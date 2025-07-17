@@ -259,7 +259,6 @@
             </div>
         </div>
     </div>
-
     <script>
         let currentKeywords = [];
         let selectedKeyword = null;
@@ -419,6 +418,216 @@
                 closeModal();
             }
         }
+    </script>
+</body>
+
+</html>
+padding: 10px;
+border-radius: 6px;
+border: 1px solid #cfd8dc;
+}
+
+.chat-send {
+padding: 10px 18px;
+border: none;
+background: #2d7ef7;
+color: #fff;
+border-radius: 6px;
+cursor: pointer;
+margin-left: 8px;
+}
+
+.chat-send:disabled {
+background: #b0c4de;
+}
+
+.loading {
+color: #666;
+font-style: italic;
+}
+</style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 AI 뉴스 키워드 분석</h1>
+
+        <!-- 주간 키워드 섹션 -->
+        <div class="weekly-section">
+            <div class="weekly-title" id="weekly-title">📊 2025년 7월 3주차 - Top 3 키워드</div>
+            <div class="keywords-container" id="keywords-container">
+                <div class="keyword-tag" onclick="loadKeywordArticles('인공지능')">[인공지능]</div>
+                <div class="keyword-tag" onclick="loadKeywordArticles('반도체')">[반도체]</div>
+                <div class="keyword-tag" onclick="loadKeywordArticles('기술')">[기술]</div>
+            </div>
+        </div>
+
+        <!-- 섹션 분석 -->
+        <div class="sections-container">
+            <div class="sections-title">� 주요 키워드에 대한 산업별 시각 분석</div>
+            <div class="sections-grid">
+                <div class="section-btn" onclick="loadSectionAnalysis('사회')">🏛️ 사회적 관점</div>
+                <div class="section-btn" onclick="loadSectionAnalysis('생활문화')">🎭 생활/문화적 관점</div>
+                <div class="section-btn" onclick="loadSectionAnalysis('IT과학')">💻 기술적 관점</div>
+                <div class="section-btn" onclick="loadSectionAnalysis('세계')">🌍 글로벌 관점</div>
+                <div class="section-btn" onclick="loadSectionAnalysis('경제')">💰 경제적 관점</div>
+            </div>
+        </div>
+
+        <!-- 결과 표시 영역 -->
+        <div class="results-container" id="results-container">
+            <div class="result-title">분석 결과가 여기에 표시됩니다</div>
+            <div class="result-content">키워드를 클릭하여 관련 기사를 보거나, 산업 관점을 선택하여 주요 키워드에 대한 전문적 분석을 확인하세요.</div>
+        </div>
+
+        <!-- 챗봇 섹션 -->
+        <div class="chatbox">
+            <h3>🤖 AI 분석 챗봇</h3>
+            <div class="chat-history" id="chat-history"></div>
+            <input class="chat-input" id="chat-input" type="text" placeholder="키워드나 산업에 대해 질문하세요...">
+            <button class="chat-send" id="chat-send">전송</button>
+        </div>
+    </div>
+
+    <script>
+        // 주간 키워드 로드
+        async function loadWeeklySummary() {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/weekly-summary');
+                const data = await res.json();
+
+                if (data.content) {
+                    // 제목 업데이트
+                    document.getElementById('weekly-title').textContent = data.title || '주간 키워드 분석';
+
+                    // content에서 키워드 추출하여 표시
+                    const keywordMatch = data.content.match(/\[(.*?)\]/g);
+                    if (keywordMatch && keywordMatch.length >= 3) {
+                        const keywordsContainer = document.getElementById('keywords-container');
+                        keywordsContainer.innerHTML = '';
+
+                        // Top 3 키워드 표시
+                        keywordMatch.slice(0, 3).forEach(keywordWithBrackets => {
+                            const keyword = keywordWithBrackets.replace(/[\[\]]/g, '');
+                            const keywordDiv = document.createElement('div');
+                            keywordDiv.className = 'keyword-tag';
+                            keywordDiv.textContent = keywordWithBrackets;
+                            keywordDiv.onclick = () => loadKeywordArticles(keyword);
+                            keywordsContainer.appendChild(keywordDiv);
+                        });
+
+                        console.log('주간 키워드 로드 완료:', keywordMatch.slice(0, 3));
+                    }
+                } else {
+                    console.log('주간 요약 데이터가 없습니다.');
+                }
+            } catch (error) {
+                console.error('주간 요약 로드 오류:', error);
+                // 기본값 유지
+            }
+        }
+
+        // 키워드 관련 기사 로드
+        async function loadKeywordArticles(keyword) {
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '<div class="loading">🔍 키워드 관련 기사를 검색 중...</div>';
+
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/keyword-articles/${encodeURIComponent(keyword)}`);
+                const data = await res.json();
+
+                let html = `<div class="result-title">🔎 "${keyword}" 관련 기사 Top 5</div>`;
+
+                if (data.articles && data.articles.length > 0) {
+                    html += '<div class="articles-grid">';
+                    data.articles.forEach(article => {
+                        html += `
+                            <div class="article-card">
+                                <div class="article-title">${article.title}</div>
+                                <div class="article-content">${article.content}</div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div class="result-content">해당 키워드와 관련된 기사를 찾을 수 없습니다.</div>';
+                }
+
+                resultsContainer.innerHTML = html;
+
+            } catch (error) {
+                resultsContainer.innerHTML = '<div class="result-content">기사 로드 중 오류가 발생했습니다.</div>';
+            }
+        }
+
+        // 섹션별 분석 로드
+        async function loadSectionAnalysis(section) {
+            // 버튼 활성화 표시
+            document.querySelectorAll('.section-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '<div class="loading">� 주요 키워드에 대한 산업별 시각을 분석 중...</div>';
+
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/section-analysis/${encodeURIComponent(section)}`);
+                const data = await res.json();
+
+                const keywordsText = data.keywords ? data.keywords.join(', ') : 'AI, 인공지능, 반도체';
+                const html = `
+                    <div class="result-title">� "${keywordsText}"에 대한 ${section} 관점 분석</div>
+                    <div class="result-content">${data.analysis}</div>
+                `;
+
+                resultsContainer.innerHTML = html;
+
+            } catch (error) {
+                resultsContainer.innerHTML = '<div class="result-content">분석 로드 중 오류가 발생했습니다.</div>';
+            }
+        }
+
+        // 챗봇 기능
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            appendChat('user', msg);
+            input.value = '';
+            document.getElementById('chat-send').disabled = true;
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: msg })
+                });
+                const data = await res.json();
+                appendChat('bot', data.answer || '응답을 받을 수 없습니다.');
+            } catch (error) {
+                appendChat('bot', '오류가 발생했습니다.');
+            }
+
+            document.getElementById('chat-send').disabled = false;
+        }
+
+        function appendChat(who, msg) {
+            const history = document.getElementById('chat-history');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `<span class='chat-${who}'>${who === 'user' ? '나' : '🤖 AI'}:</span> ${msg}`;
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        // 이벤트 리스너
+        document.getElementById('chat-send').onclick = sendChat;
+        document.getElementById('chat-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') sendChat();
+        });
+
+        // 페이지 로드 시 주간 요약 로드
+        loadWeeklySummary();
     </script>
 </body>
 
