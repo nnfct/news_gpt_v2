@@ -15,8 +15,7 @@
         body {
             font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+            min-height: 100vh;r: #333;
         }
 
         .header {
@@ -197,6 +196,94 @@
             line-height: 1.5;
         }
 
+        /* 챗봇 섹션 */
+        .chatbot-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-history {
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: #f8f9fa;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .chat-bot {
+            align-self: flex-start;
+            background: #e9ecef;
+            color: #2d3a4b;
+            padding: 10px 16px;
+            border-radius: 18px 18px 18px 4px;
+            max-width: 70%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .chat-send {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .chat-send:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .chat-send:disabled {
+            background: #b0c4de;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2em;
@@ -243,6 +330,20 @@
             </div>
             <div class="analysis-content" id="analysis-content">
                 <div class="loading">분석할 키워드를 선택해주세요</div>
+            </div>
+        </div>
+
+        <!-- 챗봇 섹션 -->
+        <div class="chatbot-section">
+            <h2 class="section-title">💬 AI 뉴스 챗봇</h2>
+            <div class="chat-history" id="chat-history">
+                <div class="chat-message">
+                    <div class="chat-bot">안녕하세요! 뉴스 키워드와 관련된 질문을 해주세요. 예: "인공지능의 사회적 영향은?", "반도체 시장 전망은?"</div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" class="chat-input" placeholder="뉴스에 대해 궁금한 점을 물어보세요..." />
+                <button id="chat-send" class="chat-send">전송</button>
             </div>
         </div>
     </div>
@@ -419,6 +520,78 @@
                 closeModal();
             }
         }
+
+        // 챗봇 기능
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // 사용자 메시지 추가
+            addChatMessage(message, 'user');
+            input.value = '';
+            
+            // 전송 버튼 비활성화
+            const sendBtn = document.getElementById('chat-send');
+            sendBtn.disabled = true;
+            sendBtn.textContent = '전송 중...';
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: message })
+                });
+
+                const data = await response.json();
+                addChatMessage(data.answer || '죄송합니다. 답변을 생성할 수 없습니다.', 'bot');
+            } catch (error) {
+                console.error('Chat error:', error);
+                addChatMessage('서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+            }
+
+            // 전송 버튼 다시 활성화
+            sendBtn.disabled = false;
+            sendBtn.textContent = '전송';
+        }
+
+        function addChatMessage(message, sender) {
+            const chatHistory = document.getElementById('chat-history');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = sender === 'user' ? 'chat-user' : 'chat-bot';
+            messageContent.textContent = message;
+            
+            messageDiv.appendChild(messageContent);
+            chatHistory.appendChild(messageDiv);
+            
+            // 스크롤을 맨 아래로
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // 페이지 로드 후 이벤트 리스너 등록
+        document.addEventListener('DOMContentLoaded', function() {
+            // 챗봇 이벤트 리스너
+            const chatSendBtn = document.getElementById('chat-send');
+            const chatInput = document.getElementById('chat-input');
+            
+            if (chatSendBtn) {
+                chatSendBtn.addEventListener('click', sendChat);
+            }
+            
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendChat();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 
