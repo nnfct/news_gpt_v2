@@ -210,11 +210,29 @@
             padding: 20px;
             border-left: 4px solid #667eea;
             transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .article-card:hover {
             background: #e9ecef;
             transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .article-card[style*="cursor: pointer"]:hover {
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .article-card[style*="cursor: pointer"]:hover::after {
+            content: "🔗";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 16px;
+            color: #667eea;
         }
 
         .article-date {
@@ -288,13 +306,50 @@
             line-height: 1.5;
         }
 
-        /* 챗봇 섹션 */
         .chatbot-section {
             background: white;
             border-radius: 16px;
             padding: 30px;
             margin-top: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-suggestions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .suggestion-title {
+            font-weight: 600;
+            color: #2d3a4b;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .suggestions-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .suggestion-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .suggestion-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .chat-history {
@@ -376,6 +431,16 @@
             transform: none;
         }
 
+        .typing-dots {
+            animation: typing 1.5s infinite;
+        }
+
+        @keyframes typing {
+            0%, 20% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2em;
@@ -389,6 +454,10 @@
             .keyword-tag,
             .industry-tab {
                 text-align: center;
+            }
+
+            .suggestions-container {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -427,14 +496,31 @@
 
         <!-- 챗봇 섹션 -->
         <div class="chatbot-section">
-            <h2 class="section-title">💬 AI 뉴스 챗봇</h2>
+            <h2 class="section-title">💬 AI 뉴스 분석 챗봇</h2>
+            <div class="chat-suggestions">
+                <div class="suggestion-title">💡 이런 질문을 해보세요:</div>
+                <div class="suggestions-container">
+                    <div class="suggestion-item" onclick="sendSuggestion('인공지능의 사회적 영향은?')">인공지능의 사회적 영향은?</div>
+                    <div class="suggestion-item" onclick="sendSuggestion('반도체 시장 경제 전망은?')">반도체 시장 경제 전망은?</div>
+                    <div class="suggestion-item" onclick="sendSuggestion('AI vs 반도체 비교')">AI vs 반도체 비교</div>
+                    <div class="suggestion-item" onclick="sendSuggestion('최근 기업 동향은?')">최근 기업 동향은?</div>
+                </div>
+            </div>
             <div class="chat-history" id="chat-history">
                 <div class="chat-message">
-                    <div class="chat-bot">안녕하세요! 뉴스 키워드와 관련된 질문을 해주세요. 예: "인공지능의 사회적 영향은?", "반도체 시장 전망은?"</div>
+                    <div class="chat-bot">
+                        안녕하세요! 저는 주간 키워드 분석 기반 AI 챗봇입니다. 🤖<br>
+                        <strong>현재 주간 핵심 키워드를 기반으로</strong> 다양한 관점에서 답변해드립니다.<br><br>
+                        📌 <strong>질문 유형:</strong><br>
+                        • 산업별 분석: "인공지능의 경제적 영향은?"<br>
+                        • 키워드 트렌드: "반도체 최근 동향은?"<br>
+                        • 비교 분석: "AI vs 반도체 비교"<br>
+                        • 일반 질문: "현재 주요 뉴스는?"
+                    </div>
                 </div>
             </div>
             <div class="chat-input-container">
-                <input type="text" id="chat-input" class="chat-input" placeholder="뉴스에 대해 궁금한 점을 물어보세요..." />
+                <input type="text" id="chat-input" class="chat-input" placeholder="주간 키워드 기반으로 뉴스를 분석해드립니다..." />
                 <button id="chat-send" class="chat-send">전송</button>
             </div>
         </div>
@@ -604,7 +690,7 @@
             const articles = document.getElementById('modal-articles');
 
             title.innerHTML = `<span style="color: #667eea;">📰</span> "${keyword}" 관련 Top 5 기사`;
-            articles.innerHTML = '<div class="loading">🔍 관련 기사를 검색하고 요약 중...</div>';
+            articles.innerHTML = '<div class="loading">🔍 네이버 API로 최신 기사를 검색하고 요약 중...</div>';
             modal.style.display = 'block';
 
             try {
@@ -620,20 +706,94 @@
                     data.articles.forEach((article, index) => {
                         const card = document.createElement('div');
                         card.className = 'article-card';
+                        
+                        // URL이 있고 유효한 경우에만 클릭 가능하도록 설정
+                        const hasValidUrl = article.url && article.url.trim() !== '' && article.url !== '#';
+                        card.style.cursor = hasValidUrl ? 'pointer' : 'default';
+                        
+                        // 날짜 포맷 개선
+                        const displayDate = article.date || '날짜 정보 없음';
+                        const isCurrentWeek = displayDate.includes('2025-07-1') || displayDate.includes('2025-07-2');
+                        const dateColor = isCurrentWeek ? '#28a745' : '#6c757d';
+                        
                         card.innerHTML = `
-                            <div class="article-date">${article.date || '날짜 정보 없음'}</div>
+                            <div class="article-date" style="color: ${dateColor};">
+                                ${isCurrentWeek ? '🆕 ' : ''}${displayDate}
+                            </div>
                             <div class="article-title">${article.title}</div>
                             <div class="article-summary">${article.summary}</div>
+                            ${hasValidUrl ? 
+                                '<div style="margin-top: 10px; color: #667eea; font-size: 12px;">💡 클릭하여 원문 보기</div>' : 
+                                '<div style="margin-top: 10px; color: #999; font-size: 12px;">⚠️ 원문 링크가 없습니다</div>'
+                            }
                         `;
+                        
+                        // 기사 클릭 시 원문으로 리다이렉트
+                        if (hasValidUrl) {
+                            card.addEventListener('click', function() {
+                                console.log('클릭된 기사 URL:', article.url);
+                                console.log('기사 제목:', article.title);
+                                
+                                // 네이버 뉴스 링크인 경우 바로 열기
+                                if (article.url.includes('naver.com')) {
+                                    window.open(article.url, '_blank');
+                                } else {
+                                    // 다른 링크도 새 탭에서 열기
+                                    window.open(article.url, '_blank');
+                                }
+                            });
+                            
+                            // 호버 효과 추가
+                            card.addEventListener('mouseenter', function() {
+                                card.style.transform = 'translateY(-3px)';
+                                card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                            });
+                            
+                            card.addEventListener('mouseleave', function() {
+                                card.style.transform = 'translateY(0)';
+                                card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                            });
+                        } else {
+                            console.log('URL이 없는 기사:', article.title);
+                        }
+                        
                         articlesGrid.appendChild(card);
                     });
 
                     articles.appendChild(articlesGrid);
+                    
+                    // 네이버 API 사용 알림 추가
+                    const apiInfo = document.createElement('div');
+                    apiInfo.style.cssText = `
+                        text-align: center; 
+                        color: #28a745; 
+                        font-size: 12px; 
+                        margin-top: 15px; 
+                        padding: 10px;
+                        background: #f8f9fa;
+                        border-radius: 6px;
+                        border-left: 4px solid #28a745;
+                    `;
+                    apiInfo.innerHTML = '✅ 네이버 뉴스 API를 통해 2025년 7월 3주차 최신 기사를 가져왔습니다.';
+                    articles.appendChild(apiInfo);
                 } else {
-                    articles.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">해당 키워드와 관련된 기사를 찾을 수 없습니다.</div>';
+                    articles.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            <p>해당 키워드와 관련된 기사를 찾을 수 없습니다.</p>
+                            <p style="font-size: 14px; color: #999; margin-top: 10px;">
+                                검색 범위: 2025년 7월 3주차 (7/14 ~ 7/20)
+                            </p>
+                        </div>
+                    `;
                 }
             } catch (error) {
-                articles.innerHTML = '<div style="color: #e74c3c; text-align: center; padding: 20px;">❌ 관련 기사를 불러올 수 없습니다.</div>';
+                console.error('기사 검색 오류:', error);
+                articles.innerHTML = `
+                    <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                        <p>❌ 관련 기사를 불러올 수 없습니다.</p>
+                        <p style="font-size: 14px; margin-top: 10px;">오류: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -647,6 +807,13 @@
             if (event.target === modal) {
                 closeModal();
             }
+        }
+
+        // 제안 질문 클릭 기능
+        function sendSuggestion(suggestionText) {
+            const chatInput = document.getElementById('chat-input');
+            chatInput.value = suggestionText;
+            sendChat();
         }
 
         // 챗봇 기능
@@ -663,7 +830,10 @@
             // 전송 버튼 비활성화
             const sendBtn = document.getElementById('chat-send');
             sendBtn.disabled = true;
-            sendBtn.textContent = '전송 중...';
+            sendBtn.textContent = '분석 중...';
+
+            // 타이핑 인디케이터 추가
+            const typingIndicator = addTypingIndicator();
 
             try {
                 const response = await fetch('http://127.0.0.1:8000/chat', {
@@ -675,15 +845,42 @@
                 });
 
                 const data = await response.json();
+                
+                // 타이핑 인디케이터 제거
+                typingIndicator.remove();
+                
+                // 답변 추가 (마크다운 스타일 적용)
                 addChatMessage(data.answer || '죄송합니다. 답변을 생성할 수 없습니다.', 'bot');
+                
             } catch (error) {
                 console.error('Chat error:', error);
-                addChatMessage('서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+                typingIndicator.remove();
+                addChatMessage('🔄 서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'bot');
             }
 
             // 전송 버튼 다시 활성화
             sendBtn.disabled = false;
             sendBtn.textContent = '전송';
+        }
+
+        function addTypingIndicator() {
+            const chatHistory = document.getElementById('chat-history');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message';
+            typingDiv.id = 'typing-indicator';
+
+            const typingContent = document.createElement('div');
+            typingContent.className = 'chat-bot';
+            typingContent.innerHTML = '🤔 분석 중<span class="typing-dots">...</span>';
+            typingContent.style.fontStyle = 'italic';
+
+            typingDiv.appendChild(typingContent);
+            chatHistory.appendChild(typingDiv);
+
+            // 스크롤을 맨 아래로
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            
+            return typingDiv;
         }
 
         function addChatMessage(message, sender) {
@@ -693,7 +890,13 @@
 
             const messageContent = document.createElement('div');
             messageContent.className = sender === 'user' ? 'chat-user' : 'chat-bot';
-            messageContent.textContent = message;
+            
+            // 봇 메시지의 경우 줄바꿈 처리
+            if (sender === 'bot') {
+                messageContent.innerHTML = message.replace(/\n/g, '<br>');
+            } else {
+                messageContent.textContent = message;
+            }
 
             messageDiv.appendChild(messageContent);
             chatHistory.appendChild(messageDiv);

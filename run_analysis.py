@@ -25,9 +25,9 @@ def collect_news():
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET or NAVER_CLIENT_ID == "your_naver_client_id":
         print("⚠️ Naver API 키가 설정되지 않아 샘플 데이터를 사용합니다.")
         return [
-            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다."},
-            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다."},
-            {"title": "클라우드 서비스 시장 확대", "content": "코로나19 이후 디지털 전환이 가속화되면서 클라우드 컴퓨팅 서비스 시장이 급속히 성장하고 있다."}
+            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567890", "date": "2025-07-18"},
+            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567891", "date": "2025-07-17"},
+            {"title": "클라우드 서비스 시장 확대", "content": "코로나19 이후 디지털 전환이 가속화되면서 클라우드 컴퓨팅 서비스 시장이 급속히 성장하고 있다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567892", "date": "2025-07-16"}
         ]
     
     try:
@@ -69,6 +69,21 @@ def collect_news():
                     # HTML 태그 제거
                     title = item.get("title", "").replace("<b>", "").replace("</b>", "").replace("&quot;", '"')
                     description = item.get("description", "").replace("<b>", "").replace("</b>", "").replace("&quot;", '"')
+                    link = item.get("link", "")  # 기사 원문 URL 추가
+                    pub_date = item.get("pubDate", "")  # 네이버 API에서 제공하는 발행일
+                    
+                    # 날짜 형식 변환 (RFC2822 -> YYYY-MM-DD)
+                    formatted_date = ""
+                    if pub_date:
+                        try:
+                            from datetime import datetime
+                            # 네이버 API pubDate는 "Mon, 17 Jul 2025 14:30:00 +0900" 형식
+                            dt = datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %z")
+                            formatted_date = dt.strftime("%Y-%m-%d")
+                        except:
+                            formatted_date = "2025-07-17"  # 기본값
+                    else:
+                        formatted_date = "2025-07-17"  # 기본값
                     
                     # 중복 제거를 위한 간단한 체크
                     is_duplicate = False
@@ -82,7 +97,9 @@ def collect_news():
                             "title": title,
                             "content": description,
                             "section": "IT/기술",
-                            "keyword": keyword
+                            "keyword": keyword,
+                            "url": link,  # URL 정보 추가
+                            "date": formatted_date  # 날짜 정보 추가
                         })
                     
                 print(f"  ✅ '{keyword}' 키워드로 {len(items)}개 뉴스 수집 (중복 제거 후 추가)")
@@ -98,8 +115,8 @@ def collect_news():
         print(f"❌ 네이버 API 오류: {e}")
         print("⚠️ 샘플 데이터를 사용합니다.")
         return [
-            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다.", "section": "IT/기술"},
-            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다.", "section": "IT/기술"}
+            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567893", "date": "2025-07-18"},
+            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567894", "date": "2025-07-17"}
         ]
 
 def extract_keywords(news):
@@ -191,6 +208,48 @@ def analyze_weekly_keywords(news_list):
     
     return top_3_keywords, keyword_counter
 
+def upload_news_articles(news_list):
+    """뉴스 기사들을 Azure Search에 업로드"""
+    try:
+        endpoint = AZURE_SEARCH_ENDPOINT or ""
+        index_name = AZURE_SEARCH_INDEX or ""
+        api_key = AZURE_SEARCH_API_KEY or ""
+        client = SearchClient(
+            endpoint=str(endpoint),
+            index_name=str(index_name),
+            credential=AzureKeyCredential(str(api_key))
+        )
+        
+        print(f"📤 {len(news_list)}개 뉴스 기사 업로드 중...")
+        
+        # 기사 문서 생성
+        documents = []
+        for i, news in enumerate(news_list):
+            doc = {
+                "id": f"news_article_{i+1}_{hash(news['title']) % 1000000:06d}",
+                "title": news.get("title", ""),
+                "content": news.get("content", ""),
+                "date": news.get("date", "2025-07-17"),
+                "url": news.get("url", ""),
+                "section": news.get("section", "IT/기술"),
+                "keyword": news.get("keyword", "")
+            }
+            documents.append(doc)
+        
+        # 배치 업로드 (한 번에 최대 1000개)
+        batch_size = 50
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i+batch_size]
+            result = client.upload_documents(documents=batch)
+            
+            success_count = sum(1 for r in result if r.succeeded)
+            print(f"  ✅ 배치 {i//batch_size + 1}: {success_count}/{len(batch)}개 성공")
+            
+        print(f"✅ 총 {len(documents)}개 뉴스 기사 업로드 완료!")
+        
+    except Exception as e:
+        print(f"❌ 뉴스 기사 업로드 오류: {e}")
+
 def upload_weekly_summary(top_3_keywords, keyword_counter):
     """주간 키워드 요약을 Azure Search에 업로드"""
     try:
@@ -236,14 +295,17 @@ if __name__ == "__main__":
     # 1단계: 7일치 뉴스 수집
     news_list = collect_news()
     
-    # 2단계: 전체 키워드 빈도 분석
+    # 2단계: 뉴스 기사들을 Azure Search에 업로드
+    upload_news_articles(news_list)
+    
+    # 3단계: 전체 키워드 빈도 분석
     top_3_keywords, keyword_counter = analyze_weekly_keywords(news_list)
     
-    # 3단계: 주간 요약 결과 출력
+    # 4단계: 주간 요약 결과 출력
     print(f"\n🎯 최종 결과:")
     print(f"2025년 7월 3주차 Top 3 키워드: [{top_3_keywords[0]}] [{top_3_keywords[1]}] [{top_3_keywords[2]}]")
     
-    # 4단계: Azure Search에 주간 요약 업로드
+    # 5단계: Azure Search에 주간 요약 업로드
     upload_weekly_summary(top_3_keywords, keyword_counter)
     
     print(f"\n✅ 분석 완료! 웹페이지에서 결과를 확인하세요.")
