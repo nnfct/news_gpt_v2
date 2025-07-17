@@ -15,7 +15,8 @@
         body {
             font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;r: #333;
+            min-height: 100vh;
+            r: #333;
         }
 
         .header {
@@ -525,13 +526,13 @@
         async function sendChat() {
             const input = document.getElementById('chat-input');
             const message = input.value.trim();
-            
+
             if (!message) return;
 
             // 사용자 메시지 추가
             addChatMessage(message, 'user');
             input.value = '';
-            
+
             // 전송 버튼 비활성화
             const sendBtn = document.getElementById('chat-send');
             sendBtn.disabled = true;
@@ -562,30 +563,30 @@
             const chatHistory = document.getElementById('chat-history');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message';
-            
+
             const messageContent = document.createElement('div');
             messageContent.className = sender === 'user' ? 'chat-user' : 'chat-bot';
             messageContent.textContent = message;
-            
+
             messageDiv.appendChild(messageContent);
             chatHistory.appendChild(messageDiv);
-            
+
             // 스크롤을 맨 아래로
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
         // 페이지 로드 후 이벤트 리스너 등록
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // 챗봇 이벤트 리스너
             const chatSendBtn = document.getElementById('chat-send');
             const chatInput = document.getElementById('chat-input');
-            
+
             if (chatSendBtn) {
                 chatSendBtn.addEventListener('click', sendChat);
             }
-            
+
             if (chatInput) {
-                chatInput.addEventListener('keypress', function(e) {
+                chatInput.addEventListener('keypress', function (e) {
                     if (e.key === 'Enter') {
                         sendChat();
                     }
