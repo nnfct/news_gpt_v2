@@ -48,7 +48,7 @@
             border-radius: 16px;
             padding: 30px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .section-title {
@@ -94,7 +94,7 @@
             background: white;
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .industry-tabs {
@@ -146,7 +146,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
         }
 
@@ -201,12 +201,12 @@
             .header h1 {
                 font-size: 2em;
             }
-            
+
             .keywords-container,
             .industry-tabs {
                 flex-direction: column;
             }
-            
+
             .keyword-tag,
             .industry-tab {
                 text-align: center;
@@ -264,7 +264,7 @@
         let selectedKeyword = null;
 
         // 페이지 로드시 키워드 불러오기
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             loadWeeklyKeywords();
             setupIndustryTabs();
         });
@@ -274,7 +274,7 @@
             try {
                 const response = await fetch('http://127.0.0.1:8000/weekly-keywords');
                 const data = await response.json();
-                
+
                 displayKeywords(data.keywords);
                 updateWeekInfo(data.week_info);
             } catch (error) {
@@ -307,10 +307,10 @@
         // 키워드 선택
         function selectKeyword(keyword) {
             selectedKeyword = keyword;
-            
+
             // 키워드 태그 활성화 표시
             document.querySelectorAll('.keyword-tag').forEach(tag => {
-                tag.style.background = tag.textContent === keyword 
+                tag.style.background = tag.textContent === keyword
                     ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             });
@@ -325,7 +325,7 @@
         // 산업별 탭 설정
         function setupIndustryTabs() {
             document.querySelectorAll('.industry-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
+                tab.addEventListener('click', function () {
                     // 탭 활성화
                     document.querySelectorAll('.industry-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
@@ -373,7 +373,7 @@
         }
 
         // 키워드 관련 기사 모달 열기 (더블클릭시)
-        document.addEventListener('dblclick', function(e) {
+        document.addEventListener('dblclick', function (e) {
             if (e.target.classList.contains('keyword-tag')) {
                 openArticleModal(e.target.textContent);
             }
@@ -412,7 +412,7 @@
         }
 
         // 모달 외부 클릭시 닫기
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('article-modal');
             if (event.target === modal) {
                 closeModal();
@@ -422,36 +422,36 @@
 </body>
 
 </html>
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #cfd8dc;
-        }
+padding: 10px;
+border-radius: 6px;
+border: 1px solid #cfd8dc;
+}
 
-        .chat-send {
-            padding: 10px 18px;
-            border: none;
-            background: #2d7ef7;
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-left: 8px;
-        }
+.chat-send {
+padding: 10px 18px;
+border: none;
+background: #2d7ef7;
+color: #fff;
+border-radius: 6px;
+cursor: pointer;
+margin-left: 8px;
+}
 
-        .chat-send:disabled {
-            background: #b0c4de;
-        }
+.chat-send:disabled {
+background: #b0c4de;
+}
 
-        .loading {
-            color: #666;
-            font-style: italic;
-        }
-    </style>
+.loading {
+color: #666;
+font-style: italic;
+}
+</style>
 </head>
 
 <body>
     <div class="container">
         <h1>🔍 AI 뉴스 키워드 분석</h1>
-        
+
         <!-- 주간 키워드 섹션 -->
         <div class="weekly-section">
             <div class="weekly-title" id="weekly-title">📊 2025년 7월 3주차 - Top 3 키워드</div>
@@ -495,17 +495,17 @@
             try {
                 const res = await fetch('http://127.0.0.1:8000/weekly-summary');
                 const data = await res.json();
-                
+
                 if (data.content) {
                     // 제목 업데이트
                     document.getElementById('weekly-title').textContent = data.title || '주간 키워드 분석';
-                    
+
                     // content에서 키워드 추출하여 표시
                     const keywordMatch = data.content.match(/\[(.*?)\]/g);
                     if (keywordMatch && keywordMatch.length >= 3) {
                         const keywordsContainer = document.getElementById('keywords-container');
                         keywordsContainer.innerHTML = '';
-                        
+
                         // Top 3 키워드 표시
                         keywordMatch.slice(0, 3).forEach(keywordWithBrackets => {
                             const keyword = keywordWithBrackets.replace(/[\[\]]/g, '');
@@ -515,7 +515,7 @@
                             keywordDiv.onclick = () => loadKeywordArticles(keyword);
                             keywordsContainer.appendChild(keywordDiv);
                         });
-                        
+
                         console.log('주간 키워드 로드 완료:', keywordMatch.slice(0, 3));
                     }
                 } else {
@@ -531,13 +531,13 @@
         async function loadKeywordArticles(keyword) {
             const resultsContainer = document.getElementById('results-container');
             resultsContainer.innerHTML = '<div class="loading">🔍 키워드 관련 기사를 검색 중...</div>';
-            
+
             try {
                 const res = await fetch(`http://127.0.0.1:8000/keyword-articles/${encodeURIComponent(keyword)}`);
                 const data = await res.json();
-                
+
                 let html = `<div class="result-title">🔎 "${keyword}" 관련 기사 Top 5</div>`;
-                
+
                 if (data.articles && data.articles.length > 0) {
                     html += '<div class="articles-grid">';
                     data.articles.forEach(article => {
@@ -552,9 +552,9 @@
                 } else {
                     html += '<div class="result-content">해당 키워드와 관련된 기사를 찾을 수 없습니다.</div>';
                 }
-                
+
                 resultsContainer.innerHTML = html;
-                
+
             } catch (error) {
                 resultsContainer.innerHTML = '<div class="result-content">기사 로드 중 오류가 발생했습니다.</div>';
             }
@@ -565,22 +565,22 @@
             // 버튼 활성화 표시
             document.querySelectorAll('.section-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
+
             const resultsContainer = document.getElementById('results-container');
             resultsContainer.innerHTML = '<div class="loading">� 주요 키워드에 대한 산업별 시각을 분석 중...</div>';
-            
+
             try {
                 const res = await fetch(`http://127.0.0.1:8000/section-analysis/${encodeURIComponent(section)}`);
                 const data = await res.json();
-                
+
                 const keywordsText = data.keywords ? data.keywords.join(', ') : 'AI, 인공지능, 반도체';
                 const html = `
                     <div class="result-title">� "${keywordsText}"에 대한 ${section} 관점 분석</div>
                     <div class="result-content">${data.analysis}</div>
                 `;
-                
+
                 resultsContainer.innerHTML = html;
-                
+
             } catch (error) {
                 resultsContainer.innerHTML = '<div class="result-content">분석 로드 중 오류가 발생했습니다.</div>';
             }
@@ -591,11 +591,11 @@
             const input = document.getElementById('chat-input');
             const msg = input.value.trim();
             if (!msg) return;
-            
+
             appendChat('user', msg);
             input.value = '';
             document.getElementById('chat-send').disabled = true;
-            
+
             try {
                 const res = await fetch('http://127.0.0.1:8000/chat', {
                     method: 'POST',
@@ -607,7 +607,7 @@
             } catch (error) {
                 appendChat('bot', '오류가 발생했습니다.');
             }
-            
+
             document.getElementById('chat-send').disabled = false;
         }
 
