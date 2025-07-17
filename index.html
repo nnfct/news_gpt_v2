@@ -82,11 +82,29 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
         }
 
         .keyword-tag:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .keyword-tag::after {
+            content: "클릭: 관련기사 | 더블클릭: 분석선택";
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #666;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .keyword-tag:hover::after {
+            opacity: 1;
         }
 
         /* 산업별 분석 섹션 */
@@ -130,6 +148,79 @@
             border-radius: 12px;
             min-height: 200px;
             line-height: 1.6;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis-section {
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .counter-analysis-section {
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #ee5a24;
+            background: #fff5f5;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .analysis-title {
+            font-weight: 600;
+            color: #2d3a4b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .counter-title {
+            font-weight: 600;
+            color: #c0392b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 기사 목록 모달 스타일 개선 */
+        .articles-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .article-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .article-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .article-date {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
         }
 
         .loading {
@@ -321,7 +412,7 @@
 
         <!-- 산업별 분석 섹션 -->
         <div class="industry-analysis">
-            <h2 class="section-title">산업별 동향 분석</h2>
+            <h2 class="section-title">이런 시각은 어때요?</h2>
             <div class="industry-tabs">
                 <div class="industry-tab active" data-industry="사회">사회</div>
                 <div class="industry-tab" data-industry="경제">경제</div>
@@ -407,7 +498,7 @@
             document.getElementById('week-info').textContent = weekInfo || '7월 3주차 키워드 분석';
         }
 
-        // 키워드 선택
+        // 키워드 선택 (클릭시 기사 보기, 더블클릭시 분석)
         function selectKeyword(keyword) {
             selectedKeyword = keyword;
 
@@ -418,12 +509,30 @@
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             });
 
-            // 현재 활성화된 산업 탭에 대한 분석 실행
-            const activeTab = document.querySelector('.industry-tab.active');
-            if (activeTab) {
-                loadIndustryAnalysis(activeTab.dataset.industry, keyword);
-            }
+            // 싱글 클릭: 관련 기사 표시
+            openArticleModal(keyword);
         }
+
+        // 키워드 더블클릭시 분석 선택 모드
+        document.addEventListener('dblclick', function (e) {
+            if (e.target.classList.contains('keyword-tag')) {
+                const keyword = e.target.textContent;
+                selectedKeyword = keyword;
+
+                // 키워드 활성화 표시
+                document.querySelectorAll('.keyword-tag').forEach(tag => {
+                    tag.style.background = tag.textContent === keyword
+                        ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
+                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                });
+
+                // 현재 활성화된 산업 탭에 대한 분석 실행
+                const activeTab = document.querySelector('.industry-tab.active');
+                if (activeTab) {
+                    loadIndustryAnalysis(activeTab.dataset.industry, keyword);
+                }
+            }
+        });
 
         // 산업별 탭 설정
         function setupIndustryTabs() {
@@ -441,10 +550,10 @@
             });
         }
 
-        // 산업별 분석 로딩
+        // 개선된 산업별 분석 함수 (정반대 의견 포함)
         async function loadIndustryAnalysis(industry, keyword) {
             const content = document.getElementById('analysis-content');
-            content.innerHTML = '<div class="loading">분석 중...</div>';
+            content.innerHTML = '<div class="loading">🤔 다양한 관점에서 분석 중...</div>';
 
             try {
                 const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
@@ -460,35 +569,42 @@
 
                 const data = await response.json();
                 content.innerHTML = `
-                    <h3 style="color: #2d3a4b; margin-bottom: 15px;">
-                        "${keyword}" - ${industry} 관점 분석
-                    </h3>
-                    <div style="line-height: 1.7;">${data.analysis}</div>
+                    <div class="analysis-grid">
+                        <div class="analysis-section">
+                            <div class="analysis-title">
+                                <span style="color: #667eea;">👍</span>
+                                긍정적/일반 분석
+                            </div>
+                            <div style="line-height: 1.7;">${data.analysis}</div>
+                        </div>
+                        
+                        <div class="counter-analysis-section">
+                            <div class="counter-title">
+                                <span style="color: #e74c3c;">🤔</span>
+                                비판적/회의적 분석
+                            </div>
+                            <div style="line-height: 1.7;">${data.counter_analysis || '반대 의견을 생성할 수 없습니다.'}</div>
+                        </div>
+                    </div>
                 `;
             } catch (error) {
                 content.innerHTML = `
-                    <div style="color: #666;">
-                        분석을 불러오는 중 오류가 발생했습니다.<br>
+                    <div style="color: #666; text-align: center; padding: 20px;">
+                        ❌ 분석을 불러오는 중 오류가 발생했습니다.<br>
                         잠시 후 다시 시도해주세요.
                     </div>
                 `;
             }
         }
 
-        // 키워드 관련 기사 모달 열기 (더블클릭시)
-        document.addEventListener('dblclick', function (e) {
-            if (e.target.classList.contains('keyword-tag')) {
-                openArticleModal(e.target.textContent);
-            }
-        });
-
+        // 개선된 기사 모달 함수
         async function openArticleModal(keyword) {
             const modal = document.getElementById('article-modal');
             const title = document.getElementById('modal-title');
             const articles = document.getElementById('modal-articles');
 
-            title.textContent = `"${keyword}" 관련 기사`;
-            articles.innerHTML = '<div class="loading">관련 기사를 불러오는 중...</div>';
+            title.innerHTML = `<span style="color: #667eea;">📰</span> "${keyword}" 관련 Top 5 기사`;
+            articles.innerHTML = '<div class="loading">🔍 관련 기사를 검색하고 요약 중...</div>';
             modal.style.display = 'block';
 
             try {
@@ -496,17 +612,28 @@
                 const data = await response.json();
 
                 articles.innerHTML = '';
-                data.articles.forEach(article => {
-                    const item = document.createElement('div');
-                    item.className = 'article-item';
-                    item.innerHTML = `
-                        <div class="article-title">${article.title}</div>
-                        <div class="article-summary">${article.summary}</div>
-                    `;
-                    articles.appendChild(item);
-                });
+
+                if (data.articles && data.articles.length > 0) {
+                    const articlesGrid = document.createElement('div');
+                    articlesGrid.className = 'articles-grid';
+
+                    data.articles.forEach((article, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'article-card';
+                        card.innerHTML = `
+                            <div class="article-date">${article.date || '날짜 정보 없음'}</div>
+                            <div class="article-title">${article.title}</div>
+                            <div class="article-summary">${article.summary}</div>
+                        `;
+                        articlesGrid.appendChild(card);
+                    });
+
+                    articles.appendChild(articlesGrid);
+                } else {
+                    articles.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">해당 키워드와 관련된 기사를 찾을 수 없습니다.</div>';
+                }
             } catch (error) {
-                articles.innerHTML = '<div style="color: #666;">관련 기사를 불러올 수 없습니다.</div>';
+                articles.innerHTML = '<div style="color: #e74c3c; text-align: center; padding: 20px;">❌ 관련 기사를 불러올 수 없습니다.</div>';
             }
         }
 
