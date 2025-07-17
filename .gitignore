@@ -1,0 +1,23 @@
+# 환경변수 파일 (민감 정보 제외)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 로그 파일
+*.log
+
+# 임시 파일
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+
+# 테스트 파일
+test_*.py
+*_test.py

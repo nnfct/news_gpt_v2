@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+openai
+azure-search-documents
+pandas
+python-dotenv
+requests
