@@ -17,29 +17,26 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #1C2039;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #343A40;
+            color: #333;
         }
 
         .header {
             text-align: center;
             padding: 40px 20px;
             color: white;
-            background: linear-gradient(135deg, #1C2039 0%, #2C2C3A 100%);
         }
 
         .header h1 {
             font-size: 2.5em;
             font-weight: 300;
             margin-bottom: 10px;
-            color: #00D9C0;
         }
 
         .header .subtitle {
             font-size: 1.1em;
             opacity: 0.9;
-            color: #E9ECEF;
         }
 
         .main-container {
@@ -50,28 +47,26 @@
 
         /* 주간 요약 섹션 */
         .weekly-summary {
-            background: #F5F7FA;
+            background: white;
             border-radius: 16px;
             padding: 30px;
             margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .week-section {
             margin-bottom: 25px;
             padding: 20px;
-            border: 1px solid #E9ECEF;
+            border: 1px solid #e9ecef;
             border-radius: 12px;
-            background: white;
+            background: #f8f9fa;
             transition: all 0.3s ease;
         }
 
         .week-section:hover {
-            background: #F5F7FA;
+            background: #f0f0f0;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
-            border-color: #007BFF;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .week-header {
@@ -79,19 +74,19 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
-            border-bottom: 2px solid #E9ECEF;
+            border-bottom: 2px solid #dee2e6;
             padding-bottom: 10px;
         }
 
         .week-title {
             font-size: 1.1em;
             font-weight: 600;
-            color: #343A40;
+            color: #495057;
         }
 
         .week-loading {
             font-size: 0.9em;
-            color: #007BFF;
+            color: #667eea;
             font-style: italic;
         }
 
@@ -102,16 +97,16 @@
         .section-title {
             font-size: 1.4em;
             font-weight: 600;
-            color: #343A40;
+            color: #2d3a4b;
             margin-bottom: 20px;
-            border-bottom: 3px solid #00D9C0;
+            border-bottom: 3px solid #667eea;
             padding-bottom: 10px;
             display: inline-block;
         }
 
         .week-info {
             font-size: 0.95em;
-            color: #6C757D;
+            color: #666;
             margin-bottom: 20px;
         }
 
@@ -123,21 +118,20 @@
         }
 
         .keyword-tag {
-            background: linear-gradient(135deg, #007BFF 0%, #00D9C0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 24px;
             border-radius: 25px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
             position: relative;
         }
 
         .keyword-tag:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 217, 192, 0.5);
-            background: linear-gradient(135deg, #0056B3 0%, #00B5A3 100%);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
         .keyword-tag::after {
@@ -147,7 +141,7 @@
             left: 50%;
             transform: translateX(-50%);
             font-size: 10px;
-            color: #6C757D;
+            color: #666;
             white-space: nowrap;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -159,11 +153,10 @@
 
         /* 산업별 분석 섹션 */
         .industry-analysis {
-            background: #F5F7FA;
+            background: white;
             border-radius: 16px;
             padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .industry-tabs {
@@ -174,37 +167,31 @@
         }
 
         .industry-tab {
-            background: white;
-            border: 2px solid #E9ECEF;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
             padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 500;
-            color: #343A40;
         }
 
         .industry-tab.active {
-            background: linear-gradient(135deg, #007BFF 0%, #00D9C0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-color: #007BFF;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            border-color: #667eea;
         }
 
         .industry-tab:hover:not(.active) {
-            background: #F5F7FA;
-            border-color: #007BFF;
-            transform: translateY(-1px);
+            background: #e9ecef;
         }
 
         .analysis-content {
-            background: white;
+            background: #f8f9fa;
             padding: 25px;
             border-radius: 12px;
             min-height: 200px;
             line-height: 1.6;
-            color: #343A40;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .analysis-grid {
@@ -217,7 +204,7 @@
         .analysis-section {
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #007BFF;
+            border-left: 4px solid #667eea;
             background: white;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
@@ -225,14 +212,14 @@
         .counter-analysis-section {
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #DC3545;
-            background: #FFF5F5;
+            border-left: 4px solid #ee5a24;
+            background: #fff5f5;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .analysis-title {
             font-weight: 600;
-            color: #343A40;
+            color: #2d3a4b;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
@@ -241,7 +228,7 @@
 
         .counter-title {
             font-weight: 600;
-            color: #DC3545;
+            color: #c0392b;
             margin-bottom: 15px;
             display: flex;
             align-items: center;
@@ -262,25 +249,25 @@
         }
 
         .article-card {
-            background: white;
+            background: #f8f9fa;
             border-radius: 12px;
             padding: 20px;
-            border-left: 4px solid #007BFF;
+            border-left: 4px solid #667eea;
             transition: all 0.3s ease;
             position: relative;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .article-card:hover {
-            background: #F5F7FA;
+            background: #e9ecef;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
         }
 
         .article-card[style*="cursor: pointer"]:hover {
-            border-left-color: #00D9C0;
-            background: #F0FDFC;
-            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.3);
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .article-card[style*="cursor: pointer"]:hover::after {
@@ -289,18 +276,18 @@
             top: 15px;
             right: 15px;
             font-size: 16px;
-            color: #00D9C0;
+            color: #667eea;
         }
 
         .article-date {
             font-size: 12px;
-            color: #6C757D;
+            color: #666;
             margin-bottom: 5px;
         }
 
         .loading {
             text-align: center;
-            color: #6C757D;
+            color: #666;
             font-style: italic;
         }
 
@@ -312,7 +299,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(28, 32, 57, 0.8);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
         }
 
@@ -321,14 +308,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #F5F7FA;
+            background: white;
             border-radius: 16px;
             padding: 30px;
             max-width: 800px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header {
@@ -336,7 +322,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #E9ECEF;
+            border-bottom: 2px solid #f0f0f0;
             padding-bottom: 15px;
         }
 
@@ -345,50 +331,43 @@
             border: none;
             font-size: 1.5em;
             cursor: pointer;
-            color: #6C757D;
-            transition: color 0.3s ease;
-        }
-
-        .close-btn:hover {
-            color: #007BFF;
+            color: #666;
         }
 
         .article-item {
-            border-bottom: 1px solid #E9ECEF;
+            border-bottom: 1px solid #f0f0f0;
             padding: 15px 0;
         }
 
         .article-title {
             font-weight: 600;
-            color: #343A40;
+            color: #2d3a4b;
             margin-bottom: 8px;
         }
 
         .article-summary {
-            color: #6C757D;
+            color: #666;
             line-height: 1.5;
         }
 
         .chatbot-section {
-            background: #F5F7FA;
+            background: white;
             border-radius: 16px;
             padding: 30px;
             margin-top: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .chat-suggestions {
-            background: white;
+            background: #f8f9fa;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .suggestion-title {
             font-weight: 600;
-            color: #343A40;
+            color: #2d3a4b;
             margin-bottom: 15px;
             font-size: 14px;
         }
@@ -400,7 +379,7 @@
         }
 
         .suggestion-item {
-            background: linear-gradient(135deg, #007BFF 0%, #00D9C0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 10px 16px;
             border-radius: 20px;
@@ -409,13 +388,12 @@
             text-align: center;
             font-size: 13px;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
 
         .suggestion-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.4);
-            background: linear-gradient(135deg, #0056B3 0%, #00B5A3 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .chat-history {
@@ -424,10 +402,9 @@
             overflow-y: auto;
             margin-bottom: 20px;
             padding: 15px;
-            border: 1px solid #E9ECEF;
+            border: 1px solid #e9ecef;
             border-radius: 12px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #f8f9fa;
         }
 
         .chat-message {
@@ -438,25 +415,23 @@
 
         .chat-user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #007BFF 0%, #00D9C0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 10px 16px;
             border-radius: 18px 18px 4px 18px;
             max-width: 70%;
             word-wrap: break-word;
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
 
         .chat-bot {
             align-self: flex-start;
-            background: #E9ECEF;
-            color: #343A40;
+            background: #e9ecef;
+            color: #2d3a4b;
             padding: 10px 16px;
             border-radius: 18px 18px 18px 4px;
             max-width: 70%;
             word-wrap: break-word;
             line-height: 1.5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .chat-input-container {
@@ -467,22 +442,19 @@
         .chat-input {
             flex: 1;
             padding: 12px 16px;
-            border: 2px solid #E9ECEF;
+            border: 2px solid #e9ecef;
             border-radius: 25px;
             outline: none;
             font-size: 14px;
             transition: border-color 0.3s ease;
-            background: white;
-            color: #343A40;
         }
 
         .chat-input:focus {
-            border-color: #007BFF;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+            border-color: #667eea;
         }
 
         .chat-send {
-            background: linear-gradient(135deg, #007BFF 0%, #00D9C0 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -490,20 +462,17 @@
             cursor: pointer;
             font-weight: 500;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
         }
 
         .chat-send:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.4);
-            background: linear-gradient(135deg, #0056B3 0%, #00B5A3 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .chat-send:disabled {
-            background: #6C757D;
+            background: #b0c4de;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
 
         .typing-dots {
@@ -529,17 +498,17 @@
         @keyframes pulse {
             0% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
             }
 
             50% {
                 transform: scale(1.02);
-                box-shadow: 0 0 0 8px rgba(0, 217, 192, 0.3);
+                box-shadow: 0 0 0 8px rgba(102, 126, 234, 0.3);
             }
 
             100% {
                 transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
             }
         }
 
@@ -743,8 +712,8 @@
             // 키워드 태그 활성화 표시
             document.querySelectorAll('.keyword-tag').forEach(tag => {
                 tag.style.background = tag.textContent === keyword
-                    ? 'linear-gradient(135deg, #DC3545 0%, #FD7E14 100%)'
-                    : 'linear-gradient(135deg, #007BFF 0%, #00D9C0 100%)';
+                    ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             });
 
             // 동적으로 챗봇 제안 질문 업데이트
