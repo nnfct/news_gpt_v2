@@ -65,9 +65,8 @@ AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 
-# 네이버 API 설정
-NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
-NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
+# DeepSearch API 설정
+DEEPSEARCH_API_KEY = os.getenv("DEEPSEARCH_API_KEY")
 
 if not all([AZURE_SEARCH_API_KEY, AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_INDEX, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT]):
     raise RuntimeError("환경변수(.env) 값이 모두 설정되어야 합니다.")
@@ -85,10 +84,10 @@ search_client = SearchClient(
     credential=AzureKeyCredential(str(AZURE_SEARCH_API_KEY))
 )
 
-def get_current_week_news_from_naver(query, start_date=None, end_date=None):
-    """네이버 API를 사용하여 현재 주간 뉴스 가져오기"""
-    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
-        print("네이버 API 키가 설정되지 않았습니다.")
+def get_current_week_news_from_deepsearch(query, start_date=None, end_date=None):
+    """DeepSearch API를 사용하여 현재 주간 뉴스 가져오기"""
+    if not DEEPSEARCH_API_KEY:
+        print("DeepSearch API 키가 설정되지 않았습니다.")
         return []
     
     # 현재 주간 날짜 설정 (2025년 7월 3주차)
@@ -97,43 +96,41 @@ def get_current_week_news_from_naver(query, start_date=None, end_date=None):
     if not end_date:
         end_date = "2025-07-20"    # 7월 3주차 종료
     
-    headers = {
-        "X-Naver-Client-Id": NAVER_CLIENT_ID,
-        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
-    }
-    
     try:
-        # 네이버 뉴스 검색 API 호출
-        url = "https://openapi.naver.com/v1/search/news.json"
+        # DeepSearch API 호출
+        url = "https://api-v2.deepsearch.com/v1/global-articles"
         params = {
-            "query": query,
-            "display": 20,  # 가져올 뉴스 수
-            "start": 1,
-            "sort": "date"  # 최신순 정렬
+            "api_key": DEEPSEARCH_API_KEY,
+            "q": query,
+            "limit": 20,  # 가져올 뉴스 수
+            "start_date": start_date,
+            "end_date": end_date,
+            "sort": "published_at:desc"  # 최신순 정렬
         }
         
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         
         data = response.json()
         articles = []
         
-        for item in data.get("items", []):
-            # 날짜 파싱 및 필터링
-            pub_date = item.get("pubDate", "")
+        for item in data.get("articles", []):
+            # 날짜 필터링 (API에서 이미 필터링되지만 추가 확인)
+            pub_date = item.get("published_at", "")
             
-            # RFC 2822 형식을 파싱하여 날짜 확인
             try:
-                from datetime import datetime
-                parsed_date = datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %z")
-                article_date = parsed_date.strftime("%Y-%m-%d")
+                # ISO 형식 날짜 파싱
+                if "T" in pub_date:
+                    article_date = pub_date.split("T")[0]  # YYYY-MM-DD 형식으로 추출
+                else:
+                    article_date = pub_date
                 
                 # 지정된 주간 범위 내의 뉴스만 필터링
                 if start_date <= article_date <= end_date:
                     articles.append({
-                        "title": item.get("title", "").replace("<b>", "").replace("</b>", ""),
-                        "description": item.get("description", "").replace("<b>", "").replace("</b>", ""),
-                        "link": item.get("link", ""),
+                        "title": item.get("title", ""),
+                        "description": item.get("summary", "") or item.get("content", "")[:200] + "...",
+                        "link": item.get("url", ""),
                         "pubDate": article_date
                     })
             except Exception as e:
@@ -146,18 +143,17 @@ def get_current_week_news_from_naver(query, start_date=None, end_date=None):
         log_error(
             error=e,
             file_name="main.py",
-            function_name="get_current_week_news_from_naver",
-            context=f"네이버 API 호출 오류 - 쿼리: {query}, 기간: {start_date}~{end_date}",
+            function_name="get_current_week_news_from_deepsearch",
+            context=f"DeepSearch API 호출 오류 - 쿼리: {query}, 기간: {start_date}~{end_date}",
             additional_info={
                 "query": query,
                 "start_date": start_date,
                 "end_date": end_date,
-                "has_client_id": bool(NAVER_CLIENT_ID),
-                "has_client_secret": bool(NAVER_CLIENT_SECRET)
+                "has_api_key": bool(DEEPSEARCH_API_KEY)
             },
             severity="HIGH"
         )
-        print(f"네이버 API 호출 오류: {e}")
+        print(f"DeepSearch API 호출 오류: {e}")
         return []
 
 # 정적 파일 서빙 추가
@@ -676,7 +672,7 @@ def get_weekly_keywords_by_date(start_date: str, end_date: str):
         all_articles = []
         
         for query in queries[:3]:  # API 호출 제한으로 3개만 사용
-            articles = get_current_week_news_from_naver(query, start_date, end_date)
+            articles = get_current_week_news_from_deepsearch(query, start_date, end_date)
             all_articles.extend(articles)
             
             # API 호출 간 딜레이
@@ -827,19 +823,19 @@ def get_industry_analysis(request: dict):
 
 @app.get("/keyword-articles")
 def get_keyword_articles(keyword: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
-    """키워드 관련 기사 Top 5 조회 (네이버 API 사용)"""
+    """키워드 관련 기사 Top 5 조회 (DeepSearch API 사용)"""
     try:
         # 날짜 범위가 제공되면 해당 날짜 범위로 검색
         if start_date and end_date:
-            naver_articles = get_current_week_news_from_naver(keyword, start_date, end_date)
+            deepsearch_articles = get_current_week_news_from_deepsearch(keyword, start_date, end_date)
         else:
             # 기본값: 현재 주차 (3주차)
-            naver_articles = get_current_week_news_from_naver(keyword, "2025-07-14", "2025-07-18")
+            deepsearch_articles = get_current_week_news_from_deepsearch(keyword, "2025-07-14", "2025-07-18")
         
-        if naver_articles:
-            # 네이버 API 결과를 사용
+        if deepsearch_articles:
+            # DeepSearch API 결과를 사용
             articles = []
-            for article in naver_articles[:5]:  # Top 5만 선택
+            for article in deepsearch_articles[:5]:  # Top 5만 선택
                 articles.append({
                     "title": article["title"],
                     "summary": article["description"],
@@ -849,7 +845,7 @@ def get_keyword_articles(keyword: str, start_date: Optional[str] = None, end_dat
             
             return {"articles": articles}
         
-        # 네이버 API 결과가 없으면 Azure Search 사용
+        # DeepSearch API 결과가 없으면 Azure Search 사용
         results = search_client.search(
             search_text=keyword,
             top=10,
