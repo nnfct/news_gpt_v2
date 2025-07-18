@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔍 AI 뉴스 키워드 분석</title>
+    <title>🔍 AI 뉴스 키워드 분석 - Top 5</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -109,12 +109,6 @@
             display: inline-block;
         }
 
-        .week-info {
-            font-size: 0.95em;
-            color: #6C757D;
-            margin-bottom: 20px;
-        }
-
         .keywords-container {
             display: flex;
             gap: 15px;
@@ -165,178 +159,29 @@
             opacity: 1;
         }
 
-        /* 산업별 분석 섹션 */
-        .industry-analysis {
-            background: #F5F7FA;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
-        }
-
-        .industry-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .industry-tab {
-            background: white;
-            border: 2px solid #E9ECEF;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            color: #343A40;
-        }
-
-        .industry-tab.active {
-            background: #5A7DBC;
-            color: white;
-            border-color: #5A7DBC;
-            box-shadow: 0 4px 15px rgba(90, 125, 188, 0.3);
-        }
-
-        .industry-tab:hover:not(.active) {
-            background: #F5F7FA;
-            border-color: #5A7DBC;
-            transform: translateY(-1px);
-        }
-
-        .analysis-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            min-height: 200px;
-            line-height: 1.6;
-            color: #343A40;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .analysis-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .analysis-section {
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #5A7DBC;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .counter-analysis-section {
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #DC3545;
-            background: #FFF5F5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .analysis-title {
-            font-weight: 600;
-            color: #343A40;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .counter-title {
-            font-weight: 600;
-            color: #DC3545;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        @media (max-width: 768px) {
-            .analysis-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* 기사 목록 모달 스타일 개선 */
-        .articles-grid {
-            display: grid;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .article-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border-left: 4px solid #5A7DBC;
-            transition: all 0.3s ease;
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .article-card:hover {
-            background: #F5F7FA;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(90, 125, 188, 0.2);
-        }
-
-        .article-card[style*="cursor: pointer"]:hover {
-            border-left-color: #00D9C0;
-            background: #F0FDFC;
-            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.3);
-        }
-
-        .article-card[style*="cursor: pointer"]:hover::after {
-            content: "🔗";
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 16px;
-            color: #00D9C0;
-        }
-
-        .article-date {
-            font-size: 12px;
-            color: #6C757D;
-            margin-bottom: 5px;
-        }
-
-        .loading {
-            text-align: center;
-            color: #6C757D;
-            font-style: italic;
-        }
-
         /* 키워드 관련 기사 모달 */
         .modal {
             display: none;
             position: fixed;
-            top: 0;
+            z-index: 1000;
             left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(28, 32, 57, 0.8);
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #F5F7FA;
-            border-radius: 16px;
-            padding: 30px;
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            width: 80%;
             max-width: 800px;
-            width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .modal-header {
@@ -344,232 +189,94 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #E9ECEF;
             padding-bottom: 15px;
+            border-bottom: 2px solid #E9ECEF;
         }
 
         .close-btn {
             background: none;
             border: none;
-            font-size: 1.5em;
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
-            color: #6C757D;
-            transition: color 0.3s ease;
+            color: #aaa;
         }
 
         .close-btn:hover {
-            color: #5A7DBC;
+            color: #000;
         }
 
         .article-item {
-            border-bottom: 1px solid #E9ECEF;
-            padding: 15px 0;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #5A7DBC;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .article-item.korean {
+            border-left: 4px solid #00D9C0;
+            background: #F8FFFE;
+        }
+
+        .article-item.foreign {
+            border-left: 4px solid #FFA500;
+            background: #FFFAF0;
+        }
+
+        .article-item:hover {
+            background: #F5F7FA;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(90, 125, 188, 0.2);
+        }
+
+        .article-item.korean:hover {
+            background: #E6FFFA;
+        }
+
+        .article-item.foreign:hover {
+            background: #FFF8E1;
         }
 
         .article-title {
+            font-size: 1.1em;
             font-weight: 600;
             color: #343A40;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .article-title:hover {
+            color: #5A7DBC;
+            text-decoration: underline;
         }
 
         .article-summary {
             color: #6C757D;
             line-height: 1.5;
+            margin-bottom: 10px;
         }
 
-        .chatbot-section {
-            background: #F5F7FA;
-            border-radius: 16px;
-            padding: 30px;
-            margin-top: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+        .article-date {
+            font-size: 0.9em;
+            color: #9CA3AF;
+            margin-top: 10px;
         }
 
-        .chat-suggestions {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .suggestion-title {
-            font-weight: 600;
-            color: #343A40;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .suggestions-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-        }
-
-        .suggestion-item {
-            background: #F0F2F5;
-            color: #555555;
-            padding: 10px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .loading {
             text-align: center;
-            font-size: 13px;
-            font-weight: 500;
-            box-shadow: 0 2px 8px rgba(240, 242, 245, 0.3);
-            border: 1px solid #E9ECEF;
-        }
-
-        .suggestion-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(90, 125, 188, 0.4);
-            background: #5A7DBC;
-            color: #FFFFFF;
-        }
-
-        .chat-history {
-            min-height: 200px;
-            max-height: 400px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #E9ECEF;
-            border-radius: 12px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-message {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-user {
-            align-self: flex-end;
-            background: #5A7DBC;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 18px 18px 4px 18px;
-            max-width: 70%;
-            word-wrap: break-word;
-            box-shadow: 0 2px 8px rgba(90, 125, 188, 0.3);
-        }
-
-        .chat-bot {
-            align-self: flex-start;
-            background: #E9ECEF;
-            color: #343A40;
-            padding: 10px 16px;
-            border-radius: 18px 18px 18px 4px;
-            max-width: 70%;
-            word-wrap: break-word;
-            line-height: 1.5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .chat-input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #E9ECEF;
-            border-radius: 25px;
-            outline: none;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-            background: white;
-            color: #343A40;
-        }
-
-        .chat-input:focus {
-            border-color: #5A7DBC;
-            box-shadow: 0 0 0 3px rgba(90, 125, 188, 0.1);
-        }
-
-        .chat-send {
-            background: #5A7DBC;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(90, 125, 188, 0.3);
-        }
-
-        .chat-send:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(90, 125, 188, 0.4);
-            background: #4A6DA7;
-        }
-
-        .chat-send:disabled {
-            background: #6C757D;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .typing-dots {
-            animation: typing 1.5s infinite;
-        }
-
-        @keyframes typing {
-
-            0%,
-            20% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
-            }
-
-            50% {
-                transform: scale(1.02);
-                box-shadow: 0 0 0 8px rgba(0, 217, 192, 0.3);
-            }
-
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-            }
+            padding: 40px;
+            color: #6C757D;
+            font-style: italic;
         }
 
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2em;
-            }
-
-            .keywords-container,
-            .industry-tabs {
-                flex-direction: column;
-            }
-
-            .keyword-tag,
-            .industry-tab {
-                text-align: center;
-            }
-
-            .suggestions-container {
-                grid-template-columns: 1fr;
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
             }
         }
     </style>
@@ -578,7 +285,7 @@
 <body>
     <div class="header">
         <h1>🔍 AI 뉴스 키워드 분석</h1>
-        <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        <p class="subtitle">주간 TOP 5 기술 키워드 (기업명 제외)</p>
     </div>
 
     <div class="main-container">
@@ -619,49 +326,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 산업별 분석 섹션 -->
-        <div class="industry-analysis">
-            <h2 class="section-title">이런 시각은 어때요?</h2>
-            <div class="industry-tabs">
-                <div class="industry-tab active" data-industry="사회">사회</div>
-                <div class="industry-tab" data-industry="경제">경제</div>
-                <div class="industry-tab" data-industry="IT/과학">IT/과학</div>
-                <div class="industry-tab" data-industry="생활/문화">생활/문화</div>
-                <div class="industry-tab" data-industry="세계">세계</div>
-            </div>
-            <div class="analysis-content" id="analysis-content">
-                <div class="loading">분석할 키워드를 선택해주세요</div>
-            </div>
-        </div>
-
-        <!-- 챗봇 섹션 -->
-        <div class="chatbot-section">
-            <h2 class="section-title">💬 AI 뉴스 분석 챗봇</h2>
-            <div class="chat-suggestions">
-                <div class="suggestion-title">💡 이런 질문을 해보세요:</div>
-                <div class="suggestions-container">
-                    <!-- 제안 질문들이 여기에 동적으로 추가됩니다 -->
-                </div>
-            </div>
-            <div class="chat-history" id="chat-history">
-                <div class="chat-message">
-                    <div class="chat-bot">
-                        안녕하세요! 저는 주간 키워드 분석 기반 AI 챗봇입니다. 🤖<br>
-                        <strong>현재 주간 핵심 키워드를 기반으로</strong> 다양한 관점에서 답변해드립니다.<br><br>
-                        📌 <strong>질문 유형:</strong><br>
-                        • 산업별 분석: "인공지능의 경제적 영향은?"<br>
-                        • 키워드 트렌드: "반도체 최근 동향은?"<br>
-                        • 비교 분석: "AI vs 반도체 비교"<br>
-                        • 일반 질문: "현재 주요 뉴스는?"
-                    </div>
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" class="chat-input" placeholder="주간 키워드 기반으로 뉴스를 분석해드립니다..." />
-                <button id="chat-send" class="chat-send">전송</button>
-            </div>
-        </div>
     </div>
 
     <!-- 키워드 관련 기사 모달 -->
@@ -684,7 +348,6 @@
         // 페이지 로드시 키워드 불러오기
         document.addEventListener('DOMContentLoaded', function () {
             loadAllWeeklyKeywords();
-            setupIndustryTabs();
         });
 
         // 모든 주간 키워드 불러오기
@@ -703,7 +366,7 @@
 
                 loadingElement.textContent = '분석 중...';
 
-                const response = await fetch(`http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`);
+                const response = await fetch(`http://localhost:8010/api/keywords?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
 
                 loadingElement.classList.add('hidden');
@@ -725,343 +388,114 @@
         // 샘플 키워드 데이터
         function getSampleKeywords(weekNumber) {
             const sampleData = {
-                1: ['인공지능', '반도체', '전기차'],
-                2: ['메타버스', '블록체인', '로봇'],
-                3: ['정보통신산업진흥원', 'AI Youth Festa 2025', '디지털 혁신']
+                1: ['IT', '정보기술', '디지털전환', '스마트시티', '사이버보안'],
+                2: ['AI', '머신러닝', '빅데이터', '클라우드', '5G'],
+                3: ['IT', '정보기술', '디지털전환', '스마트시티', '사이버보안']
             };
-            return sampleData[weekNumber] || ['키워드1', '키워드2', '키워드3'];
+            return sampleData[weekNumber] || ['키워드1', '키워드2', '키워드3', '키워드4', '키워드5'];
         }
 
         // 주차별 키워드 표시
         function displayWeekKeywords(container, keywords, weekNumber) {
             container.innerHTML = '';
 
-            keywords.forEach(keyword => {
+            keywords.forEach((keyword, index) => {
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag';
-                keywordElement.textContent = keyword;
-                keywordElement.onclick = () => selectKeyword(keyword);
-                keywordElement.ondblclick = () => showKeywordArticles(keyword);
+
+                // Top 5 순위와 카운트 표시
+                if (typeof keyword === 'object') {
+                    keywordElement.textContent = `${keyword.keyword} (${keyword.count}회)`;
+                    keywordElement.onclick = () => selectKeyword(keyword.keyword);
+                } else {
+                    keywordElement.textContent = keyword;
+                    keywordElement.onclick = () => selectKeyword(keyword);
+                }
+
                 container.appendChild(keywordElement);
             });
         }
 
-        // 키워드 선택 (클릭시 기사 보기, 더블클릭시 분석)
+        // 키워드 선택 (클릭시 기사 보기)
         function selectKeyword(keyword) {
             selectedKeyword = keyword;
 
             // 키워드 태그 활성화 표시
             document.querySelectorAll('.keyword-tag').forEach(tag => {
-                if (tag.textContent === keyword) {
+                tag.classList.remove('selected');
+                if (tag.textContent.includes(keyword) || tag.textContent.startsWith(keyword)) {
                     tag.classList.add('selected');
-                    tag.style.background = '#5A7DBC';
-                    tag.style.color = '#FFFFFF';
-                } else {
-                    tag.classList.remove('selected');
-                    tag.style.background = '#F0F2F5';
-                    tag.style.color = '#555555';
                 }
             });
 
-            // 동적으로 챗봇 제안 질문 업데이트
-            updateChatSuggestions(keyword);
-
-            // 키워드 클릭 시 동적 분석 실행
-            performKeywordAnalysis(keyword);
-
-            // 싱글 클릭: 관련 기사 표시도 함께 실행
+            // 클릭 시 관련 기사 표시
             openArticleModal(keyword);
         }
 
-        // 동적 키워드 분석 함수
-        async function performKeywordAnalysis(keyword) {
-            try {
-                const response = await fetch('/keyword-analysis', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ keyword: keyword })
-                });
-
-                const analysis = await response.json();
-
-                if (analysis.error) {
-                    console.error('분석 오류:', analysis.error);
-                    return;
-                }
-
-                // 챗봇에 분석 결과 표시
-                displayAnalysisInChat(keyword, analysis);
-
-            } catch (error) {
-                console.error('키워드 분석 중 오류:', error);
-            }
-        }
-
-        // 챗봇에 분석 결과 표시
-        function displayAnalysisInChat(keyword, analysis) {
-            const chatMessages = document.getElementById('chat-messages');
-
-            // 사용자 메시지 추가
-            const userMessage = document.createElement('div');
-            userMessage.className = 'chat-message user';
-            userMessage.innerHTML = `<strong>키워드 분석:</strong> ${keyword}`;
-            chatMessages.appendChild(userMessage);
-
-            // AI 응답 - 트렌드 요약
-            const trendMessage = document.createElement('div');
-            trendMessage.className = 'chat-message assistant';
-            trendMessage.innerHTML = `
-                <div style="margin-bottom: 15px;">
-                    <strong>📊 ${keyword} 트렌드 요약</strong><br>
-                    ${analysis.trend_summary}
-                </div>
-            `;
-            chatMessages.appendChild(trendMessage);
-
-            // AI 응답 - 다각도 분석
-            const perspectiveMessage = document.createElement('div');
-            perspectiveMessage.className = 'chat-message assistant';
-
-            let perspectiveHtml = '<div><strong>🔍 다각도 분석</strong><br><br>';
-
-            Object.entries(analysis.perspectives).forEach(([perspective, content]) => {
-                perspectiveHtml += `
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                        <strong style="color: #667eea;">▶ ${perspective}</strong><br>
-                        <span style="font-size: 0.9em; line-height: 1.4;">${content}</span>
-                    </div>
-                `;
-            });
-
-            perspectiveHtml += '</div>';
-            perspectiveMessage.innerHTML = perspectiveHtml;
-            chatMessages.appendChild(perspectiveMessage);
-
-            // 관련 기사 링크
-            if (analysis.related_articles && analysis.related_articles.length > 0) {
-                const articlesMessage = document.createElement('div');
-                articlesMessage.className = 'chat-message assistant';
-
-                let articlesHtml = '<div><strong>📰 관련 기사</strong><br><br>';
-
-                analysis.related_articles.slice(0, 3).forEach((article, index) => {
-                    articlesHtml += `
-                        <div style="margin-bottom: 8px; padding: 8px; background: #e8f4f8; border-radius: 6px; font-size: 0.85em;">
-                            <strong>${index + 1}. ${article.title}</strong><br>
-                            <span style="color: #666;">${article.date}</span>
-                        </div>
-                    `;
-                });
-
-                articlesHtml += '</div>';
-                articlesMessage.innerHTML = articlesHtml;
-                chatMessages.appendChild(articlesMessage);
-            }
-
-            // 스크롤을 가장 아래로
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // 키워드 더블클릭시 분석 선택 모드
-        document.addEventListener('dblclick', function (e) {
-            if (e.target.classList.contains('keyword-tag')) {
-                const keyword = e.target.textContent;
-                selectedKeyword = keyword;
-
-                // 키워드 활성화 표시
-                document.querySelectorAll('.keyword-tag').forEach(tag => {
-                    tag.style.background = tag.textContent === keyword
-                        ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                });
-
-                // 동적으로 챗봇 제안 질문 업데이트
-                updateChatSuggestions(keyword);
-
-                // 현재 활성화된 산업 탭에 대한 분석 실행
-                const activeTab = document.querySelector('.industry-tab.active');
-                if (activeTab) {
-                    loadIndustryAnalysis(activeTab.dataset.industry, keyword);
-                }
-            }
-        });
-
-        // 산업별 탭 설정
-        function setupIndustryTabs() {
-            document.querySelectorAll('.industry-tab').forEach(tab => {
-                tab.addEventListener('click', function () {
-                    // 탭 활성화
-                    document.querySelectorAll('.industry-tab').forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // 선택된 키워드가 있으면 분석 실행
-                    if (selectedKeyword) {
-                        loadIndustryAnalysis(this.dataset.industry, selectedKeyword);
-                    }
-                });
-            });
-        }
-
-        // 개선된 산업별 분석 함수 (정반대 의견 포함)
-        async function loadIndustryAnalysis(industry, keyword) {
-            const content = document.getElementById('analysis-content');
-            content.innerHTML = '<div class="loading">🤔 다양한 관점에서 분석 중...</div>';
-
-            try {
-                const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        industry: industry,
-                        keyword: keyword
-                    })
-                });
-
-                const data = await response.json();
-                content.innerHTML = `
-                    <div class="analysis-grid">
-                        <div class="analysis-section">
-                            <div class="analysis-title">
-                                <span style="color: #667eea;">👍</span>
-                                긍정적/일반 분석
-                            </div>
-                            <div style="line-height: 1.7;">${data.analysis}</div>
-                        </div>
-                        
-                        <div class="counter-analysis-section">
-                            <div class="counter-title">
-                                <span style="color: #e74c3c;">🤔</span>
-                                비판적/회의적 분석
-                            </div>
-                            <div style="line-height: 1.7;">${data.counter_analysis || '반대 의견을 생성할 수 없습니다.'}</div>
-                        </div>
-                    </div>
-                `;
-            } catch (error) {
-                content.innerHTML = `
-                    <div style="color: #666; text-align: center; padding: 20px;">
-                        ❌ 분석을 불러오는 중 오류가 발생했습니다.<br>
-                        잠시 후 다시 시도해주세요.
-                    </div>
-                `;
-            }
-        }
-
-        // 개선된 기사 모달 함수
+        // 기사 모달 열기
         async function openArticleModal(keyword) {
             const modal = document.getElementById('article-modal');
-            const title = document.getElementById('modal-title');
-            const articles = document.getElementById('modal-articles');
+            const modalTitle = document.getElementById('modal-title');
+            const modalArticles = document.getElementById('modal-articles');
 
-            title.innerHTML = `<span style="color: #667eea;">📰</span> "${keyword}" 관련 Top 5 기사`;
-            articles.innerHTML = '<div class="loading">🔍 네이버 API로 최신 기사를 검색하고 요약 중...</div>';
+            modalTitle.textContent = `"${keyword}" 관련 기사`;
+            modalArticles.innerHTML = '<div class="loading">기사를 불러오는 중...</div>';
+
             modal.style.display = 'block';
 
             try {
-                const response = await fetch(`http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`);
+                // 현재 날짜 범위 결정 (가장 최근 주차 사용)
+                const currentDate = new Date();
+                const startDate = '2025-07-14';
+                const endDate = '2025-07-18';
+
+                const response = await fetch(`http://localhost:8010/keyword-articles?keyword=${encodeURIComponent(keyword)}&start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
 
-                articles.innerHTML = '';
+                modalArticles.innerHTML = '';
 
                 if (data.articles && data.articles.length > 0) {
-                    const articlesGrid = document.createElement('div');
-                    articlesGrid.className = 'articles-grid';
+                    data.articles.forEach(article => {
+                        const articleElement = document.createElement('div');
 
-                    data.articles.forEach((article, index) => {
-                        const card = document.createElement('div');
-                        card.className = 'article-card';
+                        // 한국어 여부 판단 (제목과 내용의 한글 비율 체크)
+                        const title = article.title || '';
+                        const content = article.summary || '';
+                        const koreanChars = (title + content).match(/[가-힣]/g) || [];
+                        const totalChars = (title + content).length;
+                        const isKorean = koreanChars.length / Math.max(totalChars, 1) > 0.3;
 
-                        // URL이 있고 유효한 경우에만 클릭 가능하도록 설정
-                        const hasValidUrl = article.url && article.url.trim() !== '' && article.url !== '#';
-                        card.style.cursor = hasValidUrl ? 'pointer' : 'default';
+                        articleElement.className = `article-item ${isKorean ? 'korean' : 'foreign'}`;
 
-                        // 날짜 포맷 개선
-                        const displayDate = article.date || '날짜 정보 없음';
-                        const isCurrentWeek = displayDate.includes('2025-07-1') || displayDate.includes('2025-07-2');
-                        const dateColor = isCurrentWeek ? '#28a745' : '#6c757d';
+                        const languageLabel = isKorean ? '🇰🇷 한국어' : '🌍 외국어';
 
-                        card.innerHTML = `
-                            <div class="article-date" style="color: ${dateColor};">
-                                ${isCurrentWeek ? '🆕 ' : ''}${displayDate}
-                            </div>
-                            <div class="article-title">${article.title}</div>
+                        articleElement.innerHTML = `
+                            <div class="article-title" onclick="openArticleLink('${article.url.replace(/'/g, '&apos;')}')">${article.title}</div>
                             <div class="article-summary">${article.summary}</div>
-                            ${hasValidUrl ?
-                                '<div style="margin-top: 10px; color: #667eea; font-size: 12px;">💡 클릭하여 원문 보기</div>' :
-                                '<div style="margin-top: 10px; color: #999; font-size: 12px;">⚠️ 원문 링크가 없습니다</div>'
-                            }
+                            <div class="article-date">${article.date} | ${languageLabel} ${article.relevance ? `| 관련: ${article.relevance}` : ''}</div>
                         `;
-
-                        // 기사 클릭 시 원문으로 리다이렉트
-                        if (hasValidUrl) {
-                            card.addEventListener('click', function () {
-                                console.log('클릭된 기사 URL:', article.url);
-                                console.log('기사 제목:', article.title);
-
-                                // 네이버 뉴스 링크인 경우 바로 열기
-                                if (article.url.includes('naver.com')) {
-                                    window.open(article.url, '_blank');
-                                } else {
-                                    // 다른 링크도 새 탭에서 열기
-                                    window.open(article.url, '_blank');
-                                }
-                            });
-
-                            // 호버 효과 추가
-                            card.addEventListener('mouseenter', function () {
-                                card.style.transform = 'translateY(-3px)';
-                                card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                            });
-
-                            card.addEventListener('mouseleave', function () {
-                                card.style.transform = 'translateY(0)';
-                                card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                            });
-                        } else {
-                            console.log('URL이 없는 기사:', article.title);
-                        }
-
-                        articlesGrid.appendChild(card);
+                        modalArticles.appendChild(articleElement);
                     });
-
-                    articles.appendChild(articlesGrid);
-
-                    // 네이버 API 사용 알림 추가
-                    const apiInfo = document.createElement('div');
-                    apiInfo.style.cssText = `
-                        text-align: center; 
-                        color: #28a745; 
-                        font-size: 12px; 
-                        margin-top: 15px; 
-                        padding: 10px;
-                        background: #f8f9fa;
-                        border-radius: 6px;
-                        border-left: 4px solid #28a745;
-                    `;
-                    apiInfo.innerHTML = '✅ 네이버 뉴스 API를 통해 2025년 7월 3주차 최신 기사를 가져왔습니다.';
-                    articles.appendChild(apiInfo);
                 } else {
-                    articles.innerHTML = `
-                        <div style="text-align: center; color: #666; padding: 20px;">
-                            <p>해당 키워드와 관련된 기사를 찾을 수 없습니다.</p>
-                            <p style="font-size: 14px; color: #999; margin-top: 10px;">
-                                검색 범위: 2025년 7월 3주차 (7/14 ~ 7/20)
-                            </p>
-                        </div>
-                    `;
+                    modalArticles.innerHTML = '<div class="loading">관련 기사를 찾을 수 없습니다.</div>';
                 }
             } catch (error) {
-                console.error('기사 검색 오류:', error);
-                articles.innerHTML = `
-                    <div style="color: #e74c3c; text-align: center; padding: 20px;">
-                        <p>❌ 관련 기사를 불러올 수 없습니다.</p>
-                        <p style="font-size: 14px; margin-top: 10px;">오류: ${error.message}</p>
-                    </div>
-                `;
+                console.error('기사 로딩 오류:', error);
+                modalArticles.innerHTML = '<div class="loading">기사 로딩 중 오류가 발생했습니다.</div>';
+            }
+        }
+
+        // 기사 링크 열기 (안전한 링크 처리)
+        function openArticleLink(url) {
+            if (url && url.trim() !== '' && url !== 'undefined') {
+                try {
+                    window.open(url, '_blank');
+                } catch (error) {
+                    console.error('링크 열기 오류:', error);
+                    alert('기사 링크를 열 수 없습니다.');
+                }
+            } else {
+                alert('기사 링크를 찾을 수 없습니다.');
             }
         }
 
@@ -1076,176 +510,6 @@
                 closeModal();
             }
         }
-
-        // 제안 질문 클릭 기능
-        function sendSuggestion(suggestionText) {
-            const chatInput = document.getElementById('chat-input');
-            chatInput.value = suggestionText;
-            sendChat();
-        }
-
-        // 키워드 기반 동적 제안 질문 업데이트
-        function updateChatSuggestions(keyword) {
-            const suggestionsContainer = document.querySelector('.suggestions-container');
-
-            // 키워드별 동적 제안 질문 생성
-            const suggestions = [
-                `${keyword}의 사회적 영향은?`,
-                `${keyword} 시장 경제 전망은?`,
-                `${keyword} 최근 기업 동향은?`,
-                `${keyword} 기술 발전 방향은?`
-            ];
-
-            // 기존 제안 질문 제거
-            suggestionsContainer.innerHTML = '';
-
-            // 새로운 제안 질문 추가
-            suggestions.forEach(suggestion => {
-                const suggestionItem = document.createElement('div');
-                suggestionItem.className = 'suggestion-item';
-                suggestionItem.textContent = suggestion;
-                suggestionItem.onclick = () => sendSuggestion(suggestion);
-                suggestionsContainer.appendChild(suggestionItem);
-            });
-
-            // 제안 질문 컨테이너 강조 효과
-            suggestionsContainer.style.animation = 'pulse 0.5s ease-in-out';
-            setTimeout(() => {
-                suggestionsContainer.style.animation = '';
-            }, 500);
-        }
-
-        // 초기 제안 질문 설정
-        function initializeChatSuggestions() {
-            const defaultSuggestions = [
-                '인공지능의 사회적 영향은?',
-                '반도체 시장 경제 전망은?',
-                'AI vs 반도체 비교',
-                '최근 기업 동향은?'
-            ];
-
-            const suggestionsContainer = document.querySelector('.suggestions-container');
-            suggestionsContainer.innerHTML = '';
-
-            defaultSuggestions.forEach(suggestion => {
-                const suggestionItem = document.createElement('div');
-                suggestionItem.className = 'suggestion-item';
-                suggestionItem.textContent = suggestion;
-                suggestionItem.onclick = () => sendSuggestion(suggestion);
-                suggestionsContainer.appendChild(suggestionItem);
-            });
-        }
-
-        // 챗봇 기능
-        async function sendChat() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            // 사용자 메시지 추가
-            addChatMessage(message, 'user');
-            input.value = '';
-
-            // 전송 버튼 비활성화
-            const sendBtn = document.getElementById('chat-send');
-            sendBtn.disabled = true;
-            sendBtn.textContent = '분석 중...';
-
-            // 타이핑 인디케이터 추가
-            const typingIndicator = addTypingIndicator();
-
-            try {
-                const response = await fetch('http://127.0.0.1:8000/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ question: message })
-                });
-
-                const data = await response.json();
-
-                // 타이핑 인디케이터 제거
-                typingIndicator.remove();
-
-                // 답변 추가 (마크다운 스타일 적용)
-                addChatMessage(data.answer || '죄송합니다. 답변을 생성할 수 없습니다.', 'bot');
-
-            } catch (error) {
-                console.error('Chat error:', error);
-                typingIndicator.remove();
-                addChatMessage('🔄 서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', 'bot');
-            }
-
-            // 전송 버튼 다시 활성화
-            sendBtn.disabled = false;
-            sendBtn.textContent = '전송';
-        }
-
-        function addTypingIndicator() {
-            const chatHistory = document.getElementById('chat-history');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message';
-            typingDiv.id = 'typing-indicator';
-
-            const typingContent = document.createElement('div');
-            typingContent.className = 'chat-bot';
-            typingContent.innerHTML = '🤔 분석 중<span class="typing-dots">...</span>';
-            typingContent.style.fontStyle = 'italic';
-
-            typingDiv.appendChild(typingContent);
-            chatHistory.appendChild(typingDiv);
-
-            // 스크롤을 맨 아래로
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-
-            return typingDiv;
-        }
-
-        function addChatMessage(message, sender) {
-            const chatHistory = document.getElementById('chat-history');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message';
-
-            const messageContent = document.createElement('div');
-            messageContent.className = sender === 'user' ? 'chat-user' : 'chat-bot';
-
-            // 봇 메시지의 경우 줄바꿈 처리
-            if (sender === 'bot') {
-                messageContent.innerHTML = message.replace(/\n/g, '<br>');
-            } else {
-                messageContent.textContent = message;
-            }
-
-            messageDiv.appendChild(messageContent);
-            chatHistory.appendChild(messageDiv);
-
-            // 스크롤을 맨 아래로
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        }
-
-        // 페이지 로드 후 이벤트 리스너 등록
-        document.addEventListener('DOMContentLoaded', function () {
-            // 초기 제안 질문 설정
-            initializeChatSuggestions();
-
-            // 챗봇 이벤트 리스너
-            const chatSendBtn = document.getElementById('chat-send');
-            const chatInput = document.getElementById('chat-input');
-
-            if (chatSendBtn) {
-                chatSendBtn.addEventListener('click', sendChat);
-            }
-
-            if (chatInput) {
-                chatInput.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        sendChat();
-                    }
-                });
-            }
-        });
     </script>
 </body>
 

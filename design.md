@@ -1402,7 +1402,7 @@ class APIKeyManager:
         self.keys = {
             'azure_openai': os.getenv('AZURE_OPENAI_API_KEY'),
             'azure_search': os.getenv('AZURE_SEARCH_API_KEY'),
-            'naver_news': os.getenv('NAVER_CLIENT_ID')
+            'deepsearch_news': os.getenv('DEEPSEARCH_API_KEY')
         }
     
     def validate_key(self, service: str) -> bool:
