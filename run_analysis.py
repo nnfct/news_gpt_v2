@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import json
 import urllib.parse
 from collections import Counter
+import time
 
 load_dotenv()
 
@@ -98,14 +99,17 @@ def collect_news():
                             "content": description,
                             "section": "IT/기술",
                             "keyword": keyword,
-                            "url": link,  # URL 정보 추가
-                            "date": formatted_date  # 날짜 정보 추가
+                            "date": formatted_date
                         })
                     
                 print(f"  ✅ '{keyword}' 키워드로 {len(items)}개 뉴스 수집 (중복 제거 후 추가)")
                 
+                # API 요청 제한을 피하기 위한 딜레이
+                time.sleep(0.1)
+                
             except Exception as e:
                 print(f"  ❌ '{keyword}' 키워드 검색 오류: {e}")
+                time.sleep(1)  # 에러 발생 시 더 긴 딜레이
                 continue
         
         print(f"\n✅ 총 {len(news_list)}개 IT/기술 뉴스 수집 완료")
@@ -115,8 +119,8 @@ def collect_news():
         print(f"❌ 네이버 API 오류: {e}")
         print("⚠️ 샘플 데이터를 사용합니다.")
         return [
-            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567893", "date": "2025-07-18"},
-            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다.", "section": "IT/기술", "url": "https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid=0014567894", "date": "2025-07-17"}
+            {"title": "AI 기술 발전으로 미래 일자리 변화 예상", "content": "인공지능 기술의 급속한 발전으로 인해 다양한 산업 분야에서 일자리 구조의 변화가 예상된다고 전문가들이 분석했다.", "section": "IT/기술", "date": "2025-07-18"},
+            {"title": "반도체 산업 성장과 글로벌 경쟁력", "content": "국내 반도체 기업들이 차세대 메모리 반도체 개발에 박차를 가하며 글로벌 시장에서의 경쟁력을 강화하고 있다.", "section": "IT/기술", "date": "2025-07-17"}
         ]
 
 def extract_keywords(news):
@@ -230,7 +234,6 @@ def upload_news_articles(news_list):
                 "title": news.get("title", ""),
                 "content": news.get("content", ""),
                 "date": news.get("date", "2025-07-17"),
-                "url": news.get("url", ""),
                 "section": news.get("section", "IT/기술"),
                 "keyword": news.get("keyword", "")
             }

@@ -2,15 +2,16 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
-import openai
+from openai import AzureOpenAI
 from collections import Counter
 import requests
 import json
 from datetime import datetime, timedelta
+import uvicorn
 
 app = FastAPI()
 
@@ -25,7 +26,7 @@ app.add_middleware(
 
 load_dotenv()
 
-
+# 환경변수 로드
 AZURE_SEARCH_API_KEY = os.getenv("AZURE_SEARCH_API_KEY")
 AZURE_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
 AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX")
@@ -38,6 +39,13 @@ NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 
 if not all([AZURE_SEARCH_API_KEY, AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_INDEX, AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT]):
     raise RuntimeError("환경변수(.env) 값이 모두 설정되어야 합니다.")
+
+# Azure OpenAI 클라이언트 초기화
+openai_client = AzureOpenAI(
+    api_key=str(AZURE_OPENAI_API_KEY),
+    api_version="2024-02-15-preview",
+    azure_endpoint=str(AZURE_OPENAI_ENDPOINT)
+)
 
 search_client = SearchClient(
     endpoint=str(AZURE_SEARCH_ENDPOINT),
@@ -199,12 +207,6 @@ def get_section_analysis(section: str):
 
 def generate_keyword_section_analysis(section: str, keywords: list, context: str):
     """키워드에 대한 산업별 시각 분석 생성"""
-    import openai
-    openai.api_type = "azure"
-    openai.api_key = AZURE_OPENAI_API_KEY
-    openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-    openai.api_version = "2024-02-15-preview"
-    
     keywords_text = ", ".join(keywords)
     
     # 섹션별 관점 정의
@@ -236,7 +238,7 @@ def generate_keyword_section_analysis(section: str, keywords: list, context: str
 """
     
     try:
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": f"당신은 {section} 분야의 전문 분석가입니다. 주어진 키워드들을 {section} 관점에서 심층 분석하는 역할을 합니다."},
@@ -367,12 +369,6 @@ def get_current_weekly_keywords():
 def generate_industry_based_answer(question, keyword, industry, current_keywords):
     """산업별 키워드 분석 기반 답변 생성"""
     try:
-        import openai
-        openai.api_type = "azure"
-        openai.api_key = AZURE_OPENAI_API_KEY
-        openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-        openai.api_version = "2024-02-15-preview"
-        
         # 관련 기사 검색
         results = search_client.search(search_text=keyword, top=5)
         context = "\n".join([doc.get("content", "") for doc in results])
@@ -405,7 +401,7 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
 구체적이고 전문적으로 답변해주세요.
 """
         
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다."},
@@ -422,12 +418,6 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
 def generate_keyword_trend_answer(question, keyword):
     """키워드 트렌드 분석 답변 생성"""
     try:
-        import openai
-        openai.api_type = "azure"
-        openai.api_key = AZURE_OPENAI_API_KEY
-        openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-        openai.api_version = "2024-02-15-preview"
-        
         # 키워드 관련 기사 검색
         results = search_client.search(search_text=keyword, top=8)
         articles = []
@@ -454,7 +444,7 @@ def generate_keyword_trend_answer(question, keyword):
 시간순으로 정리하여 트렌드를 명확하게 설명해주세요.
 """
         
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": f"당신은 '{keyword}' 분야의 트렌드 분석 전문가입니다. 뉴스 데이터를 바탕으로 시간적 변화와 동향을 분석합니다."},
@@ -471,12 +461,6 @@ def generate_keyword_trend_answer(question, keyword):
 def generate_comparison_answer(question, keywords):
     """비교 분석 답변 생성"""
     try:
-        import openai
-        openai.api_type = "azure"
-        openai.api_key = AZURE_OPENAI_API_KEY
-        openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-        openai.api_version = "2024-02-15-preview"
-        
         # 각 키워드별로 관련 기사 검색
         comparison_data = {}
         for keyword in keywords:
@@ -504,7 +488,7 @@ def generate_comparison_answer(question, keywords):
 객관적이고 균형잡힌 시각으로 비교해주세요.
 """
         
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 뉴스 데이터를 바탕으로 객관적으로 비교 분석합니다."},
@@ -521,12 +505,6 @@ def generate_comparison_answer(question, keywords):
 def generate_contextual_answer(question, current_keywords):
     """현재 키워드 컨텍스트 기반 일반 답변 생성"""
     try:
-        import openai
-        openai.api_type = "azure"
-        openai.api_key = AZURE_OPENAI_API_KEY
-        openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-        openai.api_version = "2024-02-15-preview"
-        
         # 질문과 관련된 기사 검색
         results = search_client.search(search_text=question, top=5)
         context = "\n".join([doc.get("content", "") for doc in results])
@@ -549,8 +527,17 @@ def generate_contextual_answer(question, current_keywords):
 
 명확하고 도움이 되는 답변을 제공해주세요.
 """
+        prompt = f"""
+질문: {question}
+{keywords_context}
+
+다음 뉴스 데이터를 참고하여 답변해주세요:
+{context}
+
+현재 주간 핵심 키워드들과 연관지어 답변하되, 질문의 맥락을 정확히 파악하여 답변해주세요.
+"""
         
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": f"당신은 뉴스 분석 전문가입니다. 현재 주간 핵심 키워드({', '.join(current_keywords)})를 고려하여 질문에 답변합니다."},
@@ -566,13 +553,8 @@ def generate_contextual_answer(question, current_keywords):
 
 def get_embedding(text):
     # Azure OpenAI text-embedding-ada-002로 임베딩 생성
-    import openai
-    openai.api_type = "azure"
-    openai.api_key = AZURE_OPENAI_API_KEY
-    openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-    openai.api_version = "2024-02-15-preview"
     try:
-        response = openai.embeddings.create(
+        response = openai_client.embeddings.create(
             input=text,
             model="text-embedding-ada-002"
         )
@@ -582,13 +564,8 @@ def get_embedding(text):
 
 def generate_answer(question, context):
     # Azure OpenAI GPT-4o로 답변 생성
-    import openai
-    openai.api_type = "azure"
-    openai.api_key = AZURE_OPENAI_API_KEY
-    openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-    openai.api_version = "2024-02-15-preview"
     try:
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "아래 컨텍스트를 참고해 질문에 답하세요."},
@@ -623,16 +600,18 @@ def get_weekly_keywords():
         keyword_counts = Counter(all_keywords)
         top_keywords = [keyword for keyword, count in keyword_counts.most_common(3)]
         
-        return {
+        response_data = {
             "keywords": top_keywords,
             "week_info": "7월 3주차 (2025.07.11~07.17) - AI 뉴스 분석"
         }
+        return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
     except Exception as e:
         # 오류 시 샘플 데이터 반환
-        return {
+        response_data = {
             "keywords": ["인공지능", "반도체", "기업"],
             "week_info": "7월 3주차 (2025.07.11~07.17) - AI 뉴스 분석"
         }
+        return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
 
 @app.post("/industry-analysis")
 def get_industry_analysis(request: dict):
@@ -819,12 +798,6 @@ def calculate_relevance_score(title, content, keyword):
 def generate_article_summary(title, content, keyword):
     """기사 요약 생성 (키워드 중심)"""
     try:
-        import openai
-        openai.api_type = "azure"
-        openai.api_key = AZURE_OPENAI_API_KEY
-        openai.azure_endpoint = AZURE_OPENAI_ENDPOINT
-        openai.api_version = "2024-02-15-preview"
-        
         prompt = f"""
 다음 기사를 '{keyword}' 키워드 중심으로 2-3문장으로 간결하게 요약해주세요.
 
@@ -839,7 +812,7 @@ def generate_article_summary(title, content, keyword):
 간결하고 명확하게 작성해주세요.
 """
         
-        completion = openai.chat.completions.create(
+        completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "뉴스 기사를 키워드 중심으로 간결하고 정확하게 요약하는 전문가입니다."},
