@@ -1,4 +1,198 @@
-# 📋 Requirements Specification - NEWS GPT v2
+# 📋 News GPT v2 - Requirements Specification
+
+## 🎯 프로젝트 개요
+
+News GPT v2는 Azure OpenAI와 Azure AI Search를 활용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼입니다.
+
+## 🔧 기술 요구사항
+
+### 1. 개발 환경
+- **Python**: 3.11.9 이상
+- **Package Manager**: pip with virtual environment (venv)
+- **Web Framework**: FastAPI
+- **Web Server**: Uvicorn
+
+### 2. 필수 패키지 의존성
+
+```txt
+# Web Framework
+fastapi==0.116.1
+uvicorn==0.35.0
+
+# AI/ML Libraries
+openai==1.97.0
+azure-search-documents==11.5.3
+
+# Data Processing
+pandas==2.3.1
+numpy==2.3.1
+
+# Environment & Configuration
+python-dotenv==1.1.1
+
+# HTTP Client
+requests==2.32.4
+```
+
+### 3. Azure 서비스 요구사항
+
+#### Azure OpenAI Service
+- **모델**: GPT-4o (text generation)
+- **임베딩 모델**: text-embedding-3-large
+- **API 버전**: 2024-02-15-preview
+- **요구사항**: 
+  - API 키 및 엔드포인트 설정
+  - 충분한 토큰 할당량 (월 10,000 토큰 이상 권장)
+
+#### Azure AI Search
+- **서비스 티어**: Basic 이상
+- **인덱스 설정**: 
+  - 하이브리드 검색 지원
+  - 벡터 검색 기능 활성화
+- **필드 구조**:
+  ```json
+  {
+    "id": "string",
+    "title": "string",
+    "content": "string", 
+    "date": "string",
+    "section": "string",
+    "keyword": "string"
+  }
+  ```
+
+### 4. 외부 API 요구사항
+
+#### 네이버 뉴스 검색 API
+- **클라이언트 ID**: 네이버 개발자 센터에서 발급
+- **클라이언트 Secret**: 네이버 개발자 센터에서 발급
+- **요청 제한**: 일일 25,000회 (기본 할당량)
+- **사용 목적**: IT/기술 뉴스 수집
+
+## 🏗️ 시스템 아키텍처 요구사항
+
+### 1. 서버 구조
+```
+Frontend (HTML/CSS/JS)
+      ↓
+FastAPI Server (Port 8000)
+      ↓
+┌─────────────────┬─────────────────┐
+│  Azure OpenAI   │  Azure AI Search│
+│  (GPT-4o)       │  (Vector DB)    │
+└─────────────────┴─────────────────┘
+      ↓
+Naver News API
+```
+
+### 2. 데이터 플로우
+1. **뉴스 수집**: 네이버 API → 데이터 정제 → 키워드 추출 (GPT-4o)
+2. **벡터화**: 텍스트 임베딩 (text-embedding-3-large)
+3. **저장**: Azure AI Search 인덱스 업로드
+4. **검색**: 하이브리드 검색 (키워드 + 의미 검색)
+5. **분석**: 실시간 키워드 분석 및 트렌드 생성
+
+## 🌐 웹 인터페이스 요구사항
+
+### 1. 기술 스택
+- **마크업**: HTML5 (semantic markup)
+- **스타일링**: CSS3 (Flexbox, Grid, CSS Variables)
+- **스크립팅**: Vanilla JavaScript (ES6+)
+- **폰트**: Inter (Google Fonts)
+- **반응형**: Mobile-first 디자인
+
+### 2. 브라우저 호환성
+- **Chrome**: 80+ 
+- **Firefox**: 75+
+- **Safari**: 13+
+- **Edge**: 80+
+
+### 3. 성능 요구사항
+- **초기 로딩 시간**: 3초 이내
+- **API 응답 시간**: 5초 이내
+- **모바일 최적화**: 완전 반응형 디자인
+
+## 🔐 보안 요구사항
+
+### 1. 환경 변수 관리
+- **파일**: `.env` (git ignore 필수)
+- **필수 변수**:
+  ```env
+  AZURE_OPENAI_API_KEY=your_key_here
+  AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+  AZURE_SEARCH_API_KEY=your_key_here
+  AZURE_SEARCH_ENDPOINT=https://your-service.search.windows.net
+  AZURE_SEARCH_INDEX=news_index
+  NAVER_CLIENT_ID=your_client_id
+  NAVER_CLIENT_SECRET=your_client_secret
+  ```
+
+### 2. API 보안
+- **CORS 설정**: 모든 오리진 허용 (개발 환경)
+- **헤더 보안**: 적절한 Content-Type 설정
+- **에러 처리**: 민감 정보 노출 방지
+
+## 📊 성능 요구사항
+
+### 1. 처리 용량
+- **뉴스 수집**: 최대 161개 기사/배치
+- **키워드 분석**: 500개 이상 키워드 처리
+- **동시 사용자**: 최대 10명 (개발 환경)
+
+### 2. 응답 시간
+- **정적 페이지**: 1초 이내
+- **API 호출**: 5초 이내
+- **챗봇 응답**: 10초 이내
+
+### 3. 데이터 처리
+- **배치 크기**: 50개 문서/배치
+- **업로드 속도**: 분당 100개 문서 이상
+- **검색 속도**: 1초 이내
+
+## 📋 기능 요구사항
+
+### 1. 핵심 기능
+- [x] 실시간 뉴스 수집 (네이버 API)
+- [x] AI 기반 키워드 분석 (Azure OpenAI)
+- [x] 주간 TOP 3 키워드 추출
+- [x] 벡터 검색 기능
+- [x] 웹 기반 챗봇 인터페이스
+- [x] 반응형 웹 디자인
+
+### 2. 추가 기능 (개발 예정)
+- [ ] 동적 키워드 클릭 분석
+- [ ] 실시간 트렌드 차트
+- [ ] 감정 분석 (긍정/부정/중립)
+- [ ] 키워드 연관성 분석
+- [ ] 예측 모델링
+
+## 🧪 테스트 요구사항
+
+### 1. 단위 테스트
+- **커버리지**: 80% 이상
+- **프레임워크**: pytest
+- **테스트 대상**: API 엔드포인트, 데이터 처리 함수
+
+### 2. 통합 테스트
+- **API 테스트**: 모든 엔드포인트 정상 동작 확인
+- **Azure 서비스**: 연결 및 응답 테스트
+- **웹 인터페이스**: 주요 기능 동작 확인
+
+## 📚 문서화 요구사항
+
+### 1. 필수 문서
+- [x] README.md (설치 및 사용법)
+- [x] requirements.md (현재 문서)
+- [x] task.md (개발 계획)
+- [x] design.md (디자인 가이드)
+- [ ] API_DOCS.md (API 문서)
+
+### 2. 코드 문서화
+- **Docstring**: 모든 함수 및 클래스
+- **주석**: 복잡한 로직 설명
+- **타입 힌트**: 가능한 모든 곳에 적용
+
+이 요구사항 문서는 News GPT v2 프로젝트의 성공적인 개발과 배포를 위한 기술적 가이드라인을 제공합니다.
 
 ## 🎯 프로젝트 개요
 

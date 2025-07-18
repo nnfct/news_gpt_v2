@@ -454,6 +454,23 @@
             }
         }
 
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+            }
+
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 0 8px rgba(102, 126, 234, 0.3);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2em;
@@ -513,10 +530,7 @@
             <div class="chat-suggestions">
                 <div class="suggestion-title">💡 이런 질문을 해보세요:</div>
                 <div class="suggestions-container">
-                    <div class="suggestion-item" onclick="sendSuggestion('인공지능의 사회적 영향은?')">인공지능의 사회적 영향은?</div>
-                    <div class="suggestion-item" onclick="sendSuggestion('반도체 시장 경제 전망은?')">반도체 시장 경제 전망은?</div>
-                    <div class="suggestion-item" onclick="sendSuggestion('AI vs 반도체 비교')">AI vs 반도체 비교</div>
-                    <div class="suggestion-item" onclick="sendSuggestion('최근 기업 동향은?')">최근 기업 동향은?</div>
+                    <!-- 제안 질문들이 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
             <div class="chat-history" id="chat-history">
@@ -608,8 +622,105 @@
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             });
 
-            // 싱글 클릭: 관련 기사 표시
+            // 동적으로 챗봇 제안 질문 업데이트
+            updateChatSuggestions(keyword);
+
+            // 키워드 클릭 시 동적 분석 실행
+            performKeywordAnalysis(keyword);
+
+            // 싱글 클릭: 관련 기사 표시도 함께 실행
             openArticleModal(keyword);
+        }
+
+        // 동적 키워드 분석 함수
+        async function performKeywordAnalysis(keyword) {
+            try {
+                const response = await fetch('/keyword-analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ keyword: keyword })
+                });
+
+                const analysis = await response.json();
+
+                if (analysis.error) {
+                    console.error('분석 오류:', analysis.error);
+                    return;
+                }
+
+                // 챗봇에 분석 결과 표시
+                displayAnalysisInChat(keyword, analysis);
+
+            } catch (error) {
+                console.error('키워드 분석 중 오류:', error);
+            }
+        }
+
+        // 챗봇에 분석 결과 표시
+        function displayAnalysisInChat(keyword, analysis) {
+            const chatMessages = document.getElementById('chat-messages');
+
+            // 사용자 메시지 추가
+            const userMessage = document.createElement('div');
+            userMessage.className = 'chat-message user';
+            userMessage.innerHTML = `<strong>키워드 분석:</strong> ${keyword}`;
+            chatMessages.appendChild(userMessage);
+
+            // AI 응답 - 트렌드 요약
+            const trendMessage = document.createElement('div');
+            trendMessage.className = 'chat-message assistant';
+            trendMessage.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>📊 ${keyword} 트렌드 요약</strong><br>
+                    ${analysis.trend_summary}
+                </div>
+            `;
+            chatMessages.appendChild(trendMessage);
+
+            // AI 응답 - 다각도 분석
+            const perspectiveMessage = document.createElement('div');
+            perspectiveMessage.className = 'chat-message assistant';
+
+            let perspectiveHtml = '<div><strong>🔍 다각도 분석</strong><br><br>';
+
+            Object.entries(analysis.perspectives).forEach(([perspective, content]) => {
+                perspectiveHtml += `
+                    <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                        <strong style="color: #667eea;">▶ ${perspective}</strong><br>
+                        <span style="font-size: 0.9em; line-height: 1.4;">${content}</span>
+                    </div>
+                `;
+            });
+
+            perspectiveHtml += '</div>';
+            perspectiveMessage.innerHTML = perspectiveHtml;
+            chatMessages.appendChild(perspectiveMessage);
+
+            // 관련 기사 링크
+            if (analysis.related_articles && analysis.related_articles.length > 0) {
+                const articlesMessage = document.createElement('div');
+                articlesMessage.className = 'chat-message assistant';
+
+                let articlesHtml = '<div><strong>📰 관련 기사</strong><br><br>';
+
+                analysis.related_articles.slice(0, 3).forEach((article, index) => {
+                    articlesHtml += `
+                        <div style="margin-bottom: 8px; padding: 8px; background: #e8f4f8; border-radius: 6px; font-size: 0.85em;">
+                            <strong>${index + 1}. ${article.title}</strong><br>
+                            <span style="color: #666;">${article.date}</span>
+                        </div>
+                    `;
+                });
+
+                articlesHtml += '</div>';
+                articlesMessage.innerHTML = articlesHtml;
+                chatMessages.appendChild(articlesMessage);
+            }
+
+            // 스크롤을 가장 아래로
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // 키워드 더블클릭시 분석 선택 모드
@@ -624,6 +735,9 @@
                         ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
                         : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 });
+
+                // 동적으로 챗봇 제안 질문 업데이트
+                updateChatSuggestions(keyword);
 
                 // 현재 활성화된 산업 탭에 대한 분석 실행
                 const activeTab = document.querySelector('.industry-tab.active');
@@ -829,6 +943,58 @@
             sendChat();
         }
 
+        // 키워드 기반 동적 제안 질문 업데이트
+        function updateChatSuggestions(keyword) {
+            const suggestionsContainer = document.querySelector('.suggestions-container');
+
+            // 키워드별 동적 제안 질문 생성
+            const suggestions = [
+                `${keyword}의 사회적 영향은?`,
+                `${keyword} 시장 경제 전망은?`,
+                `${keyword} 최근 기업 동향은?`,
+                `${keyword} 기술 발전 방향은?`
+            ];
+
+            // 기존 제안 질문 제거
+            suggestionsContainer.innerHTML = '';
+
+            // 새로운 제안 질문 추가
+            suggestions.forEach(suggestion => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'suggestion-item';
+                suggestionItem.textContent = suggestion;
+                suggestionItem.onclick = () => sendSuggestion(suggestion);
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+
+            // 제안 질문 컨테이너 강조 효과
+            suggestionsContainer.style.animation = 'pulse 0.5s ease-in-out';
+            setTimeout(() => {
+                suggestionsContainer.style.animation = '';
+            }, 500);
+        }
+
+        // 초기 제안 질문 설정
+        function initializeChatSuggestions() {
+            const defaultSuggestions = [
+                '인공지능의 사회적 영향은?',
+                '반도체 시장 경제 전망은?',
+                'AI vs 반도체 비교',
+                '최근 기업 동향은?'
+            ];
+
+            const suggestionsContainer = document.querySelector('.suggestions-container');
+            suggestionsContainer.innerHTML = '';
+
+            defaultSuggestions.forEach(suggestion => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'suggestion-item';
+                suggestionItem.textContent = suggestion;
+                suggestionItem.onclick = () => sendSuggestion(suggestion);
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+        }
+
         // 챗봇 기능
         async function sendChat() {
             const input = document.getElementById('chat-input');
@@ -920,6 +1086,9 @@
 
         // 페이지 로드 후 이벤트 리스너 등록
         document.addEventListener('DOMContentLoaded', function () {
+            // 초기 제안 질문 설정
+            initializeChatSuggestions();
+
             // 챗봇 이벤트 리스너
             const chatSendBtn = document.getElementById('chat-send');
             const chatInput = document.getElementById('chat-input');

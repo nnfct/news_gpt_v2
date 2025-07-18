@@ -702,7 +702,7 @@ def get_keyword_articles(keyword: str):
         results = search_client.search(
             search_text=keyword,
             top=10,
-            select=["title", "content", "date", "url"]
+            select=["title", "content", "date"]
         )
         
         articles = []
@@ -713,22 +713,159 @@ def get_keyword_articles(keyword: str):
             title = doc.get("title", "")
             content = doc.get("content", "")
             date = doc.get("date", "")
-            url = doc.get("url", "")
             
             if title and content:
                 # 간단한 요약 (처음 200자)
                 summary = content[:200] + "..." if len(content) > 200 else content
                 
-                # URL이 없는 경우 기본 URL 패턴 생성
-                if not url or url.strip() == "":
-                    url = f"https://news.naver.com/main/read.nhn?mode=LSD&mid=sec&sid1=105&oid=001&aid={hash(title) % 1000000:06d}"
-                
                 articles.append({
                     "title": title,
                     "summary": summary,
-                    "date": date or "날짜 정보 없음",
-                    "url": url
+                    "date": date,
+                    "url": "#"  # Azure Search에는 URL이 없으므로 기본값
                 })
+        
+        return {"articles": articles}
+        
+    except Exception as e:
+        return {"error": f"기사 조회 중 오류가 발생했습니다: {str(e)}"}
+
+@app.post("/keyword-analysis")
+def analyze_keyword_dynamically(request: dict):
+    """동적 키워드 분석 - 클릭된 키워드에 대한 다각도 분석"""
+    keyword = request.get("keyword", "")
+    
+    if not keyword:
+        return {"error": "키워드가 필요합니다."}
+    
+    try:
+        # 1. 키워드 관련 뉴스 검색
+        search_results = search_client.search(
+            search_text=keyword,
+            top=10,
+            select=["title", "content", "date", "section", "keyword"]
+        )
+        
+        # 2. 검색된 뉴스들을 컨텍스트로 활용
+        context_articles = []
+        for doc in search_results:
+            if len(context_articles) >= 5:
+                break
+            context_articles.append({
+                "title": doc.get("title", ""),
+                "content": doc.get("content", ""),
+                "date": doc.get("date", ""),
+                "section": doc.get("section", "")
+            })
+        
+        # 3. 다각도 분석 생성
+        perspectives = [
+            "사회적 영향",
+            "경제적 측면", 
+            "기술적 혁신",
+            "미래 전망",
+            "주요 이슈"
+        ]
+        
+        analyses = {}
+        
+        for perspective in perspectives:
+            analysis_text = generate_perspective_analysis(keyword, perspective, context_articles)
+            analyses[perspective] = analysis_text
+        
+        # 4. 키워드 트렌드 요약
+        trend_summary = generate_keyword_trend_summary(keyword, context_articles)
+        
+        return {
+            "keyword": keyword,
+            "trend_summary": trend_summary,
+            "perspectives": analyses,
+            "related_articles": context_articles
+        }
+        
+    except Exception as e:
+        return {"error": f"분석 생성 중 오류가 발생했습니다: {str(e)}"}
+
+def generate_perspective_analysis(keyword, perspective, articles):
+    """특정 관점에서의 키워드 분석 생성"""
+    try:
+        # 관련 기사들의 내용을 컨텍스트로 구성
+        context = "\n".join([
+            f"제목: {article['title']}\n내용: {article['content'][:200]}..."
+            for article in articles[:3]
+        ])
+        
+        prompt = f"""
+다음 키워드에 대해 {perspective} 관점에서 분석해주세요:
+
+키워드: {keyword}
+
+관련 뉴스:
+{context}
+
+분석 요구사항:
+- {perspective} 관점에서 해당 키워드의 의미와 중요성
+- 현재 트렌드와 향후 전망
+- 핵심 포인트 3가지
+- 간결하고 명확한 설명 (200자 이내)
+
+분석 결과를 한국어로 작성해주세요.
+"""
+        
+        completion = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "당신은 뉴스 분석 전문가입니다. 주어진 키워드를 특정 관점에서 깊이 있게 분석하고, 핵심 인사이트를 제공합니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=300
+        )
+        
+        return completion.choices[0].message.content
+        
+    except Exception as e:
+        return f"분석 생성 중 오류가 발생했습니다: {str(e)}"
+
+def generate_keyword_trend_summary(keyword, articles):
+    """키워드 트렌드 요약 생성"""
+    try:
+        context = "\n".join([
+            f"제목: {article['title']}\n내용: {article['content'][:150]}..."
+            for article in articles[:5]
+        ])
+        
+        prompt = f"""
+다음 키워드의 현재 트렌드를 요약해주세요:
+
+키워드: {keyword}
+
+관련 뉴스:
+{context}
+
+요약 요구사항:
+- 현재 이슈의 핵심 내용
+- 주요 이해관계자들
+- 사회적/경제적 영향
+- 한 문장으로 핵심 메시지 요약
+
+150자 이내로 간결하게 작성해주세요.
+"""
+        
+        completion = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "당신은 뉴스 트렌드 분석 전문가입니다. 복잡한 이슈를 핵심만 간추려 명확하게 설명합니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.5,
+            max_tokens=200
+        )
+        
+        return completion.choices[0].message.content
+        
+    except Exception as e:
+        return f"키워드 '{keyword}'에 대한 트렌드 분석을 생성할 수 없습니다."
         
         if not articles:
             # 샘플 데이터 반환
