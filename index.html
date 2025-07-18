@@ -736,18 +736,31 @@
         function displayWeekKeywords(container, keywords, weekNumber) {
             container.innerHTML = '';
 
+            // 주차별 날짜 범위 매핑
+            const weekDateRanges = {
+                1: { start: '2025-07-01', end: '2025-07-05' },
+                2: { start: '2025-07-06', end: '2025-07-13' },
+                3: { start: '2025-07-14', end: '2025-07-18' }
+            };
+
             keywords.forEach(keyword => {
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag';
                 keywordElement.textContent = keyword;
-                keywordElement.onclick = () => selectKeyword(keyword);
-                keywordElement.ondblclick = () => showKeywordArticles(keyword);
+
+                // 주차 정보를 데이터 속성으로 저장
+                keywordElement.dataset.weekNumber = weekNumber;
+                keywordElement.dataset.startDate = weekDateRanges[weekNumber].start;
+                keywordElement.dataset.endDate = weekDateRanges[weekNumber].end;
+
+                keywordElement.onclick = () => selectKeyword(keyword, weekNumber, weekDateRanges[weekNumber]);
+                keywordElement.ondblclick = () => showKeywordArticles(keyword, weekDateRanges[weekNumber]);
                 container.appendChild(keywordElement);
             });
         }
 
         // 키워드 선택 (클릭시 기사 보기, 더블클릭시 분석)
-        function selectKeyword(keyword) {
+        function selectKeyword(keyword, weekNumber, dateRange) {
             selectedKeyword = keyword;
 
             // 키워드 태그 활성화 표시
@@ -769,8 +782,8 @@
             // 키워드 클릭 시 동적 분석 실행
             performKeywordAnalysis(keyword);
 
-            // 싱글 클릭: 관련 기사 표시도 함께 실행
-            openArticleModal(keyword);
+            // 싱글 클릭: 해당 주차 날짜로 관련 기사 표시
+            openArticleModal(keyword, dateRange);
         }
 
         // 동적 키워드 분석 함수
@@ -952,17 +965,25 @@
         }
 
         // 개선된 기사 모달 함수
-        async function openArticleModal(keyword) {
+        async function openArticleModal(keyword, dateRange = null) {
             const modal = document.getElementById('article-modal');
             const title = document.getElementById('modal-title');
             const articles = document.getElementById('modal-articles');
 
-            title.innerHTML = `<span style="color: #667eea;">📰</span> "${keyword}" 관련 Top 5 기사`;
+            // 날짜 범위 정보 표시
+            const dateInfo = dateRange ? `(${dateRange.start} ~ ${dateRange.end})` : '';
+            title.innerHTML = `<span style="color: #667eea;">📰</span> "${keyword}" 관련 Top 5 기사 ${dateInfo}`;
             articles.innerHTML = '<div class="loading">🔍 네이버 API로 최신 기사를 검색하고 요약 중...</div>';
             modal.style.display = 'block';
 
             try {
-                const response = await fetch(`http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`);
+                // 날짜 범위가 있으면 쿼리 파라미터로 전달
+                let url = `http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
+                if (dateRange) {
+                    url += `&start_date=${dateRange.start}&end_date=${dateRange.end}`;
+                }
+
+                const response = await fetch(url);
                 const data = await response.json();
 
                 articles.innerHTML = '';
@@ -1042,14 +1063,24 @@
                         border-radius: 6px;
                         border-left: 4px solid #28a745;
                     `;
-                    apiInfo.innerHTML = '✅ 네이버 뉴스 API를 통해 2025년 7월 3주차 최신 기사를 가져왔습니다.';
+                    // 날짜 범위 텍스트 동적 생성
+                    const dateRangeText = dateRange ?
+                        `${dateRange.start.replace('-', '년 ').replace('-', '월 ')}일 ~ ${dateRange.end.replace('-', '년 ').replace('-', '월 ')}일` :
+                        '2025년 7월 3주차';
+
+                    apiInfo.innerHTML = `✅ 네이버 뉴스 API를 통해 ${dateRangeText} 최신 기사를 가져왔습니다.`;
                     articles.appendChild(apiInfo);
                 } else {
+                    // 날짜 범위 텍스트 동적 생성
+                    const dateRangeText = dateRange ?
+                        `${dateRange.start.replace('-', '년 ').replace('-', '월 ')}일 ~ ${dateRange.end.replace('-', '년 ').replace('-', '월 ')}일` :
+                        '2025년 7월 3주차 (7/14 ~ 7/20)';
+
                     articles.innerHTML = `
                         <div style="text-align: center; color: #666; padding: 20px;">
                             <p>해당 키워드와 관련된 기사를 찾을 수 없습니다.</p>
                             <p style="font-size: 14px; color: #999; margin-top: 10px;">
-                                검색 범위: 2025년 7월 3주차 (7/14 ~ 7/20)
+                                검색 범위: ${dateRangeText}
                             </p>
                         </div>
                     `;

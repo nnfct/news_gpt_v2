@@ -13,7 +13,7 @@ import json
 from datetime import datetime, timedelta
 import uvicorn
 from error_logger import log_error, auto_log_errors
-import traceback
+from typing import Optional
 
 app = FastAPI()
 
@@ -826,11 +826,15 @@ def get_industry_analysis(request: dict):
         }
 
 @app.get("/keyword-articles")
-def get_keyword_articles(keyword: str):
+def get_keyword_articles(keyword: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
     """키워드 관련 기사 Top 5 조회 (네이버 API 사용)"""
     try:
-        # 네이버 API를 사용하여 현재 주간 뉴스 가져오기
-        naver_articles = get_current_week_news_from_naver(keyword)
+        # 날짜 범위가 제공되면 해당 날짜 범위로 검색
+        if start_date and end_date:
+            naver_articles = get_current_week_news_from_naver(keyword, start_date, end_date)
+        else:
+            # 기본값: 현재 주차 (3주차)
+            naver_articles = get_current_week_news_from_naver(keyword, "2025-07-14", "2025-07-18")
         
         if naver_articles:
             # 네이버 API 결과를 사용
