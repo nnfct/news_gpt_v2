@@ -54,6 +54,46 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
+        .week-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .week-section:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .week-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .week-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .week-loading {
+            font-size: 0.9em;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .week-loading.hidden {
+            display: none;
+        }
+
         .section-title {
             font-size: 1.4em;
             font-weight: 600;
@@ -74,6 +114,7 @@
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
+            min-height: 50px;
         }
 
         .keyword-tag {
@@ -502,10 +543,39 @@
     <div class="main-container">
         <!-- 주간 요약 섹션 -->
         <div class="weekly-summary">
-            <h2 class="section-title">주간 요약</h2>
-            <div class="week-info" id="week-info">7월 3주차 키워드 분석</div>
-            <div class="keywords-container" id="keywords-container">
-                <!-- 키워드들이 여기에 동적으로 추가됩니다 -->
+            <h2 class="section-title">📅 주간 요약</h2>
+
+            <!-- 7월 1주차 (7/1~7/5) -->
+            <div class="week-section">
+                <div class="week-header">
+                    <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
+                    <div class="week-loading" id="week1-loading">분석 중...</div>
+                </div>
+                <div class="keywords-container" id="week1-keywords">
+                    <!-- 1주차 키워드들 -->
+                </div>
+            </div>
+
+            <!-- 7월 2주차 (7/6~7/13) -->
+            <div class="week-section">
+                <div class="week-header">
+                    <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
+                    <div class="week-loading" id="week2-loading">분석 중...</div>
+                </div>
+                <div class="keywords-container" id="week2-keywords">
+                    <!-- 2주차 키워드들 -->
+                </div>
+            </div>
+
+            <!-- 7월 3주차 (7/14~7/18) -->
+            <div class="week-section">
+                <div class="week-header">
+                    <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
+                    <div class="week-loading" id="week3-loading">분석 중...</div>
+                </div>
+                <div class="keywords-container" id="week3-keywords">
+                    <!-- 3주차 키워드들 -->
+                </div>
             </div>
         </div>
 
@@ -572,43 +642,67 @@
 
         // 페이지 로드시 키워드 불러오기
         document.addEventListener('DOMContentLoaded', function () {
-            loadWeeklyKeywords();
+            loadAllWeeklyKeywords();
             setupIndustryTabs();
         });
 
-        // 주간 키워드 불러오기
-        async function loadWeeklyKeywords() {
+        // 모든 주간 키워드 불러오기
+        async function loadAllWeeklyKeywords() {
+            // 각 주차별 키워드 로드
+            loadWeekKeywords(1, '2025-07-01', '2025-07-05');
+            loadWeekKeywords(2, '2025-07-06', '2025-07-13');
+            loadWeekKeywords(3, '2025-07-14', '2025-07-18');
+        }
+
+        // 특정 주차 키워드 불러오기
+        async function loadWeekKeywords(weekNumber, startDate, endDate) {
             try {
-                const response = await fetch('http://127.0.0.1:8000/weekly-keywords');
+                const loadingElement = document.getElementById(`week${weekNumber}-loading`);
+                const keywordsContainer = document.getElementById(`week${weekNumber}-keywords`);
+
+                loadingElement.textContent = '분석 중...';
+
+                const response = await fetch(`http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
 
-                displayKeywords(data.keywords);
-                updateWeekInfo(data.week_info);
+                loadingElement.classList.add('hidden');
+                displayWeekKeywords(keywordsContainer, data.keywords, weekNumber);
+
             } catch (error) {
-                console.error('키워드 로딩 오류:', error);
+                console.error(`${weekNumber}주차 키워드 로딩 오류:`, error);
+                const loadingElement = document.getElementById(`week${weekNumber}-loading`);
+                loadingElement.textContent = '로딩 실패';
+
                 // 샘플 데이터로 대체
-                displayKeywords(['인공지능', '반도체', '기업']);
+                const sampleKeywords = getSampleKeywords(weekNumber);
+                const keywordsContainer = document.getElementById(`week${weekNumber}-keywords`);
+                displayWeekKeywords(keywordsContainer, sampleKeywords, weekNumber);
+                setTimeout(() => loadingElement.classList.add('hidden'), 1000);
             }
         }
 
-        // 키워드 표시
-        function displayKeywords(keywords) {
-            currentKeywords = keywords;
-            const container = document.getElementById('keywords-container');
+        // 샘플 키워드 데이터
+        function getSampleKeywords(weekNumber) {
+            const sampleData = {
+                1: ['인공지능', '반도체', '전기차'],
+                2: ['메타버스', '블록체인', '로봇'],
+                3: ['정보통신산업진흥원', 'AI Youth Festa 2025', '디지털 혁신']
+            };
+            return sampleData[weekNumber] || ['키워드1', '키워드2', '키워드3'];
+        }
+
+        // 주차별 키워드 표시
+        function displayWeekKeywords(container, keywords, weekNumber) {
             container.innerHTML = '';
 
             keywords.forEach(keyword => {
-                const tag = document.createElement('div');
-                tag.className = 'keyword-tag';
-                tag.textContent = keyword;
-                tag.onclick = () => selectKeyword(keyword);
-                container.appendChild(tag);
+                const keywordElement = document.createElement('div');
+                keywordElement.className = 'keyword-tag';
+                keywordElement.textContent = keyword;
+                keywordElement.onclick = () => selectKeyword(keyword);
+                keywordElement.ondblclick = () => showKeywordArticles(keyword);
+                container.appendChild(keywordElement);
             });
-        }
-
-        // 주간 정보 업데이트
-        function updateWeekInfo(weekInfo) {
-            document.getElementById('week-info').textContent = weekInfo || '7월 3주차 키워드 분석';
         }
 
         // 키워드 선택 (클릭시 기사 보기, 더블클릭시 분석)
