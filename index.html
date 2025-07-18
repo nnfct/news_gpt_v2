@@ -439,9 +439,19 @@
         }
 
         @keyframes typing {
-            0%, 20% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+
+            0%,
+            20% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         @media (max-width: 768px) {
@@ -709,34 +719,34 @@
                     data.articles.forEach((article, index) => {
                         const card = document.createElement('div');
                         card.className = 'article-card';
-                        
+
                         // URL이 있고 유효한 경우에만 클릭 가능하도록 설정
                         const hasValidUrl = article.url && article.url.trim() !== '' && article.url !== '#';
                         card.style.cursor = hasValidUrl ? 'pointer' : 'default';
-                        
+
                         // 날짜 포맷 개선
                         const displayDate = article.date || '날짜 정보 없음';
                         const isCurrentWeek = displayDate.includes('2025-07-1') || displayDate.includes('2025-07-2');
                         const dateColor = isCurrentWeek ? '#28a745' : '#6c757d';
-                        
+
                         card.innerHTML = `
                             <div class="article-date" style="color: ${dateColor};">
                                 ${isCurrentWeek ? '🆕 ' : ''}${displayDate}
                             </div>
                             <div class="article-title">${article.title}</div>
                             <div class="article-summary">${article.summary}</div>
-                            ${hasValidUrl ? 
-                                '<div style="margin-top: 10px; color: #667eea; font-size: 12px;">💡 클릭하여 원문 보기</div>' : 
+                            ${hasValidUrl ?
+                                '<div style="margin-top: 10px; color: #667eea; font-size: 12px;">💡 클릭하여 원문 보기</div>' :
                                 '<div style="margin-top: 10px; color: #999; font-size: 12px;">⚠️ 원문 링크가 없습니다</div>'
                             }
                         `;
-                        
+
                         // 기사 클릭 시 원문으로 리다이렉트
                         if (hasValidUrl) {
-                            card.addEventListener('click', function() {
+                            card.addEventListener('click', function () {
                                 console.log('클릭된 기사 URL:', article.url);
                                 console.log('기사 제목:', article.title);
-                                
+
                                 // 네이버 뉴스 링크인 경우 바로 열기
                                 if (article.url.includes('naver.com')) {
                                     window.open(article.url, '_blank');
@@ -745,26 +755,26 @@
                                     window.open(article.url, '_blank');
                                 }
                             });
-                            
+
                             // 호버 효과 추가
-                            card.addEventListener('mouseenter', function() {
+                            card.addEventListener('mouseenter', function () {
                                 card.style.transform = 'translateY(-3px)';
                                 card.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
                             });
-                            
-                            card.addEventListener('mouseleave', function() {
+
+                            card.addEventListener('mouseleave', function () {
                                 card.style.transform = 'translateY(0)';
                                 card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
                             });
                         } else {
                             console.log('URL이 없는 기사:', article.title);
                         }
-                        
+
                         articlesGrid.appendChild(card);
                     });
 
                     articles.appendChild(articlesGrid);
-                    
+
                     // 네이버 API 사용 알림 추가
                     const apiInfo = document.createElement('div');
                     apiInfo.style.cssText = `
@@ -848,13 +858,13 @@
                 });
 
                 const data = await response.json();
-                
+
                 // 타이핑 인디케이터 제거
                 typingIndicator.remove();
-                
+
                 // 답변 추가 (마크다운 스타일 적용)
                 addChatMessage(data.answer || '죄송합니다. 답변을 생성할 수 없습니다.', 'bot');
-                
+
             } catch (error) {
                 console.error('Chat error:', error);
                 typingIndicator.remove();
@@ -882,7 +892,7 @@
 
             // 스크롤을 맨 아래로
             chatHistory.scrollTop = chatHistory.scrollHeight;
-            
+
             return typingDiv;
         }
 
@@ -893,7 +903,7 @@
 
             const messageContent = document.createElement('div');
             messageContent.className = sender === 'user' ? 'chat-user' : 'chat-bot';
-            
+
             // 봇 메시지의 경우 줄바꿈 처리
             if (sender === 'bot') {
                 messageContent.innerHTML = message.replace(/\n/g, '<br>');
