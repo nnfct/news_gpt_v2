@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -12,8 +12,40 @@ import requests
 import json
 from datetime import datetime, timedelta
 import uvicorn
+from error_logger import log_error, auto_log_errors
+import traceback
 
 app = FastAPI()
+
+# 글로벌 예외 처리기 추가
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """모든 예외를 자동으로 error_history.md에 기록"""
+    
+    # 에러 로깅
+    log_error(
+        error=exc,
+        file_name="main.py",
+        function_name="global_exception_handler",
+        context=f"글로벌 예외 처리 - 요청 URL: {request.url}",
+        additional_info={
+            "method": request.method,
+            "url": str(request.url),
+            "headers": dict(request.headers),
+            "client_ip": request.client.host if request.client else "unknown"
+        },
+        severity="HIGH"
+    )
+    
+    # 클라이언트에게 에러 응답
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "내부 서버 오류가 발생했습니다.",
+            "message": str(exc),
+            "timestamp": datetime.now().isoformat()
+        }
+    )
 
 # CORS 미들웨어 추가
 app.add_middleware(
@@ -111,6 +143,20 @@ def get_current_week_news_from_naver(query, start_date=None, end_date=None):
         return articles[:10]  # 최대 10개 반환
         
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="main.py",
+            function_name="get_current_week_news_from_naver",
+            context=f"네이버 API 호출 오류 - 쿼리: {query}, 기간: {start_date}~{end_date}",
+            additional_info={
+                "query": query,
+                "start_date": start_date,
+                "end_date": end_date,
+                "has_client_id": bool(NAVER_CLIENT_ID),
+                "has_client_secret": bool(NAVER_CLIENT_SECRET)
+            },
+            severity="HIGH"
+        )
         print(f"네이버 API 호출 오류: {e}")
         return []
 
@@ -141,6 +187,14 @@ def get_weekly_summary():
                 
         return {"title": "주간 요약 없음", "content": "아직 분석된 주간 데이터가 없습니다.", "date": ""}
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="main.py",
+            function_name="get_weekly_summary",
+            context="주간 요약 조회 중 오류 발생",
+            additional_info={"search_filter": "id eq 'weekly_summary_2025_week3'"},
+            severity="HIGH"
+        )
         return {"title": "오류", "content": f"주간 요약 조회 중 오류 발생: {str(e)}", "date": ""}
 
 @app.get("/section-analysis/{section}")
@@ -836,7 +890,7 @@ def analyze_keyword_dynamically(request: dict):
         search_results = search_client.search(
             search_text=keyword,
             top=10,
-            select=["title", "content", "date", "section", "keyword"]
+            select=["title", "content", "date"]  # 실제 존재하는 필드만 선택
         )
         
         # 2. 검색된 뉴스들을 컨텍스트로 활용
@@ -848,7 +902,7 @@ def analyze_keyword_dynamically(request: dict):
                 "title": doc.get("title", ""),
                 "content": doc.get("content", ""),
                 "date": doc.get("date", ""),
-                "section": doc.get("section", "")
+                "section": "AI/기술"  # 기본값 설정
             })
         
         # 3. 다각도 분석 생성
@@ -877,6 +931,17 @@ def analyze_keyword_dynamically(request: dict):
         }
         
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="main.py",
+            function_name="analyze_keyword_dynamically",
+            context=f"키워드 분석 중 오류 발생 - 키워드: {keyword}",
+            additional_info={
+                "keyword": keyword,
+                "search_attempted": True
+            },
+            severity="HIGH"
+        )
         return {"error": f"분석 생성 중 오류가 발생했습니다: {str(e)}"}
 
 def generate_perspective_analysis(keyword, perspective, articles):
@@ -997,6 +1062,14 @@ def generate_keyword_trend_summary(keyword, articles):
         
         return {"articles": articles}
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="main.py",
+            function_name="get_keyword_articles",
+            context=f"키워드 기사 검색 오류 - 키워드: {keyword}",
+            additional_info={"keyword": keyword},
+            severity="MEDIUM"
+        )
         print(f"키워드 기사 검색 오류: {e}")
         return {
             "articles": [

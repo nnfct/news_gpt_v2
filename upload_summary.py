@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
+from error_logger import log_error
 
 load_dotenv()
 
@@ -34,4 +35,16 @@ try:
         print(f"❌ 업로드 실패: {result[0].error_message}")
         
 except Exception as e:
+    log_error(
+        error=e,
+        file_name="upload_summary.py",
+        function_name="main",
+        context="주간 요약 업로드 중 오류 발생",
+        additional_info={
+            "document_id": "weekly_summary_2025_week3",
+            "endpoint": AZURE_SEARCH_ENDPOINT,
+            "index": AZURE_SEARCH_INDEX
+        },
+        severity="HIGH"
+    )
     print(f"❌ 오류: {e}")

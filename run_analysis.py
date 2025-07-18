@@ -12,6 +12,7 @@ import openai
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 import pandas as pd
+from error_logger import log_error, auto_log_errors
 
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -108,6 +109,18 @@ def collect_news():
                 time.sleep(0.1)
                 
             except Exception as e:
+                log_error(
+                    error=e,
+                    file_name="run_analysis.py",
+                    function_name="collect_news",
+                    context=f"네이버 API 키워드 검색 오류 - 키워드: {keyword}",
+                    additional_info={
+                        "keyword": keyword,
+                        "url": url,
+                        "news_collected_so_far": len(news_list)
+                    },
+                    severity="MEDIUM"
+                )
                 print(f"  ❌ '{keyword}' 키워드 검색 오류: {e}")
                 time.sleep(1)  # 에러 발생 시 더 긴 딜레이
                 continue
@@ -116,6 +129,17 @@ def collect_news():
         return news_list
         
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="run_analysis.py",
+            function_name="collect_news",
+            context="네이버 뉴스 수집 전체 프로세스 오류",
+            additional_info={
+                "total_keywords": len(tech_keywords) if 'tech_keywords' in locals() else 0,
+                "collected_news": len(news_list) if 'news_list' in locals() else 0
+            },
+            severity="HIGH"
+        )
         print(f"❌ 네이버 API 오류: {e}")
         print("⚠️ 샘플 데이터를 사용합니다.")
         return [
@@ -145,6 +169,17 @@ def extract_keywords(news):
         # Top 3만 반환
         return keywords[:3]
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="run_analysis.py", 
+            function_name="extract_keywords",
+            context=f"키워드 추출 오류 - 뉴스 제목: {news.get('title', 'Unknown')[:50]}...",
+            additional_info={
+                "news_title": news.get('title', 'Unknown'),
+                "news_content_length": len(news.get('content', ''))
+            },
+            severity="MEDIUM"
+        )
         print(f"키워드 추출 오류: {e}")
         return []
 

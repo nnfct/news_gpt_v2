@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 import datetime
+from error_logger import log_error
 
 load_dotenv()
 
@@ -67,6 +68,18 @@ def upload_test_articles():
         print(f"\n📊 총 {len(test_articles)}개 기사 중 {success_count}개 성공적으로 업로드")
         
     except Exception as e:
+        log_error(
+            error=e,
+            file_name="upload_test_articles.py",
+            function_name="upload_test_articles",
+            context="테스트 기사 업로드 중 오류 발생",
+            additional_info={
+                "total_articles": len(test_articles) if 'test_articles' in locals() else 0,
+                "endpoint": AZURE_SEARCH_ENDPOINT,
+                "index": AZURE_SEARCH_INDEX
+            },
+            severity="HIGH"
+        )
         print(f"❌ 업로드 오류: {e}")
 
 if __name__ == "__main__":
