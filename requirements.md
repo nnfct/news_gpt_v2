@@ -63,11 +63,11 @@ requests==2.32.4
 
 ### 4. 외부 API 요구사항
 
-#### 네이버 뉴스 검색 API
-- **클라이언트 ID**: 네이버 개발자 센터에서 발급
-- **클라이언트 Secret**: 네이버 개발자 센터에서 발급
-- **요청 제한**: 일일 25,000회 (기본 할당량)
-- **사용 목적**: IT/기술 뉴스 수집
+#### DeepSearch 뉴스 검색 API
+- **API 키**: DeepSearch 서비스에서 발급
+- **엔드포인트**: https://api-v2.deepsearch.com/v1/global-articles
+- **요청 제한**: API 키별 제한 (확인 필요)
+- **사용 목적**: 글로벌 뉴스 수집
 
 ## 🏗️ 시스템 아키텍처 요구사항
 
@@ -82,11 +82,11 @@ FastAPI Server (Port 8000)
 │  (GPT-4o)       │  (Vector DB)    │
 └─────────────────┴─────────────────┘
       ↓
-Naver News API
+DeepSearch API v2
 ```
 
 ### 2. 데이터 플로우
-1. **뉴스 수집**: 네이버 API → 데이터 정제 → 키워드 추출 (GPT-4o)
+1. **뉴스 수집**: DeepSearch API → 데이터 정제 → 키워드 추출 (GPT-4o)
 2. **벡터화**: 텍스트 임베딩 (text-embedding-3-large)
 3. **저장**: Azure AI Search 인덱스 업로드
 4. **검색**: 하이브리드 검색 (키워드 + 의미 검색)
@@ -123,8 +123,7 @@ Naver News API
   AZURE_SEARCH_API_KEY=your_key_here
   AZURE_SEARCH_ENDPOINT=https://your-service.search.windows.net
   AZURE_SEARCH_INDEX=news_index
-  NAVER_CLIENT_ID=your_client_id
-  NAVER_CLIENT_SECRET=your_client_secret
+  DEEPSEARCH_API_KEY=your_api_key_here
   ```
 
 ### 2. API 보안

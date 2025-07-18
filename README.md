@@ -4,11 +4,11 @@
 
 ## 📋 프로젝트 개요
 
-News GPT v2는 Azure 클라우드 서비스를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. 네이버 뉴스 API를 통해 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 트렌드 분석을 제공합니다.
+News GPT v2는 Azure 클라우드 서비스를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch 뉴스 API를 통해 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 트렌드 분석을 제공합니다.
 
 ### 🎯 주요 기능
 
-- **📰 실시간 뉴스 수집**: 네이버 뉴스 API를 통한 29개 IT/기술 키워드 기반 뉴스 자동 수집
+- **📰 실시간 뉴스 수집**: DeepSearch 뉴스 API를 통한 29개 IT/기술 키워드 기반 뉴스 자동 수집
 - **🔍 주간 키워드 분석**: AI 기반 주간 TOP 3 키워드 추출 및 빈도 분석
 - **🤖 다각도 분석**: 사회, 경제, IT/과학, 생활/문화, 세계 관점별 키워드 분석
 - **� 지능형 챗봇**: Azure OpenAI 기반 실시간 뉴스 분석 챗봇
@@ -22,7 +22,7 @@ News GPT v2는 Azure 클라우드 서비스를 기반으로 한 AI 기반 뉴스
 │   (HTML/JS)     │◄──►│  Server         │◄──►│                 │
 │                 │    │  (Port 8000)    │    │ Azure OpenAI    │
 └─────────────────┘    └─────────────────┘    │ Azure AI Search │
-                                              │ Naver News API  │
+                                              │DeepSearch API v2│
 ┌─────────────────┐    ┌─────────────────┐    └─────────────────┘
 │   Analysis      │    │   Data Flow     │
 │   Dashboard     │    │   Processing    │
@@ -35,7 +35,7 @@ News GPT v2는 Azure 클라우드 서비스를 기반으로 한 AI 기반 뉴스
 - **Framework**: FastAPI (Python 3.11+)
 - **AI Engine**: Azure OpenAI (GPT-4o, text-embedding-3-large)
 - **Vector Database**: Azure AI Search
-- **News API**: Naver News Search API
+- **News API**: DeepSearch News API v2
 - **Environment**: Python venv, python-dotenv
 
 **Frontend**
@@ -82,8 +82,8 @@ Azure Portal에서 다음 서비스를 생성하고 API 키를 발급받으세�
    - 검색 서비스 생성
    - 인덱스: `news_index` 생성
 
-3. **Naver Developers**
-   - 네이버 검색 API (뉴스) 등록
+3. **DeepSearch News API**
+   - 뉴스 검색 API 등록 및 키 발급
 
 ### 3. 환경변수 설정
 
@@ -99,9 +99,8 @@ AZURE_SEARCH_API_KEY=your_azure_search_api_key_here
 AZURE_SEARCH_ENDPOINT=https://your-search-service.search.windows.net
 AZURE_SEARCH_INDEX=news_index
 
-# 네이버 뉴스 API 설정
-NAVER_CLIENT_ID=your_naver_client_id_here
-NAVER_CLIENT_SECRET=your_naver_client_secret_here
+# DeepSearch 뉴스 API 설정
+DEEPSEARCH_API_KEY=your_deepsearch_api_key_here
 ```
 
 ### 4. 데이터 초기화 및 테스트
