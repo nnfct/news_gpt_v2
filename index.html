@@ -344,6 +344,28 @@
             color: #00D9C0;
         }
 
+        /* URL이 없는 기사 카드 스타일 */
+        .article-card.no-url {
+            border-left-color: #dc3545;
+            opacity: 0.8;
+        }
+
+        .article-card.no-url:hover {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+            transform: none;
+        }
+
+        .article-card.no-url:hover::after {
+            content: "🚫";
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 16px;
+            color: #dc3545;
+        }
+
         .article-date {
             font-size: 12px;
             color: #6C757D;
@@ -1559,6 +1581,17 @@
                 clearTimeout(timeoutId);
                 
                 const data = await response.json();
+                
+                // API 응답 데이터 디버깅 (URL 필드 확인)
+                console.log(`📊 ${regionText} API 응답:`, data);
+                if (data.articles && data.articles.length > 0) {
+                    console.log(`🔗 ${regionText} 첫 번째 기사 URL:`, data.articles[0].url);
+                    console.log(`📋 ${regionText} URL 필드 현황:`, data.articles.map(article => ({
+                        title: article.title?.substring(0, 50) + '...',
+                        hasUrl: !!article.url,
+                        url: article.url
+                    })));
+                }
 
                 // 캐시에 저장
                 dataCache[cacheKey] = data;
@@ -1592,22 +1625,41 @@
 
                 data.articles.forEach((article, index) => {
                     const card = document.createElement('div');
-                    card.className = 'article-card quick-hover'; // 빠른 호버 효과
-                    card.style.cursor = 'pointer';
+                    const articleHasValidUrl = article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined';
                     
-                    // 즉시 피드백 효과 적용
-                    applyInstantFeedback(card);
+                    // URL 상태에 따른 클래스 설정
+                    card.className = articleHasValidUrl ? 'article-card quick-hover' : 'article-card no-url';
+                    if (articleHasValidUrl) {
+                        card.style.cursor = 'pointer';
+                    }
+                    
+                    // 즉시 피드백 효과 적용 (URL이 있는 경우만)
+                    if (articleHasValidUrl) {
+                        applyInstantFeedback(card);
+                    }
 
-                    // 날짜 포맷 개선
+                    // 날짜 포맷 개선 + URL 상태 표시
                     const displayDate = article.date || article.published_at || '날짜 정보 없음';
                     const dateColor = '#6c757d';
+                    
+                    // URL 상태 아이콘
+                    const urlIcon = articleHasValidUrl ? '🔗' : '🚫';
+                    const urlStatus = articleHasValidUrl ? '클릭하여 원문 보기' : '원문 링크 없음';
+                    const urlColor = articleHasValidUrl ? '#28a745' : '#dc3545';
 
                     card.innerHTML = `
                         <div class="article-date" style="color: ${dateColor};">
                             ${displayDate}
+                            <span style="color: ${urlColor}; margin-left: 8px; font-size: 12px;" title="${urlStatus}">
+                                ${urlIcon}
+                            </span>
                         </div>
                         <div class="article-title">${article.title}</div>
                         <div class="article-summary">${article.summary || article.content || '요약 정보 없음'}</div>
+                        ${articleHasValidUrl ? 
+                            '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' : 
+                            '<div style="font-size: 11px; color: #dc3545; margin-top: 8px;">⚠ 원문 링크가 제공되지 않습니다</div>'
+                        }
                     `;
 
                     // 애니메이션 효과
@@ -1619,17 +1671,47 @@
                         card.style.transform = 'translateY(0)';
                     }, index * 100);
 
-                    // 기사 클릭시 원본 URL로 이동
+                    // 기사 클릭시 원본 URL로 이동 (해외/국내 구분 강화)
                     card.addEventListener('click', () => {
-                        if (article.url) {
+                        console.log(`🔗 기사 클릭 - 지역: ${regionText}, URL: ${article.url || '없음'}`, article);
+                        
+                        if (article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined') {
                             // 즉시 시각적 피드백
                             card.style.transform = 'scale(0.98)';
+                            card.style.backgroundColor = '#e8f5e8';
+                            
+                            // URL 유효성 추가 체크
+                            const url = article.url.startsWith('http') ? article.url : `https://${article.url}`;
+                            
                             setTimeout(() => {
-                                window.open(article.url, '_blank');
+                                window.open(url, '_blank');
                                 card.style.transform = '';
+                                card.style.backgroundColor = '';
+                                console.log(`✅ ${regionText} 기사 열림: ${url}`);
                             }, 100);
                         } else {
-                            console.warn('기사 URL이 없습니다:', article);
+                            // URL이 없는 경우 시각적 피드백
+                            card.style.backgroundColor = '#ffebee';
+                            setTimeout(() => {
+                                card.style.backgroundColor = '';
+                            }, 1000);
+                            
+                            console.warn(`❌ ${regionText} 기사 URL이 없습니다:`, article);
+                            
+                            // 사용자에게 알림
+                            const notification = document.createElement('div');
+                            notification.style.cssText = `
+                                position: fixed; top: 20px; right: 20px; 
+                                background: #ff5252; color: white; padding: 12px 20px; 
+                                border-radius: 8px; font-size: 14px; z-index: 10000;
+                                box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+                            `;
+                            notification.innerHTML = `⚠️ ${regionText} 기사 링크가 없습니다`;
+                            document.body.appendChild(notification);
+                            
+                            setTimeout(() => {
+                                notification.remove();
+                            }, 3000);
                         }
                     });
 
@@ -1765,32 +1847,88 @@
                 articles.forEach((article, index) => {
                     setTimeout(() => {
                         const card = document.createElement('div');
-                        card.className = 'article-card instant-feedback quick-hover';
-                        card.style.cursor = 'pointer';
+                        const articleHasValidUrl = article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined';
+                        
+                        // URL 상태에 따른 클래스 설정
+                        card.className = articleHasValidUrl ? 'article-card instant-feedback quick-hover' : 'article-card no-url';
+                        if (articleHasValidUrl) {
+                            card.style.cursor = 'pointer';
+                        }
                         card.style.opacity = '0';
                         card.style.transform = 'translateY(20px)';
 
                         const displayDate = article.date || article.published_at || '날짜 정보 없음';
                         
+                        // URL 상태 표시
+                        const urlIcon = articleHasValidUrl ? '🔗' : '🚫';
+                        const urlStatus = articleHasValidUrl ? '클릭하여 원문 보기' : '원문 링크 없음';
+                        const urlColor = articleHasValidUrl ? '#28a745' : '#dc3545';
+                        
                         card.innerHTML = `
                             <div class="article-date" style="color: #6c757d;">
                                 ${displayDate}
                                 ${fromCache ? '<span style="color: #10b981; margin-left: 8px;">⚡ 캐시</span>' : ''}
+                                <span style="color: ${urlColor}; margin-left: 8px; font-size: 12px;" title="${urlStatus}">
+                                    ${urlIcon}
+                                </span>
                             </div>
                             <div class="article-title">${article.title}</div>
                             <div class="article-summary">${article.summary || article.content || '요약 정보 없음'}</div>
+                            ${articleHasValidUrl ? 
+                                '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' : 
+                                '<div style="font-size: 11px; color: #dc3545; margin-top: 8px;">⚠ 원문 링크가 제공되지 않습니다</div>'
+                            }
                         `;
 
-                        // 클릭 이벤트 (즉시 피드백)
+                        // 클릭 이벤트 (즉시 피드백 + 해외/국내 URL 처리 강화)
                         card.addEventListener('click', () => {
-                            if (article.url) {
+                            console.log(`🔗 ${regionText} 기사 클릭 - URL: ${article.url || '없음'}`, article);
+                            
+                            if (articleHasValidUrl) {
                                 card.style.transform = 'scale(0.98)';
                                 card.style.backgroundColor = '#f0fdfc';
+                                
+                                // URL 유효성 추가 체크
+                                const url = article.url.startsWith('http') ? article.url : `https://${article.url}`;
+                                
                                 setTimeout(() => {
-                                    window.open(article.url, '_blank');
+                                    window.open(url, '_blank');
                                     card.style.transform = '';
                                     card.style.backgroundColor = '';
+                                    console.log(`✅ ${regionText} 기사 열림: ${url}`);
                                 }, 150);
+                            } else {
+                                // URL이 없는 경우 더 명확한 피드백
+                                card.style.backgroundColor = '#ffebee';
+                                card.style.borderLeft = '4px solid #ff5252';
+                                
+                                setTimeout(() => {
+                                    card.style.backgroundColor = '';
+                                    card.style.borderLeft = '4px solid #5A7DBC';
+                                }, 2000);
+                                
+                                console.warn(`❌ ${regionText} 기사 URL이 없습니다:`, article);
+                                
+                                // 향상된 사용자 알림
+                                const notification = document.createElement('div');
+                                notification.style.cssText = `
+                                    position: fixed; top: 50%; left: 50%; 
+                                    transform: translate(-50%, -50%);
+                                    background: white; color: #333; padding: 20px 30px; 
+                                    border-radius: 12px; font-size: 14px; z-index: 10000;
+                                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                                    border-left: 4px solid #ff5252;
+                                `;
+                                notification.innerHTML = `
+                                    <div style="font-weight: 600; margin-bottom: 8px;">⚠️ 링크 정보 없음</div>
+                                    <div>이 ${regionText} 기사는 원본 링크가 제공되지 않습니다.</div>
+                                `;
+                                document.body.appendChild(notification);
+                                
+                                setTimeout(() => {
+                                    notification.style.opacity = '0';
+                                    setTimeout(() => notification.remove(), 300);
+                                }, 3000);
                             }
                         });
 

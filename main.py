@@ -846,16 +846,24 @@ async def search_global_keyword_articles(keyword: str, start_date: str = "2025-0
             if article_date:
                 title = item.get("title", "")
                 content = item.get("summary", "") or item.get("content", "")
+                article_id = generate_article_id(item)
+                source_url = item.get("content_url", "") or item.get("url", "")
                 
-                articles.append({
-                    "id": generate_article_id(item),
+                article = {
+                    "id": article_id,
                     "title": title,
                     "content": content,
                     "date": article_date,
-                    "source_url": item.get("content_url", "") or item.get("url", ""),
+                    "source_url": source_url,
+                    "url": source_url,  # 프론트엔드에서 사용하는 필드
                     "keyword": keyword,
                     "source": "해외"
-                })
+                }
+                
+                # 해외 기사도 캐시에 저장하여 원본 URL 리다이렉트 가능하게 함
+                articles_cache[article_id] = article
+                
+                articles.append(article)
                 
         # 중복 제거 (제목+내용 해시)
         unique_articles = []
