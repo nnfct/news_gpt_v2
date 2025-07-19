@@ -4,33 +4,80 @@
 
 ## 📋 프로젝트 개요
 
-News GPT v2는 Azure 클라우드 서비스와 DeepSearch API를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch 뉴스 API v2를 통해 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 트렌드 분석을 제공합니다.
+News GPT v2는 Azure 클라우드 서비스와 DeepSearch API를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch 뉴스 API v2를 통해 경제 및 기술 분야의 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 트렌드 분석을 제공합니다.
 
 ### 🎯 주요 기능
 
-- **📰 실시간 뉴스 수집**: DeepSearch API v2를 통한 IT/기술 키워드 기반 뉴스 자동 수집
+- **📰 실시간 뉴스 수집**: DeepSearch API v2를 통한 경제/기술 분야 뉴스 자동 수집
 - **🔍 키워드 분석**: AI 기반 주간 TOP 5 키워드 추출 및 빈도 분석
 - **🤖 다각도 분석**: 사회, 경제, IT/과학, 생활/문화, 세계 관점별 키워드 분석
 - **💬 지능형 챗봇**: Azure OpenAI 기반 실시간 뉴스 분석 챗봇
 - **🔎 벡터 검색**: Azure AI Search를 활용한 의미 기반 뉴스 검색
 - **📊 산업별 분석**: 정반대 관점을 포함한 균형잡힌 산업 분석
 
+## 📁 프로젝트 구조
+
+```
+news_gpt_v2/
+├── 📄 main.py                      # FastAPI 서버 메인 파일
+├── 📄 index.html                   # 웹 인터페이스 메인 페이지
+├── 📄 .env                         # 환경변수 설정 파일
+├── 📄 requirements.txt             # Python 의존성 패키지
+│
+├── 🔧 관리 및 유틸리티 파일
+│   ├── check_indexes.py            # Azure AI Search 인덱스 확인
+│   ├── check_search_data.py        # 저장된 데이터 확인
+│   ├── upload_test_articles.py     # 테스트 기사 업로드
+│   └── recreate_index.py           # 인덱스 재생성
+│
+├── 🔬 분석 및 테스트 파일
+│   ├── run_analysis_deepsearch.py  # DeepSearch API 기반 뉴스 분석
+│   ├── debug_deepsearch.py         # DeepSearch API 디버깅
+│   ├── keyword_aggregation.py      # 키워드 집계 분석
+│   └── check_weekly_api.py         # 주간 API 체크
+│
+├── 🚀 실행 스크립트
+│   ├── start_server.bat            # Windows 배치 실행
+│   ├── start_server.ps1            # PowerShell 스크립트
+│   └── start_deepsearch_server.bat # DeepSearch 전용 서버 시작
+│
+├── 📚 문서화
+│   ├── README.md                   # 프로젝트 메인 문서
+│   ├── DEEPSEARCH_GUIDE.md         # DeepSearch API 가이드
+│   ├── USAGE_GUIDE.md              # 사용법 가이드
+│   ├── requirements.md             # 요구사항 명세서
+│   └── design.md                   # 디자인 명세서
+│
+└── 📂 하위 디렉토리
+    ├── backup/                     # 백업 파일들
+    ├── guide/                      # 가이드 문서들
+    └── reference/                  # 참조용 파일들
+```
+
 ## 🏗️ 시스템 아키텍처
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │  FastAPI        │    │  Azure Services │
-│   (HTML/JS)     │◄──►│  Server         │◄──►│                 │
-│                 │    │  (Port 8000)    │    │ Azure OpenAI    │
+│   (index.html)  │◄──►│  (main.py)      │◄──►│                 │
+│   Port 8000     │    │  Port 8000      │    │ Azure OpenAI    │
 └─────────────────┘    └─────────────────┘    │ Azure AI Search │
-                                              │DeepSearch API v2│
-┌─────────────────┐    ┌─────────────────┐    └─────────────────┘
-│   Analysis      │    │   Data Flow     │
-│   Dashboard     │    │   Processing    │
+                                              │                 │
+┌─────────────────┐    ┌─────────────────┐    │ DeepSearch API  │
+│  Analysis Tools │    │   Data Flow     │    │ (economy,tech)  │
+│  - keyword_*    │    │   Processing    │    └─────────────────┘
+│  - debug_*      │    │                 │
+│  - run_*        │    │                 │
 └─────────────────┘    └─────────────────┘
 ```
 
-### 🔧 기술 스택
+### � 데이터 플로우
+
+1. **뉴스 수집**: DeepSearch API (economy,tech) → 경제/기술 뉴스 수집
+2. **데이터 처리**: Azure OpenAI GPT-4o → 키워드 추출 및 분석
+3. **저장**: Azure AI Search → 벡터 인덱싱 및 검색 최적화
+4. **분석**: 키워드 집계 → 주간 TOP 5 키워드 생성
+5. **서비스**: 웹 인터페이스 → 실시간 분석 결과 제공
 
 **Backend**
 - **Framework**: FastAPI (Python 3.11+)
@@ -51,7 +98,6 @@ News GPT v2는 Azure 클라우드 서비스와 DeepSearch API를 기반으로 �
 
 **Dependencies**
 - **fastapi**: 웹 프레임워크
-- **uvicorn**: ASGI 서버
 - **openai**: Azure OpenAI 클라이언트
 - **azure-search-documents**: Azure AI Search 클라이언트
 - **requests**: HTTP 클라이언트
@@ -212,7 +258,6 @@ news_gpt_v2/
 ├── # 서버 실행 스크립트
 ├── start_server.bat             # Windows 배치 실행
 ├── start_server.ps1             # PowerShell 실행
-├── start_uvicorn.ps1            # Uvicorn 실행
 ├── start_deepsearch_server.bat  # DeepSearch 서버 실행
 ├── setup_and_run.ps1            # 설정 및 실행
 ├── run_system_python.ps1        # 시스템 Python 실행
@@ -225,10 +270,6 @@ news_gpt_v2/
 ├── requirements.md              # 요구사항 명세서
 ├── design.md                    # 설계 문서
 ├── task.md                      # 작업 계획서
-├── error_history.md             # 오류 기록
-├── 
-├── # 유틸리티
-├── error_logger.py              # 오류 로깅 유틸리티
 ├── 
 ├── # 백업 및 참조
 ├── backup/                      # HTML 백업 파일들
@@ -298,7 +339,41 @@ python upload_summary.py
 python recreate_index.py
 ```
 
-## 📊 현재 데이터 상태
+## � 현재 수정된 주요 이슈 및 해결 상황
+
+### ✅ 해결된 문제들 (2025년 7월 20일 기준)
+
+#### 1. DeepSearch API 키워드 검색 수정 완료
+- **문제**: 키워드 검색 시 `q` 파라미터 누락으로 정확한 키워드 필터링 안됨
+- **해결**: `search_keyword_articles()` 및 `collect_it_news_from_deepsearch()` 함수에 `q` 파라미터 추가
+- **API URL**: `https://api-v2.deepsearch.com/v1/articles/economy,tech?q=키워드&date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_API_KEY`
+
+#### 2. 포트 8000 중복 사용 해결
+- **문제**: 이전 FastAPI 프로세스가 포트 8000을 점유
+- **해결**: `taskkill /PID [PID] /F` 명령어로 기존 프로세스 종료 후 새 서버 시작
+
+#### 3. 챗봇 기능 정상 작동 확인
+- **상태**: ✅ 웹 인터페이스 챗봇 UI 완성됨
+- **상태**: ✅ `/chat` API 엔드포인트 정상 작동
+- **상태**: ✅ Azure OpenAI GPT-4o 연동 완료
+- **확인**: `http://localhost:8000`에서 챗봇 영역 정상 표시 및 작동
+
+### 🔧 최신 API 구조 (2025.07.20 업데이트)
+
+```bash
+# 키워드별 기사 검색 (수정됨 - q 파라미터 추가)
+GET /keyword-articles?keyword=AI&start_date=2025-07-14&end_date=2025-07-18
+
+# 실제 DeepSearch API 호출 구조
+https://api-v2.deepsearch.com/v1/articles/economy,tech?q=AI&date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_API_KEY
+
+# 챗봇 대화 (정상 작동)
+POST /chat
+Content-Type: application/json
+{"question": "AI 기술 현황에 대해 알려주세요"}
+```
+
+## 📊 현재 데이터 상태 및 시스템 현황
 
 ### 2025년 7월 3주차 분석 결과
 
@@ -310,14 +385,16 @@ python recreate_index.py
 5. **블록체인** (12회 언급)
 
 **저장된 데이터**:
-- DeepSearch API v2를 통한 실시간 뉴스 수집
+- DeepSearch API v2를 통한 실시간 뉴스 수집 (키워드 필터링 적용)
 - Azure AI Search `news_index`에 저장
 - 벡터 임베딩 기반 의미 검색 지원
 - GPT-4o 기반 키워드 추출 및 분석
 
-**현재 브랜치**: `deepsearch-api-test`
-- DeepSearch API v2로 완전 전환 완료
-- Naver API에서 마이그레이션 완료
+**현재 브랜치**: `0720_upgrade`
+- DeepSearch API v2로 완전 전환 완료 ✅
+- Naver API에서 마이그레이션 완료 ✅
+- 키워드 검색 기능 개선 완료 ✅ (2025.07.20)
+- 챗봇 기능 정상 작동 확인 ✅ (2025.07.20)
 
 ## 🔧 문제 해결
 
@@ -364,11 +441,26 @@ python main.py
 
 #### 5. 챗봇 기능 문제
 ```bash
-# 챗봇 엔드포인트 테스트
-curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"question\": \"테스트\"}"
+# 챗봇 엔드포인트 테스트 (PowerShell)
+Invoke-RestMethod -Uri "http://localhost:8000/chat" -Method POST -ContentType "application/json" -Body '{"question": "AI 기술 현황에 대해 알려주세요"}'
 
 # Azure OpenAI 연결 확인
 python -c "from openai import AzureOpenAI; print('Azure OpenAI 연결 가능')"
+
+# 웹 브라우저에서 직접 테스트
+# http://localhost:8000 접속 후 하단 챗봇 영역에서 메시지 입력
+```
+
+#### 6. DeepSearch API 키워드 검색 문제 (최신 해결)
+```bash
+# 수정 전 (키워드 필터링 안됨)
+https://api-v2.deepsearch.com/v1/articles/economy,tech?date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_KEY
+
+# 수정 후 (키워드 필터링 적용)
+https://api-v2.deepsearch.com/v1/articles/economy,tech?q=AI&date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_KEY
+
+# 검증 방법
+python debug_deepsearch.py
 ```
 
 ## 📈 성능 최적화 및 모니터링
@@ -385,8 +477,7 @@ python -c "from openai import AzureOpenAI; print('Azure OpenAI 연결 가능')"
 - **재시도 메커니즘**: API 실패 시 자동 재시도 (최대 3회)
 
 ### 모니터링 도구
-- **로깅**: 구조화된 로그 기록 (`error_logger.py`)
-- **오류 추적**: 자동 오류 기록 (`error_history.md`)
+- **로깅**: Python 표준 logging 라이브러리 활용
 - **API 테스트**: 다양한 테스트 스크립트 제공
 
 ## 🔐 보안 고려사항
@@ -504,9 +595,9 @@ copies or substantial portions of the Software.
 
 ## 🔗 관련 링크
 
-- **프로젝트 데모**: http://localhost:8000 (로컬 실행 시)
+- **프로젝트 데모**: http://localhost:8000 (로컬 실행 시) ✅ 정상 작동
 - **GitHub 저장소**: https://github.com/nnfct/news_gpt_v2
-- **현재 브랜치**: `deepsearch-api-test`
+- **현재 브랜치**: `0720_upgrade` (최신 업데이트 반영)
 - **Azure OpenAI**: https://azure.microsoft.com/ko-kr/products/ai-services/openai-service
 - **Azure AI Search**: https://azure.microsoft.com/ko-kr/products/ai-services/ai-search
 - **DeepSearch API**: https://www.deepsearch.com/ (뉴스 검색 API)

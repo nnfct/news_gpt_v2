@@ -65,9 +65,9 @@ requests==2.32.4
 
 #### DeepSearch 뉴스 검색 API
 - **API 키**: DeepSearch 서비스에서 발급
-- **엔드포인트**: https://api-v2.deepsearch.com/v1/global-articles
+- **엔드포인트**: https://api-v2.deepsearch.com/v1/articles/economy,tech
 - **요청 제한**: API 키별 제한 (확인 필요)
-- **사용 목적**: 글로벌 뉴스 수집
+- **사용 목적**: 경제 및 기술 뉴스 수집
 
 ## 🏗️ 시스템 아키텍처 요구사항
 

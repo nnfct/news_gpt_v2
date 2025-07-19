@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
-import uvicorn
 from functools import wraps
 
 # 로깅 설정
@@ -121,14 +120,13 @@ async def search_keyword_articles(keyword: str, start_date: str = "2025-07-14", 
         articles = []
         for search_term in search_terms:
             try:
-                url = "https://api-v2.deepsearch.com/v1/articles"
+                # DeepSearch API에서 경제,기술 카테고리 + 키워드 검색
+                url = f"https://api-v2.deepsearch.com/v1/articles/economy,tech"
                 params = {
                     "api_key": DEEPSEARCH_API_KEY,
-                    "q": search_term,
-                    "limit": 20,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "sort": "published_at:desc"
+                    "date_from": start_date,
+                    "date_to": end_date,
+                    "q": search_term  # 키워드 검색 추가
                 }
                 response = requests.get(url, params=params, timeout=15)
                 response.raise_for_status()
@@ -302,14 +300,13 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
         logger.info(f"🔍 DeepSearch API로 뉴스 수집 중... ({start_date} ~ {end_date})")
         for keyword in tech_keywords:
             try:
-                url = "https://api-v2.deepsearch.com/v1/articles"
+                # DeepSearch API에서 경제,기술 카테고리 + 키워드 검색
+                url = f"https://api-v2.deepsearch.com/v1/articles/economy,tech"
                 params = {
                     "api_key": DEEPSEARCH_API_KEY,
-                    "q": keyword,
-                    "limit": 15,
-                    "start_date": start_date,
-                    "end_date": end_date,
-                    "sort": "published_at:desc"
+                    "date_from": start_date,
+                    "date_to": end_date,
+                    "q": keyword  # 키워드 검색 추가
                 }
                 data = deepsearch_api_request(url, params)
                 # 응답 구조 확인
@@ -867,5 +864,5 @@ def analyze_keyword_dynamically(request: dict):
             "analysis": f"키워드 분석 중 오류가 발생했습니다: {str(e)}"
         }
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# FastAPI 앱 실행은 외부에서 'python -m uvicorn main:app --host 0.0.0.0 --port 8000' 명령어로 실행
+# 또는 'python main.py' 실행 시에는 개발 서버로 동작하지 않음

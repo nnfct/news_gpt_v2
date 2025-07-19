@@ -1,5 +1,4 @@
 fastapi
-uvicorn
 openai
 azure-search-documents
 pandas

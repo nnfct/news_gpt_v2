@@ -52,11 +52,6 @@ DEEPSEARCH_API_KEY=5e0b0dba14d846918383174f356dd683
 - 날짜 범위별 필터링
 - 실시간 뉴스 데이터
 
-### 3. 에러 로깅
-- 모든 에러 자동 기록
-- `error_history.md` 파일에 저장
-- 상세한 디버깅 정보 제공
-
 ## 🔍 API 엔드포인트
 
 ### 주요 엔드포인트
@@ -66,9 +61,10 @@ DEEPSEARCH_API_KEY=5e0b0dba14d846918383174f356dd683
 - `GET /api/articles/{keyword}` - 키워드별 기사
 
 ### DeepSearch API 설정
-- **Base URL**: `https://api-v2.deepsearch.com/v1/global-articles`
+- **Base URL**: `https://api-v2.deepsearch.com/v1/articles/economy,tech`
 - **인증**: API Key 방식
 - **응답 포맷**: JSON
+- **카테고리**: 경제(economy), 기술(tech)
 
 ## 🚨 문제 해결
 

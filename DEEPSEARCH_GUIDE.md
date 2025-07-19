@@ -77,7 +77,7 @@ python run_analysis_deepsearch.py
 
 ### API 엔드포인트 변경
 - **이전**: `https://openapi.naver.com/v1/search/news.json`
-- **현재**: `https://api-v2.deepsearch.com/v1/global-articles`
+- **현재**: `https://api-v2.deepsearch.com/v1/articles/economy,tech`
 
 ### 인증 방식 변경
 - **이전**: `X-Naver-Client-Id`, `X-Naver-Client-Secret` 헤더
