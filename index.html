@@ -43,7 +43,7 @@
         }
 
         .main-container {
-            max-width: 1200px;
+            max-width: 1400px;  /* 1200px에서 1400px로 확대 */
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -51,19 +51,21 @@
         .weekly-summary {
             background: white;
             border-radius: 16px;
-            padding: 30px;
+            padding: 40px;
             margin: 30px 0;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid #E9ECEF;
+            min-height: 700px;  /* 600px에서 700px로 확대 */
         }
 
         .summary-container {
             display: flex;
-            gap: 30px;
+            gap: 40px;
         }
 
         .summary-half {
             flex: 1;
+            min-height: 620px;  /* 520px에서 620px로 확대 */
         }
 
         .summary-title {
@@ -91,7 +93,11 @@
         }
 
         .week-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #FAFBFC;
+            border-radius: 12px;
+            border: 1px solid #F0F2F5;
         }
 
         .week-header {
@@ -120,10 +126,11 @@
         .industry-analysis {
             background: white;
             border-radius: 16px;
-            padding: 30px;
+            padding: 40px;
             margin: 30px 0;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid #E9ECEF;
+            min-height: 600px;
         }
 
         .industry-tabs {
@@ -170,15 +177,18 @@
 
         .keywords-container {
             display: flex;
-            gap: 15px;
+            gap: 8px;  /* 10px에서 8px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
             flex-wrap: wrap;
-            min-height: 50px;
+            min-height: 150px;  /* 120px에서 150px로 확대하여 Top 5 키워드 수용 */
+            align-content: flex-start;
+            justify-content: flex-start;
+            width: 100%;  /* 전체 너비 사용 */
         }
 
         .keyword-tag {
             background: #F0F2F5;
             color: #555555;
-            padding: 12px 24px;
+            padding: 8px 14px;  /* 10px 16px에서 8px 14px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
             border-radius: 25px;
             font-weight: 500;
             cursor: pointer;
@@ -186,6 +196,9 @@
             box-shadow: 0 4px 15px rgba(240, 242, 245, 0.4);
             position: relative;
             border: 1px solid #E9ECEF;
+            font-size: 0.85em;  /* 0.9em에서 0.85em로 더 줄여서 공간 효율성 */
+            white-space: nowrap;  /* 키워드가 줄바꿈 되지 않도록 */
+            flex-shrink: 0;  /* 크기 축소 방지 */
         }
 
         .keyword-tag:hover {
@@ -386,10 +399,11 @@
         .chatbot-section {
             background: #F5F7FA;
             border-radius: 16px;
-            padding: 30px;
+            padding: 40px;
             margin-top: 30px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid #E9ECEF;
+            min-height: 600px;
         }
 
         .chat-suggestions {
@@ -557,9 +571,9 @@
         }
 
         .skeleton-keyword {
-            height: 40px;
-            width: 120px;
-            margin: 8px;
+            height: 35px;  /* 40px에서 35px로 줄여서 Top 5가 한줄에 들어가도록 */
+            width: 100px;  /* 120px에서 100px로 줄여서 공간 효율성 */
+            margin: 6px;  /* 8px에서 6px로 줄여서 더 촘촘하게 */
             border-radius: 20px;
             display: inline-block;
             position: relative;
@@ -719,12 +733,36 @@
                 font-size: 2em;
             }
 
-            .keywords-container,
+            .main-container {
+                max-width: 100%;
+                padding: 0 15px;
+            }
+
+            .weekly-summary {
+                padding: 30px 20px;
+                margin: 20px 0;
+            }
+
+            .summary-container {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .keywords-container {
+                gap: 6px;  /* 8px에서 6px로 줄여서 Top 5가 모바일에서도 한줄에 */
+                min-height: 140px;  /* 120px에서 140px로 확대하여 Top 5 수용 */
+            }
+
+            .keyword-tag {
+                padding: 8px 12px;  /* 10px 16px에서 8px 12px로 줄여서 Top 5 수용 */
+                font-size: 0.85em;  /* 0.9em에서 0.85em로 줄여서 공간 확보 */
+                text-align: center;
+            }
+
             .industry-tabs {
                 flex-direction: column;
             }
 
-            .keyword-tag,
             .industry-tab {
                 text-align: center;
             }
@@ -752,13 +790,13 @@
             <div class="summary-container">
                 <!-- 국내 주간 요약 -->
                 <div class="summary-half">
-                    <h2 class="summary-title domestic">🇰🇷 국내 주간 요약</h2>
+                    <h2 class="summary-title domestic">🇰🇷 국내 주간 키워드 Top5</h2>
 
                     <!-- 7월 1주차 (7/1~7/5) -->
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
-                            <div class="week-loading" id="week1-loading">분석 중...</div>
+                            <div class="week-loading" id="week1-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="week1-keywords">
                             <!-- 1주차 키워드들 -->
@@ -769,7 +807,7 @@
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
-                            <div class="week-loading" id="week2-loading">분석 중...</div>
+                            <div class="week-loading" id="week2-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="week2-keywords">
                             <!-- 2주차 키워드들 -->
@@ -780,7 +818,7 @@
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
-                            <div class="week-loading" id="week3-loading">분석 중...</div>
+                            <div class="week-loading" id="week3-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="week3-keywords">
                             <!-- 3주차 키워드들 -->
@@ -790,13 +828,13 @@
 
                 <!-- 해외 주간 요약 -->
                 <div class="summary-half">
-                    <h2 class="summary-title global">🌍 해외 주간 요약</h2>
+                    <h2 class="summary-title global">🌍 해외 주간 키워드 Top5</h2>
 
                     <!-- 7월 1주차 (7/1~7/5) -->
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
-                            <div class="week-loading" id="global-week1-loading">분석 중...</div>
+                            <div class="week-loading" id="global-week1-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="global-week1-keywords">
                             <!-- 해외 1주차 키워드들 -->
@@ -807,7 +845,7 @@
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
-                            <div class="week-loading" id="global-week2-loading">분석 중...</div>
+                            <div class="week-loading" id="global-week2-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="global-week2-keywords">
                             <!-- 해외 2주차 키워드들 -->
@@ -818,7 +856,7 @@
                     <div class="week-section">
                         <div class="week-header">
                             <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
-                            <div class="week-loading" id="global-week3-loading">분석 중...</div>
+                            <div class="week-loading" id="global-week3-loading">Top5 키워드 분석 중...</div>
                         </div>
                         <div class="keywords-container" id="global-week3-keywords">
                             <!-- 해외 3주차 키워드들 -->
@@ -943,6 +981,8 @@
             const container = document.getElementById(`${elementPrefix}week${weekNumber}-keywords`);
             if (container) {
                 container.innerHTML = `
+                    <div class="skeleton skeleton-keyword"></div>
+                    <div class="skeleton skeleton-keyword"></div>
                     <div class="skeleton skeleton-keyword"></div>
                     <div class="skeleton skeleton-keyword"></div>
                     <div class="skeleton skeleton-keyword"></div>
@@ -1254,22 +1294,22 @@
             }
         }
 
-        // 샘플 키워드 데이터
+        // 샘플 키워드 데이터 (Top5)
         function getSampleKeywords(weekNumber, region = 'domestic') {
             const domesticData = {
-                1: ['전기차', '배터리', '충전인프라'],
-                2: ['메타버스', 'VR', '가상현실'],
-                3: ['정보통신산업진흥원', 'AI Youth Festa 2025', '인공지능']
+                1: ['전기차', '배터리', '충전인프라', '자율주행', '테슬라'],
+                2: ['메타버스', 'VR', '가상현실', 'AR', 'NFT'],
+                3: ['인공지능', 'AI', 'ChatGPT', '머신러닝', '딥러닝']
             };
             
             const globalData = {
-                1: ['Tesla', 'Apple', 'Microsoft'],
-                2: ['ChatGPT', 'OpenAI', 'Meta'],
-                3: ['Google', 'NVIDIA', 'Amazon']
+                1: ['Tesla', 'Apple', 'Microsoft', 'Google', 'Amazon'],
+                2: ['ChatGPT', 'OpenAI', 'Meta', 'Twitter', 'TikTok'],
+                3: ['NVIDIA', 'AMD', 'Intel', 'Samsung', 'TSMC']
             };
             
             const dataSource = region === 'global' ? globalData : domesticData;
-            return dataSource[weekNumber] || ['키워드1', '키워드2', '키워드3'];
+            return dataSource[weekNumber] || ['키워드1', '키워드2', '키워드3', '키워드4', '키워드5'];
         }
 
         // 주차별 키워드 표시 (최적화 버전)

@@ -308,13 +308,13 @@ async def fetch_tech_articles(start_date: str, end_date: str) -> List[Dict[str, 
         return []
     
     try:
-        # 빠른 처리를 위해 최소한의 기사만 수집
+        # 충분한 기사 수집으로 더 정확한 키워드 분석
         base_url = DEEPSEARCH_TECH_URL
         params = {
             "api_key": DEEPSEARCH_API_KEY,
             "date_from": start_date,
             "date_to": end_date,
-            "page_size": 20  # 20개로 줄여서 빠른 처리
+            "page_size": 50  # 20개에서 50개로 증가하여 더 많은 데이터 수집
         }
         
         logger.info(f"� Tech 기사 수집 중...")
@@ -394,7 +394,7 @@ async def fetch_global_tech_articles(start_date: str, end_date: str) -> List[Dic
             "keyword": "tech",  # 해외에서는 tech 키워드로 검색
             "date_from": start_date,
             "date_to": end_date,
-            "page_size": 20  # 빠른 처리를 위해 20개로 제한
+            "page_size": 50  # 20개에서 50개로 증가하여 더 많은 데이터 수집
         }
         
         logger.info(f"🌍 해외 Tech 기사 수집 중...")
@@ -471,10 +471,10 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
         titles_text = " ".join([article['title'][:50] for article in top_articles])
         
         # 간단한 프롬프트로 속도 향상
-        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 3개만 추출하세요:
+        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하세요:
 {titles_text}
 
-형식: 키워드1, 키워드2, 키워드3"""
+형식: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5"""
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -482,7 +482,7 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
                 {"role": "system", "content": "IT기술 키워드 추출 전문가"},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=50,  # 더 짧게
+            max_tokens=80,  # 5개 키워드에 맞게 증가
             temperature=0  # 일관성 최대화
         )
         
@@ -492,14 +492,14 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
         
         # 빠른 키워드 파싱
         keywords = []
-        for i, item in enumerate(keywords_text.split(',')[:3], 1):  # 최대 3개
-            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '')
+        for i, item in enumerate(keywords_text.split(',')[:5], 1):  # Top 5로 증가
+            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '')
             keyword = re.sub(r'[^\w가-힣]', '', keyword)  # 특수문자 제거
             
             if keyword and 2 <= len(keyword) <= 10:
                 keywords.append({
                     "keyword": keyword,
-                    "count": 30 - (i * 5),
+                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로
                     "rank": i
                 })
         
@@ -508,10 +508,12 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
             keywords = [
                 {"keyword": "인공지능", "count": 25, "rank": 1},
                 {"keyword": "반도체", "count": 20, "rank": 2},
-                {"keyword": "클라우드", "count": 15, "rank": 3}
+                {"keyword": "클라우드", "count": 15, "rank": 3},
+                {"keyword": "빅데이터", "count": 10, "rank": 4},
+                {"keyword": "로봇", "count": 5, "rank": 5}
             ]
         
-        return keywords[:3]  # 최대 3개 반환
+        return keywords[:5]  # Top 5 반환
         
     except Exception as e:
         logger.error(f"❌ 키워드 추출 오류: {e}")
@@ -534,14 +536,14 @@ async def extract_global_keywords_with_gpt(articles: List[Dict[str, Any]]) -> Li
         titles_text = " ".join([article['title'][:50] for article in top_articles])
         
         # 영어 키워드 추출을 위한 프롬프트
-        prompt = f"""Extract 3 key English tech keywords from these global news titles:
+        prompt = f"""Extract 5 key English tech keywords from these global news titles:
 {titles_text}
 
 Requirements:
 - Only English words
 - Tech/Technology focused
 - No Korean words
-Format: keyword1, keyword2, keyword3"""
+Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -558,14 +560,14 @@ Format: keyword1, keyword2, keyword3"""
         
         # 영어 키워드 파싱
         keywords = []
-        for i, item in enumerate(keywords_text.split(',')[:3], 1):  # 최대 3개
-            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '')
+        for i, item in enumerate(keywords_text.split(',')[:5], 1):  # Top 5로 증가
+            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '')
             keyword = re.sub(r'[^a-zA-Z\s]', '', keyword).strip()  # 영어만 허용
             
             if keyword and 2 <= len(keyword) <= 15 and keyword.replace(' ', '').isalpha():
                 keywords.append({
                     "keyword": keyword,
-                    "count": 30 - (i * 5),
+                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로
                     "rank": i
                 })
         
@@ -574,10 +576,12 @@ Format: keyword1, keyword2, keyword3"""
             keywords = [
                 {"keyword": "AI Technology", "count": 25, "rank": 1},
                 {"keyword": "Innovation", "count": 20, "rank": 2},
-                {"keyword": "Digital Transformation", "count": 15, "rank": 3}
+                {"keyword": "Digital Transformation", "count": 15, "rank": 3},
+                {"keyword": "Machine Learning", "count": 10, "rank": 4},
+                {"keyword": "Cloud Computing", "count": 5, "rank": 5}
             ]
         
-        return keywords[:3]  # 최대 3개 반환
+        return keywords[:5]  # Top 5 반환
         
     except Exception as e:
         logger.error(f"❌ 해외 키워드 추출 오류: {e}")
@@ -615,7 +619,7 @@ async def search_articles_by_keyword(keyword: str, start_date: str, end_date: st
             "keyword": keyword,  # 사용자 예시에 맞춰 keyword 파라미터 사용
             "date_from": start_date,
             "date_to": end_date,
-            "page_size": 15  # 기사 수를 줄여서 빠른 응답
+            "page_size": 50  # 15개에서 50개로 증가하여 더 많은 관련 기사 수집
         }
         
         logger.info(f"🔍 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
@@ -811,7 +815,7 @@ async def search_global_keyword_articles(keyword: str, start_date: str = "2025-0
             "keyword": keyword,
             "date_from": start_date,
             "date_to": end_date,
-            "page_size": 15  # 빠른 처리를 위해 15개로 제한
+            "page_size": 50  # 15개에서 50개로 증가하여 더 많은 해외 기사 수집
         }
         
         logger.info(f"🔍 해외 키워드 '{keyword}' 검색...")
@@ -1427,7 +1431,7 @@ async def get_weekly_keywords_by_date(start_date: str = Query(..., description="
                 # GPT로 키워드 추출
                 extracted_keywords = await extract_keywords_with_gpt(tech_articles)
                 if extracted_keywords:
-                    keywords = [kw["keyword"] for kw in extracted_keywords[:3]]  # 상위 3개만
+                    keywords = [kw["keyword"] for kw in extracted_keywords[:5]]  # Top 5로 증가
                 else:
                     keywords = get_sample_keywords_by_date(start_date, end_date)
                 tech_articles_count = len(tech_articles)
@@ -1469,7 +1473,7 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
             # 해외 전용 GPT로 영어 키워드 추출
             extracted_keywords = await extract_global_keywords_with_gpt(global_tech_articles)
             if extracted_keywords:
-                keywords = [kw["keyword"] for kw in extracted_keywords[:3]]  # 상위 3개만
+                keywords = [kw["keyword"] for kw in extracted_keywords[:5]]  # Top 5로 증가
             else:
                 keywords = get_global_sample_keywords_by_date(start_date, end_date)
         
