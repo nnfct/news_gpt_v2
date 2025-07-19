@@ -1,22 +1,582 @@
-# 🏗️ System Design Document - NEWS GPT v2
+# 🎨 News GPT v2 - Design Specification (2025.07.20 최신화)
 
-## 📋 문서 개요
+## 🎯 디자인 개요
 
-### 문서 목적
-NEWS GPT v2 시스템의 전체 아키텍처, 컴포넌트 설계, 데이터 모델, API 설계 등을 상세히 기술하여 개발 및 유지보수의 가이드라인을 제공
+News GPT v2는 DeepSearch API와 Azure OpenAI를 활용한 실시간 뉴스 키워드 분석 플랫폼의 UI/UX 디자인 가이드입니다. 새로운 워크플로우에 맞춰 사용자 경험을 최적화했습니다.
 
-### 문서 범위
-- 시스템 아키텍처 및 컴포넌트 설계
-- 데이터베이스 및 데이터 모델 설계
-- API 설계 및 인터페이스 명세
-- 사용자 인터페이스 설계
-- 보안 및 성능 고려사항
+## �️ 새로운 시스템 아키텍처
 
-### 대상 독자
-- 백엔드 개발자
-- 프론트엔드 개발자
-- 시스템 아키텍트
-- 데브옵스 엔지니어
+### 워크플로우 기반 디자인
+```
+1️⃣ Tech 기사 수집 → 2️⃣ GPT 키워드 추출 → 3️⃣ 키워드별 기사 검색 → 4️⃣ 관련 기사 표시 → 5️⃣ 원본 URL 리다이렉트
+```
+
+### API 엔드포인트 구조
+- **`/api/keywords`**: Tech 기사 기반 키워드 추출
+- **`/api/keyword-articles/{keyword}`**: 키워드별 관련 기사
+- **`/api/redirect/{article_id}`**: 원본 URL 리다이렉트
+- **`/weekly-keywords-by-date`**: 날짜별 키워드 (프론트 연동)
+
+## �🎨 디자인 철학
+
+### 1. 핵심 가치
+- **효율성 (Efficiency)**: 빠른 키워드 추출과 관련 기사 검색
+- **직관성 (Intuitiveness)**: 클릭 한 번으로 관련 기사 확인
+- **신뢰성 (Reliability)**: DeepSearch API 기반 정확한 데이터
+- **반응성 (Responsiveness)**: 실시간 키워드 분석과 피드백
+
+### 2. 새로운 사용자 중심 설계
+- **워크플로우 시각화**: 1단계부터 5단계까지의 과정 표시
+- **키워드 중심 네비게이션**: 추출된 키워드를 중심으로 한 UI
+- **실시간 피드백**: API 요청 상태와 결과를 즉시 표시
+- **원본 소스 접근**: 기사 클릭시 원본 URL로 바로 이동
+
+## 🎨 컬러 팔레트
+
+### Primary Colors
+```css
+:root {
+  /* DeepSearch 브랜드 색상 */
+  --deepsearch-blue: #2563eb;
+  --deepsearch-purple: #7c3aed;
+  
+  /* 워크플로우 단계별 색상 */
+  --step1-color: #059669; /* Tech 기사 수집 */
+  --step2-color: #dc2626; /* GPT 키워드 추출 */
+  --step3-color: #7c2d12; /* 키워드 검색 */
+  --step4-color: #1d4ed8; /* 기사 표시 */
+  --step5-color: #7c3aed; /* URL 리다이렉트 */
+  
+  /* 기본 그라디언트 */
+  --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+```
+
+### Workflow Status Colors
+```css
+:root {
+  /* API 상태 색상 */
+  --status-loading: #f59e0b;
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-cached: #8b5cf6;
+}
+```
+
+### Neutral Colors
+```css
+:root {
+  /* 텍스트 색상 */
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  /* 배경 색상 */
+  --bg-white: #ffffff;
+  --bg-gray-50: #f9fafb;
+  --bg-gray-100: #f3f4f6;
+  --bg-gray-200: #e5e7eb;
+  
+  /* 경계선 색상 */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+  --border-dark: #9ca3af;
+}
+```
+
+### Accent Colors
+```css
+:root {
+  /* 키워드 태그 색상 */
+  --tag-ai: #8b5cf6;
+  --tag-tech: #06b6d4;
+  --tag-business: #10b981;
+  --tag-society: #f59e0b;
+  --tag-world: #ef4444;
+  
+  /* 하이라이트 색상 */
+  --highlight-yellow: #fef3c7;
+  --highlight-blue: #dbeafe;
+  --highlight-green: #d1fae5;
+}
+```
+
+## 🔤 타이포그래피
+
+### 1. 기본 폰트 스택
+```css
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+```
+
+### 2. 폰트 크기 시스템
+```css
+:root {
+  /* 제목 */
+  --font-size-h1: 2.5rem;   /* 40px */
+  --font-size-h2: 2rem;     /* 32px */
+  --font-size-h3: 1.5rem;   /* 24px */
+  --font-size-h4: 1.25rem;  /* 20px */
+  
+  /* 본문 */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-base: 1rem;   /* 16px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-xs: 0.75rem;  /* 12px */
+}
+```
+
+### 3. 폰트 굵기
+```css
+:root {
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+```
+
+### 4. 줄 간격
+```css
+:root {
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+}
+```
+
+## � 레이아웃 시스템
+
+### 1. 컨테이너 크기
+```css
+:root {
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  
+  /* 메인 컨테이너 */
+  --container-main: 1200px;
+}
+```
+
+### 2. 간격 시스템
+```css
+:root {
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+  --spacing-20: 5rem;     /* 80px */
+}
+```
+
+### 3. 반응형 브레이크포인트
+```css
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+```
+
+## 🧩 컴포넌트 디자인
+
+### 1. 헤더 (Header)
+```css
+.header {
+  background: var(--primary-gradient);
+  padding: var(--spacing-10) var(--spacing-5);
+  text-align: center;
+  color: white;
+}
+
+.header h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-light);
+  margin-bottom: var(--spacing-2);
+}
+
+.header .subtitle {
+  font-size: var(--font-size-lg);
+  opacity: 0.9;
+}
+```
+
+### 2. 키워드 태그 (Keyword Tags)
+```css
+.keyword-tag {
+  display: inline-block;
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--bg-white);
+  border: 2px solid var(--border-light);
+  border-radius: 25px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: var(--spacing-1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.keyword-tag:hover {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.keyword-tag.active {
+  background: var(--primary-gradient);
+  color: white;
+  border-color: transparent;
+}
+```
+
+### 3. 카드 컴포넌트 (Cards)
+```css
+.card {
+  background: var(--bg-white);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-6);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.card-title {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-3);
+}
+
+.card-content {
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+```
+
+### 4. 챗봇 인터페이스 (Chat Interface)
+```css
+.chat-container {
+  background: var(--bg-white);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: var(--spacing-4);
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.chat-message {
+  margin-bottom: var(--spacing-3);
+  padding: var(--spacing-3);
+  border-radius: 8px;
+}
+
+.chat-message.user {
+  background: var(--highlight-blue);
+  margin-left: var(--spacing-8);
+}
+
+.chat-message.assistant {
+  background: var(--bg-gray-50);
+  margin-right: var(--spacing-8);
+}
+
+.chat-input-container {
+  display: flex;
+  padding: var(--spacing-4);
+  border-top: 1px solid var(--border-light);
+}
+
+.chat-input {
+  flex: 1;
+  padding: var(--spacing-3);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: var(--font-size-base);
+  outline: none;
+}
+
+.chat-input:focus {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.chat-button {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: var(--spacing-3) var(--spacing-5);
+  margin-left: var(--spacing-2);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: all 0.3s ease;
+}
+
+.chat-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+```
+
+### 5. 탭 시스템 (Tab System)
+```css
+.tab-container {
+  background: var(--bg-white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.tab-nav {
+  display: flex;
+  background: var(--bg-gray-50);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab-button {
+  flex: 1;
+  padding: var(--spacing-4);
+  background: none;
+  border: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-button.active {
+  background: var(--bg-white);
+  color: var(--primary-blue);
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+.tab-content {
+  padding: var(--spacing-6);
+}
+```
+
+## 📱 반응형 디자인
+
+### 1. 모바일 우선 (Mobile First)
+```css
+/* Mobile Styles (기본) */
+.container {
+  padding: var(--spacing-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-4);
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .container {
+    padding: var(--spacing-6);
+  }
+  
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-6);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .container {
+    padding: var(--spacing-8);
+  }
+  
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+```
+
+### 2. 반응형 타이포그래피
+```css
+.responsive-text {
+  font-size: var(--font-size-base);
+}
+
+@media (min-width: 768px) {
+  .responsive-text {
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-text {
+    font-size: var(--font-size-h4);
+  }
+}
+```
+
+## 🎯 인터랙션 디자인
+
+### 1. 호버 효과 (Hover Effects)
+```css
+/* 부드러운 변환 효과 */
+.interactive-element {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-element:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+```
+
+### 2. 클릭 피드백 (Click Feedback)
+```css
+.clickable {
+  transition: transform 0.1s ease;
+}
+
+.clickable:active {
+  transform: translateY(1px);
+}
+```
+
+### 3. 로딩 상태 (Loading States)
+```css
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+```
+
+## 🔍 사용자 경험 (UX) 가이드라인
+
+### 1. 정보 계층 구조
+1. **1차 정보**: 주간 TOP 3 키워드 (가장 큰 크기, 강조)
+2. **2차 정보**: 섹션별 분석 결과
+3. **3차 정보**: 상세 뉴스 기사 목록
+
+### 2. 사용자 여정 (User Journey)
+1. **진입**: 메인 페이지에서 주간 키워드 확인
+2. **탐색**: 관심 키워드 클릭하여 상세 분석 확인
+3. **상호작용**: 챗봇을 통한 추가 질문 및 분석
+4. **깊이 탐색**: 관련 뉴스 기사 상세 보기
+
+### 3. 접근성 (Accessibility)
+```css
+/* 포커스 표시 */
+.focusable:focus {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* 텍스트 대비 보장 */
+.text-high-contrast {
+  color: var(--text-primary);
+  background: var(--bg-white);
+}
+
+/* 터치 타겟 크기 */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+```
+
+## 🎭 애니메이션 가이드라인
+
+### 1. 기본 원칙
+- **목적성**: 모든 애니메이션은 사용자 이해를 돕는 목적
+- **자연스러움**: ease-in-out 또는 cubic-bezier 사용
+- **적당한 속도**: 0.2-0.5초 범위의 지속 시간
+
+### 2. 애니메이션 유틸리티
+```css
+/* 페이드 인 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 스케일 효과 */
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* 슬라이드 인 */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+```
+
+## 🎨 브랜드 아이덴티티
+
+### 1. 로고 및 아이콘
+- **로고 타입**: 🔍 AI 뉴스 키워드 분석
+- **아이콘 스타일**: Heroicons 또는 Lucide 스타일
+- **크기**: 24px (기본), 32px (중간), 48px (큰 크기)
+
+### 2. 톤 앤 매너 (Tone & Manner)
+- **전문적이면서 친근함**: 복잡한 데이터를 쉽게 설명
+- **신뢰성**: 정확한 정보 전달에 중점
+- **혁신성**: 최신 AI 기술 활용을 강조
+
+### 3. 메시징
+- **헤드라인**: "AI가 분석한 이번 주 핵심 키워드"
+- **서브헤드라인**: "실시간 뉴스 데이터로 트렌드를 먼저 파악하세요"
+- **CTA**: "지금 분석 결과 보기", "키워드 상세 분석"
+
+이 디자인 가이드는 News GPT v2의 일관된 사용자 경험을 제공하기 위한 기준점 역할을 합니다.
 
 ## 🏛️ 시스템 아키텍처 (System Architecture)
 
@@ -868,7 +1428,7 @@ class APIKeyManager:
         self.keys = {
             'azure_openai': os.getenv('AZURE_OPENAI_API_KEY'),
             'azure_search': os.getenv('AZURE_SEARCH_API_KEY'),
-            'naver_news': os.getenv('NAVER_CLIENT_ID')
+            'deepsearch_news': os.getenv('DEEPSEARCH_API_KEY')
         }
     
     def validate_key(self, service: str) -> bool:

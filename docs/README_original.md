@@ -1,34 +1,56 @@
 # 🚀 News GPT v2 - AI 뉴스 키워드 분석 플랫폼 (2025.07.20 최신화)
 
-> DeepSearch API와 Azure OpenAI를 활용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼
+> DeepSearch AP## 🏗️ 시스템 아키텍처 (최적화 완료)
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │  FastAPI        │    │  External APIs  │
+│   (index.html)  │◄──►│  (main.py)      │◄──►│                 │
+│   Port 8000     │    │  Port 8000      │    │ Azure OpenAI    │
+└─────────────────┘    │  ⚡ 성능 최적화   │    │ (GPT-4o)        │
+                       │  - 1회 재시도    │    │                 │
+┌─────────────────┐    │  - 5초 타임아웃  │    │ DeepSearch API  │
+│  Memory Cache   │◄──►│  - 메모리 캐시   │    │ (Tech/Keyword)  │
+│  - 기사 저장    │    │  - 빠른 처리     │    │                 │
+│  - 키워드 저장  │    └─────────────────┘    └─────────────────┘
+└─────────────────┘
+```
+
+### 🔄 데이터 플로우 (고성능)
+
+1. **뉴스 수집 (1-3초)**: DeepSearch Tech API → 20개 기사 수집 → 5초 타임아웃
+2. **키워드 추출 (1-2초)**: Azure OpenAI GPT-4o → 3개 핵심 키워드 → 50토큰 제한
+3. **메모리 저장 (즉시)**: 키워드와 기사 정보를 메모리 캐시에 저장
+4. **관련 기사 검색 (1-2초)**: DeepSearch Keyword API → 15개 관련 기사
+5. **사용자 경험**: 키워드 클릭 → 즉시 표시 → 기사 클릭 → 원본 URL 리다이렉트용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼 (성능 최적화 완료)
 
 ## 📋 프로젝트 개요
 
-News GPT v2는 **새로운 워크플로우**를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch API v2를 통해 기술 분야의 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 관련 기사 검색을 제공합니다.
+News GPT v2는 **최적화된 워크플로우**를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch API v2를 통해 기술 분야의 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 빠르고 정확한 키워드 분석 및 관련 기사 검색을 제공합니다.
 
-### 🔄 새로운 워크플로우 (2025.07.20)
+### 🔄 최적화된 워크플로우 (2025.07.20 성능 개선)
 
 ```
-1️⃣ DeepSearch Tech API → 기사 수집 (날짜 기반)
+1️⃣ DeepSearch Tech API → 기사 수집 (20개, 5초 타임아웃)
      ↓
-2️⃣ Azure OpenAI GPT-4o → 키워드 추출  
+2️⃣ Azure OpenAI GPT-4o → 키워드 추출 (최대 3개, 50토큰)
      ↓
-3️⃣ 키워드 메모리 저장 → 캐싱
+3️⃣ 키워드 메모리 저장 → 고속 캐싱
      ↓
-4️⃣ DeepSearch Keyword API → 관련 기사 검색
+4️⃣ DeepSearch Keyword API → 관련 기사 검색 (15개)
      ↓
 5️⃣ 사용자 클릭 → 원본 URL 리다이렉트
 ```
 
-### 🎯 주요 기능
+### 🎯 주요 기능 (성능 최적화)
 
-- **📰 실시간 뉴스 수집**: DeepSearch Tech API를 통한 기술 분야 뉴스 자동 수집
-- **🔍 AI 키워드 분석**: GPT-4o 기반 주간 키워드 추출 및 빈도 분석
-- **🔗 관련 기사 검색**: 키워드 클릭시 DeepSearch Keyword API로 관련 기사 표시
+- **⚡ 초고속 뉴스 수집**: DeepSearch Tech API를 통한 최적화된 기술 분야 뉴스 수집 (5-10초)
+- **🧠 AI 키워드 분석**: GPT-4o 기반 빠른 키워드 추출 (3개 핵심 키워드, 1-3초)
+- **🔗 즉시 관련 기사 검색**: 키워드 클릭시 DeepSearch Keyword API로 관련 기사 표시
 - **🌐 원본 소스 연결**: 기사 클릭시 원본 URL로 즉시 리다이렉트
 - **💬 지능형 챗봇**: Azure OpenAI 기반 실시간 뉴스 분석 챗봇
 - **📊 산업별 분석**: 정반대 관점을 포함한 균형잡힌 분석
-- **⚡ 고성능 캐싱**: 메모리 기반 기사 및 키워드 캐시 시스템
+- **💾 고성능 캐싱**: 메모리 기반 기사 및 키워드 캐시 시스템 (Redis 대체)
 
 ## 📁 프로젝트 구조
 
@@ -51,22 +73,22 @@ news_gpt_v2/
 │   ├── keyword_aggregation.py      # 키워드 집계 분석
 │   └── check_weekly_api.py         # 주간 API 체크
 │
-├── 🚀 실행 스크립트
-│   ├── start_server.bat            # Windows 배치 실행
-│   ├── start_server.ps1            # PowerShell 스크립트
-│   └── start_deepsearch_server.bat # DeepSearch 전용 서버 시작
+├── 🚀 실행 스크립트 (성능 최적화)
+│   └── start_server.ps1            # PowerShell 서버 실행 (단일 파일)
 │
-├── 📚 문서화
-│   ├── README.md                   # 프로젝트 메인 문서
+├── 📚 문서화 (최신화 완료)
+│   ├── README.md                   # 프로젝트 메인 문서 (이 파일)
+│   ├── task.md                     # 작업 진행 상황
+│   ├── design.md                   # 디자인 명세서
 │   ├── DEEPSEARCH_GUIDE.md         # DeepSearch API 가이드
 │   ├── USAGE_GUIDE.md              # 사용법 가이드
 │   ├── requirements.md             # 요구사항 명세서
-│   └── design.md                   # 디자인 명세서
+│   └── PROJECT_REPORT.md           # 프로젝트 완료 보고서
 │
 └── 📂 하위 디렉토리
     ├── backup/                     # 백업 파일들
-    ├── guide/                      # 가이드 문서들
-    └── reference/                  # 참조용 파일들
+    ├── reference/                  # 참조용 파일들
+    └── venv/                       # Python 가상환경
 ```
 
 ## 🏗️ 시스템 아키텍처

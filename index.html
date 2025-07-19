@@ -57,6 +57,39 @@
             border: 1px solid #E9ECEF;
         }
 
+        .summary-container {
+            display: flex;
+            gap: 30px;
+        }
+
+        .summary-half {
+            flex: 1;
+        }
+
+        .summary-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #343A40;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #E9ECEF;
+        }
+
+        .summary-title.domestic {
+            color: #5A7DBC;
+        }
+
+        .summary-title.global {
+            color: #d45252;
+        }
+
+        @media (max-width: 768px) {
+            .summary-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+
         .week-section {
             margin-bottom: 30px;
         }
@@ -527,38 +560,81 @@
     <div class="main-container">
         <!-- 주간 요약 섹션 -->
         <div class="weekly-summary">
-            <h2 class="section-title">📅 주간 요약</h2>
+            <div class="summary-container">
+                <!-- 국내 주간 요약 -->
+                <div class="summary-half">
+                    <h2 class="summary-title domestic">🇰🇷 국내 주간 요약</h2>
 
-            <!-- 7월 1주차 (7/1~7/5) -->
-            <div class="week-section">
-                <div class="week-header">
-                    <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
-                    <div class="week-loading" id="week1-loading">분석 중...</div>
-                </div>
-                <div class="keywords-container" id="week1-keywords">
-                    <!-- 1주차 키워드들 -->
-                </div>
-            </div>
+                    <!-- 7월 1주차 (7/1~7/5) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
+                            <div class="week-loading" id="week1-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="week1-keywords">
+                            <!-- 1주차 키워드들 -->
+                        </div>
+                    </div>
 
-            <!-- 7월 2주차 (7/6~7/13) -->
-            <div class="week-section">
-                <div class="week-header">
-                    <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
-                    <div class="week-loading" id="week2-loading">분석 중...</div>
-                </div>
-                <div class="keywords-container" id="week2-keywords">
-                    <!-- 2주차 키워드들 -->
-                </div>
-            </div>
+                    <!-- 7월 2주차 (7/6~7/13) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
+                            <div class="week-loading" id="week2-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="week2-keywords">
+                            <!-- 2주차 키워드들 -->
+                        </div>
+                    </div>
 
-            <!-- 7월 3주차 (7/14~7/18) -->
-            <div class="week-section">
-                <div class="week-header">
-                    <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
-                    <div class="week-loading" id="week3-loading">분석 중...</div>
+                    <!-- 7월 3주차 (7/14~7/18) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
+                            <div class="week-loading" id="week3-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="week3-keywords">
+                            <!-- 3주차 키워드들 -->
+                        </div>
+                    </div>
                 </div>
-                <div class="keywords-container" id="week3-keywords">
-                    <!-- 3주차 키워드들 -->
+
+                <!-- 해외 주간 요약 -->
+                <div class="summary-half">
+                    <h2 class="summary-title global">🌍 해외 주간 요약</h2>
+
+                    <!-- 7월 1주차 (7/1~7/5) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 1주차 (2025.07.01 ~ 2025.07.05)</h3>
+                            <div class="week-loading" id="global-week1-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="global-week1-keywords">
+                            <!-- 해외 1주차 키워드들 -->
+                        </div>
+                    </div>
+
+                    <!-- 7월 2주차 (7/6~7/13) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 2주차 (2025.07.06 ~ 2025.07.13)</h3>
+                            <div class="week-loading" id="global-week2-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="global-week2-keywords">
+                            <!-- 해외 2주차 키워드들 -->
+                        </div>
+                    </div>
+
+                    <!-- 7월 3주차 (7/14~7/18) -->
+                    <div class="week-section">
+                        <div class="week-header">
+                            <h3 class="week-title">7월 3주차 (2025.07.14 ~ 2025.07.18) - 현재</h3>
+                            <div class="week-loading" id="global-week3-loading">분석 중...</div>
+                        </div>
+                        <div class="keywords-container" id="global-week3-keywords">
+                            <!-- 해외 3주차 키워드들 -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -633,51 +709,71 @@
 
         // 모든 주간 키워드 불러오기
         async function loadAllWeeklyKeywords() {
-            // 각 주차별 키워드 로드
-            loadWeekKeywords(1, '2025-07-01', '2025-07-05');
-            loadWeekKeywords(2, '2025-07-06', '2025-07-13');
-            loadWeekKeywords(3, '2025-07-14', '2025-07-18');
+            // 각 주차별 국내 키워드 로드
+            loadWeekKeywords(1, '2025-07-01', '2025-07-05', 'domestic');
+            loadWeekKeywords(2, '2025-07-06', '2025-07-13', 'domestic');
+            loadWeekKeywords(3, '2025-07-14', '2025-07-18', 'domestic');
+            
+            // 각 주차별 해외 키워드 로드
+            loadWeekKeywords(1, '2025-07-01', '2025-07-05', 'global');
+            loadWeekKeywords(2, '2025-07-06', '2025-07-13', 'global');
+            loadWeekKeywords(3, '2025-07-14', '2025-07-18', 'global');
         }
 
         // 특정 주차 키워드 불러오기
-        async function loadWeekKeywords(weekNumber, startDate, endDate) {
+        async function loadWeekKeywords(weekNumber, startDate, endDate, region = 'domestic') {
             try {
-                const loadingElement = document.getElementById(`week${weekNumber}-loading`);
-                const keywordsContainer = document.getElementById(`week${weekNumber}-keywords`);
+                const elementPrefix = region === 'global' ? 'global-' : '';
+                const loadingElement = document.getElementById(`${elementPrefix}week${weekNumber}-loading`);
+                const keywordsContainer = document.getElementById(`${elementPrefix}week${weekNumber}-keywords`);
 
                 loadingElement.textContent = '분석 중...';
 
-                const response = await fetch(`http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`);
+                // 해외는 global-weekly-keywords-by-date, 국내는 weekly-keywords-by-date 사용
+                const apiEndpoint = region === 'global' 
+                    ? `http://127.0.0.1:8000/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
+                    : `http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
+                
+                const response = await fetch(apiEndpoint);
                 const data = await response.json();
 
                 loadingElement.classList.add('hidden');
-                displayWeekKeywords(keywordsContainer, data.keywords, weekNumber);
+                displayWeekKeywords(keywordsContainer, data.keywords, weekNumber, region);
 
             } catch (error) {
-                console.error(`${weekNumber}주차 키워드 로딩 오류:`, error);
-                const loadingElement = document.getElementById(`week${weekNumber}-loading`);
+                console.error(`${weekNumber}주차 ${region === 'global' ? '해외' : '국내'} 키워드 로딩 오류:`, error);
+                const elementPrefix = region === 'global' ? 'global-' : '';
+                const loadingElement = document.getElementById(`${elementPrefix}week${weekNumber}-loading`);
                 loadingElement.textContent = '로딩 실패';
 
                 // 샘플 데이터로 대체
-                const sampleKeywords = getSampleKeywords(weekNumber);
-                const keywordsContainer = document.getElementById(`week${weekNumber}-keywords`);
-                displayWeekKeywords(keywordsContainer, sampleKeywords, weekNumber);
+                const sampleKeywords = getSampleKeywords(weekNumber, region);
+                const keywordsContainer = document.getElementById(`${elementPrefix}week${weekNumber}-keywords`);
+                displayWeekKeywords(keywordsContainer, sampleKeywords, weekNumber, region);
                 setTimeout(() => loadingElement.classList.add('hidden'), 1000);
             }
         }
 
         // 샘플 키워드 데이터
-        function getSampleKeywords(weekNumber) {
-            const sampleData = {
+        function getSampleKeywords(weekNumber, region = 'domestic') {
+            const domesticData = {
                 1: ['전기차', '배터리', '충전인프라'],
                 2: ['메타버스', 'VR', '가상현실'],
                 3: ['정보통신산업진흥원', 'AI Youth Festa 2025', '인공지능']
             };
-            return sampleData[weekNumber] || ['키워드1', '키워드2', '키워드3'];
+            
+            const globalData = {
+                1: ['Tesla', 'Apple', 'Microsoft'],
+                2: ['ChatGPT', 'OpenAI', 'Meta'],
+                3: ['Google', 'NVIDIA', 'Amazon']
+            };
+            
+            const dataSource = region === 'global' ? globalData : domesticData;
+            return dataSource[weekNumber] || ['키워드1', '키워드2', '키워드3'];
         }
 
         // 주차별 키워드 표시
-        function displayWeekKeywords(container, keywords, weekNumber) {
+        function displayWeekKeywords(container, keywords, weekNumber, region = 'domestic') {
             container.innerHTML = '';
 
             // 주차별 날짜 범위 매핑
@@ -691,14 +787,23 @@
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag';
                 keywordElement.textContent = keyword;
+                
+                // 지역별 구분을 위한 데이터 속성 추가
+                keywordElement.setAttribute('data-region', region);
+                
+                // 클릭 이벤트 - 관련 기사 표시 및 키워드 분석
+                keywordElement.addEventListener('click', function() {
+                    selectedKeyword = keyword;
+                    currentKeywords = [keyword];
+                    const dateRange = weekDateRanges[weekNumber];
+                    
+                    // 키워드 분석 수행
+                    performKeywordAnalysis(keyword);
 
-                // 주차 정보를 데이터 속성으로 저장
-                keywordElement.dataset.weekNumber = weekNumber;
-                keywordElement.dataset.startDate = weekDateRanges[weekNumber].start;
-                keywordElement.dataset.endDate = weekDateRanges[weekNumber].end;
+                    // 해당 주차 날짜로 관련 기사 표시
+                    openArticleModal(keyword, dateRange);
+                });
 
-                keywordElement.onclick = () => selectKeyword(keyword, weekNumber, weekDateRanges[weekNumber]);
-                keywordElement.ondblclick = () => showKeywordArticles(keyword, weekDateRanges[weekNumber]);
                 container.appendChild(keywordElement);
             });
         }
@@ -722,9 +827,6 @@
 
             // 동적으로 챗봇 제안 질문 업데이트
             updateChatSuggestions(keyword);
-
-            // 키워드 클릭 시 동적 분석 실행
-            performKeywordAnalysis(keyword);
 
             // 싱글 클릭: 해당 주차 날짜로 관련 기사 표시
             openArticleModal(keyword, dateRange);
@@ -759,6 +861,10 @@
         // 챗봇에 분석 결과 표시
         function displayAnalysisInChat(keyword, analysis) {
             const chatHistory = document.getElementById('chat-history');
+            if (!chatHistory) {
+                console.error('챗봇 히스토리 요소를 찾을 수 없습니다');
+                return;
+            }
 
             // 사용자 메시지 추가
             const userMessage = document.createElement('div');
@@ -766,39 +872,31 @@
             userMessage.innerHTML = `<div class="chat-user"><strong>키워드 분석:</strong> ${keyword}</div>`;
             chatHistory.appendChild(userMessage);
 
-            // AI 응답 - 트렌드 요약
-            const trendMessage = document.createElement('div');
-            trendMessage.className = 'chat-message';
-            trendMessage.innerHTML = `
+            // AI 응답 - 단순화된 분석 결과
+            const analysisMessage = document.createElement('div');
+            analysisMessage.className = 'chat-message';
+            
+            let analysisContent = '';
+            if (analysis.analysis) {
+                analysisContent = analysis.analysis;
+            } else if (analysis.trend_summary) {
+                analysisContent = analysis.trend_summary;
+            } else {
+                analysisContent = `${keyword}에 대한 분석 결과를 표시할 수 없습니다.`;
+            }
+            
+            analysisMessage.innerHTML = `
                 <div class="chat-bot">
-                    <strong>📊 ${keyword} 트렌드 요약</strong><br>
-                    ${analysis.trend_summary}
+                    <strong>🔍 ${keyword} 분석 결과</strong><br><br>
+                    ${analysisContent}
                 </div>
             `;
-            chatHistory.appendChild(trendMessage);
-
-            // AI 응답 - 다각도 분석
-            const perspectiveMessage = document.createElement('div');
-            perspectiveMessage.className = 'chat-message';
-
-            let perspectiveHtml = '<div class="chat-bot"><strong>🔍 다각도 분석</strong><br><br>';
-
-            Object.entries(analysis.perspectives).forEach(([perspective, content]) => {
-                perspectiveHtml += `
-                    <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                        <strong style="color: #667eea;">▶ ${perspective}</strong><br>
-                        <span style="font-size: 0.9em; line-height: 1.4;">${content}</span>
-                    </div>
-                `;
-            });
-
-            perspectiveHtml += '</div>';
-            perspectiveMessage.innerHTML = perspectiveHtml;
-            chatHistory.appendChild(perspectiveMessage);
+            chatHistory.appendChild(analysisMessage);
 
             // 스크롤을 가장 아래로
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
+        
 
         // 키워드 더블클릭시 분석 선택 모드
         document.addEventListener('dblclick', function (e) {
@@ -918,9 +1016,10 @@
                     data.articles.forEach((article, index) => {
                         const card = document.createElement('div');
                         card.className = 'article-card';
+                        card.style.cursor = 'pointer';
 
                         // 날짜 포맷 개선
-                        const displayDate = article.date || '날짜 정보 없음';
+                        const displayDate = article.date || article.published_at || '날짜 정보 없음';
                         const dateColor = '#6c757d';
 
                         card.innerHTML = `
@@ -928,8 +1027,17 @@
                                 ${displayDate}
                             </div>
                             <div class="article-title">${article.title}</div>
-                            <div class="article-summary">${article.summary}</div>
+                            <div class="article-summary">${article.summary || article.content || '요약 정보 없음'}</div>
                         `;
+
+                        // 기사 클릭시 원본 URL로 이동
+                        card.addEventListener('click', () => {
+                            if (article.url) {
+                                window.open(article.url, '_blank');
+                            } else {
+                                console.warn('기사 URL이 없습니다:', article);
+                            }
+                        });
 
                         articlesGrid.appendChild(card);
                     });
