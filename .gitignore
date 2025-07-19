@@ -1,22 +1,83 @@
+# News GPT v2 - Git 무시 파일
+
 # 환경변수 파일 (민감 정보 제외)
 .env
+.env.local
+.env.development
+.env.production
 
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
 # 로그 파일
 *.log
+logs/
 
 # 임시 파일
 *.tmp
 *.temp
+*.cache
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 백업 파일
+*.bak
+*.backup
+
+# 테스트 커버리지
+htmlcov/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover
+.pytest_cache/
+
+# 데이터 파일 (큰 파일)
+data/
+*.db
+*.sqlite
 
 # 테스트 파일
 test_*.py
