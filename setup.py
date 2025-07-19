@@ -104,13 +104,13 @@ def install_packages():
     return False
 
 def check_env_file():
-    """환경 설정 파일 확인 및 생성"""
-    print("\n🔑 환경 설정 확인")
+    """Environment configuration file check and creation"""
+    print("\n🔑 Environment Configuration Check")
     print("-" * 30)
     
     if os.path.exists(".env"):
-        print("✅ .env 파일이 존재합니다.")
-        # .env 파일 내용 간단 검증
+        print("✅ .env file exists.")
+        # Simple validation of .env file content
         with open(".env", "r", encoding="utf-8") as f:
             content = f.read()
             required_keys = ["DEEPSEARCH_API_KEY", "AZURE_OPENAI_API_KEY"]
