@@ -2,6 +2,7 @@
 import os
 import re
 import time
+import asyncio  # 추가
 import logging
 import requests
 import hashlib
@@ -14,8 +15,12 @@ from dotenv import load_dotenv
 from openai import AzureOpenAI
 from functools import wraps
 
-# 로깅 설정
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+# 로깅 설정 (최적화)
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    datefmt='%H:%M:%S'
+)
 logger = logging.getLogger("news_gpt_v2")
 
 # 환경변수 로드
@@ -52,25 +57,49 @@ DEEPSEARCH_GLOBAL_TECH_URL = "https://api-v2.deepsearch.com/v1/global-articles"
 DEEPSEARCH_GLOBAL_KEYWORD_URL = "https://api-v2.deepsearch.com/v1/global-articles"
 
 
-# API 호출 재시도 데코레이터 (성능 최적화)
-def retry_on_exception(max_retries=1, delay=0.1, backoff=1.2, allowed_exceptions=(Exception,)):  # 빠른 재시도
+# API 호출 재시도 데코레이터 (최적화)
+def retry_on_exception(max_retries=1, delay=0.1, backoff=1.2, allowed_exceptions=(Exception,)):
     def decorator(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            retries = 0
-            current_delay = delay
-            while True:
+        async def async_wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries + 1):
+                try:
+                    if asyncio.iscoroutinefunction(func):
+                        return await func(*args, **kwargs)
+                    else:
+                        return func(*args, **kwargs)
+                except allowed_exceptions as e:
+                    last_exception = e
+                    if attempt < max_retries:
+                        wait_time = delay * (backoff ** attempt)
+                        logger.warning(f"⚡ {func.__name__} 재시도 {attempt + 1}/{max_retries}, {wait_time:.1f}초 후")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        logger.error(f"❌ {func.__name__} 최종 실패: {str(e)}")
+            raise last_exception
+        
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries + 1):
                 try:
                     return func(*args, **kwargs)
                 except allowed_exceptions as e:
-                    retries += 1
-                    logger.warning(f"{func.__name__} 실패({retries}/{max_retries}): {e}")
-                    if retries >= max_retries:
-                        logger.error(f"{func.__name__} 최대 재시도 초과: {e}")
-                        raise
-                    time.sleep(current_delay)
-                    current_delay *= backoff
-        return wrapper
+                    last_exception = e
+                    if attempt < max_retries:
+                        wait_time = delay * (backoff ** attempt)
+                        logger.warning(f"⚡ {func.__name__} 재시도 {attempt + 1}/{max_retries}, {wait_time:.1f}초 후")
+                        time.sleep(wait_time)
+                    else:
+                        logger.error(f"❌ {func.__name__} 최종 실패: {str(e)}")
+            raise last_exception
+        
+        # 함수가 코루틴인지 확인
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
     return decorator
 
 # =============================================================================
@@ -223,9 +252,52 @@ async def get_global_keyword_articles(
 # 새로운 워크플로우 핵심 함수들
 # =============================================================================
 
-# 메모리 저장소 (실제 운영에서는 Redis나 데이터베이스 사용 권장)
+# 메모리 저장소 (최적화된 캐싱 시스템)
 articles_cache = {}  # {article_id: {url, title, content, ...}}
 keywords_cache = {}  # {keyword: [article_ids]}
+api_cache = {}  # API 응답 캐시 {endpoint_params: response_data}
+cache_timestamps = {}  # 캐시 생성 시간 저장
+
+# 캐시 설정
+CACHE_EXPIRY_MINUTES = 30  # 30분 캐시 유지
+MAX_CACHE_SIZE = 1000  # 최대 캐시 항목 수
+
+# 캐시 관리 함수들
+def get_cache_key(*args, **kwargs):
+    """캐시 키 생성"""
+    key_data = str(args) + str(sorted(kwargs.items()))
+    return hashlib.md5(key_data.encode()).hexdigest()
+
+def is_cache_valid(cache_key):
+    """캐시 유효성 검사"""
+    if cache_key not in cache_timestamps:
+        return False
+    
+    created_time = cache_timestamps[cache_key]
+    current_time = time.time()
+    age_minutes = (current_time - created_time) / 60
+    
+    return age_minutes < CACHE_EXPIRY_MINUTES
+
+def set_cache(cache_key, data):
+    """캐시 저장"""
+    # 캐시 크기 제한
+    if len(api_cache) >= MAX_CACHE_SIZE:
+        # 가장 오래된 캐시 제거
+        oldest_key = min(cache_timestamps.keys(), key=lambda k: cache_timestamps[k])
+        del api_cache[oldest_key]
+        del cache_timestamps[oldest_key]
+    
+    api_cache[cache_key] = data
+    cache_timestamps[cache_key] = time.time()
+    logger.info(f"💾 캐시 저장: {cache_key[:8]}... (총 {len(api_cache)}개)")
+
+def get_cache(cache_key):
+    """캐시 조회"""
+    if cache_key in api_cache and is_cache_valid(cache_key):
+        logger.info(f"⚡ 캐시 히트: {cache_key[:8]}...")
+        return api_cache[cache_key]
+    return None
 
 # 1단계: DeepSearch Tech에서 기사 수집
 @retry_on_exception(max_retries=1, delay=0.1, backoff=1.5, allowed_exceptions=(requests.RequestException,))
@@ -447,6 +519,72 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
             {"keyword": "인공지능", "count": 25, "rank": 1},
             {"keyword": "반도체", "count": 20, "rank": 2},
             {"keyword": "클라우드", "count": 15, "rank": 3}
+        ]
+
+# 2단계-해외: 해외 기사에서 영어 키워드 추출 
+async def extract_global_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """GPT를 사용해 해외 기사들에서 영어 키워드를 추출합니다 (최적화됨)"""
+    if not articles:
+        logger.warning("❌ 분석할 해외 기사가 없습니다")
+        return []
+    
+    try:
+        # 최적화: 상위 10개 기사만 분석하고 제목만 사용
+        top_articles = articles[:10]
+        titles_text = " ".join([article['title'][:50] for article in top_articles])
+        
+        # 영어 키워드 추출을 위한 프롬프트
+        prompt = f"""Extract 3 key English tech keywords from these global news titles:
+{titles_text}
+
+Requirements:
+- Only English words
+- Tech/Technology focused
+- No Korean words
+Format: keyword1, keyword2, keyword3"""
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=50,  # 더 짧게
+            temperature=0  # 일관성 최대화
+        )
+        
+        keywords_text = response.choices[0].message.content or ""
+        logger.info(f"🌍 해외 GPT 키워드 추출 완료: {keywords_text}")
+        
+        # 영어 키워드 파싱
+        keywords = []
+        for i, item in enumerate(keywords_text.split(',')[:3], 1):  # 최대 3개
+            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '')
+            keyword = re.sub(r'[^a-zA-Z\s]', '', keyword).strip()  # 영어만 허용
+            
+            if keyword and 2 <= len(keyword) <= 15 and keyword.replace(' ', '').isalpha():
+                keywords.append({
+                    "keyword": keyword,
+                    "count": 30 - (i * 5),
+                    "rank": i
+                })
+        
+        # 기본 영어 키워드 (빈 결과 시)
+        if not keywords:
+            keywords = [
+                {"keyword": "AI Technology", "count": 25, "rank": 1},
+                {"keyword": "Innovation", "count": 20, "rank": 2},
+                {"keyword": "Digital Transformation", "count": 15, "rank": 3}
+            ]
+        
+        return keywords[:3]  # 최대 3개 반환
+        
+    except Exception as e:
+        logger.error(f"❌ 해외 키워드 추출 오류: {e}")
+        return [
+            {"keyword": "Technology", "count": 25, "rank": 1},
+            {"keyword": "Innovation", "count": 20, "rank": 2},
+            {"keyword": "Digital", "count": 15, "rank": 3}
         ]
 
 # 3단계: 키워드를 메모리에 저장
@@ -1313,15 +1451,15 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
     try:
         logger.info(f"🌍 해외 날짜별 키워드 요청: {start_date} ~ {end_date}")
         
-        # 해외 Tech 기사 → GPT 키워드 추출 워크플로우 사용
+        # 해외 Tech 기사 → 해외 전용 GPT 키워드 추출 워크플로우 사용
         global_tech_articles = await fetch_global_tech_articles(start_date, end_date)
         if not global_tech_articles:
             logger.warning(f"❌ 해외 Tech 기사 없음: {start_date} ~ {end_date}")
             # 해외 샘플 키워드 반환
             keywords = get_global_sample_keywords_by_date(start_date, end_date)
         else:
-            # GPT로 키워드 추출 (해외 기사용)
-            extracted_keywords = await extract_keywords_with_gpt(global_tech_articles)
+            # 해외 전용 GPT로 영어 키워드 추출
+            extracted_keywords = await extract_global_keywords_with_gpt(global_tech_articles)
             if extracted_keywords:
                 keywords = [kw["keyword"] for kw in extracted_keywords[:3]]  # 상위 3개만
             else:
