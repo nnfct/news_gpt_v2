@@ -1,39 +1,65 @@
-# � News GPT v2 - Design Specification
+# 🎨 News GPT v2 - Design Specification (2025.07.20 최신화)
 
 ## 🎯 디자인 개요
 
-News GPT v2는 Azure OpenAI와 Azure AI Search를 활용한 실시간 뉴스 키워드 분석 플랫폼의 UI/UX 디자인 가이드입니다.
+News GPT v2는 DeepSearch API와 Azure OpenAI를 활용한 실시간 뉴스 키워드 분석 플랫폼의 UI/UX 디자인 가이드입니다. 새로운 워크플로우에 맞춰 사용자 경험을 최적화했습니다.
 
-## 🎨 디자인 철학
+## �️ 새로운 시스템 아키텍처
+
+### 워크플로우 기반 디자인
+```
+1️⃣ Tech 기사 수집 → 2️⃣ GPT 키워드 추출 → 3️⃣ 키워드별 기사 검색 → 4️⃣ 관련 기사 표시 → 5️⃣ 원본 URL 리다이렉트
+```
+
+### API 엔드포인트 구조
+- **`/api/keywords`**: Tech 기사 기반 키워드 추출
+- **`/api/keyword-articles/{keyword}`**: 키워드별 관련 기사
+- **`/api/redirect/{article_id}`**: 원본 URL 리다이렉트
+- **`/weekly-keywords-by-date`**: 날짜별 키워드 (프론트 연동)
+
+## �🎨 디자인 철학
 
 ### 1. 핵심 가치
-- **단순성 (Simplicity)**: 복잡한 데이터를 직관적으로 표현
-- **가독성 (Readability)**: 뉴스 콘텐츠의 명확한 전달
-- **반응성 (Responsiveness)**: 모든 디바이스에서 최적화된 경험
-- **접근성 (Accessibility)**: 모든 사용자가 쉽게 사용할 수 있는 인터페이스
+- **효율성 (Efficiency)**: 빠른 키워드 추출과 관련 기사 검색
+- **직관성 (Intuitiveness)**: 클릭 한 번으로 관련 기사 확인
+- **신뢰성 (Reliability)**: DeepSearch API 기반 정확한 데이터
+- **반응성 (Responsiveness)**: 실시간 키워드 분석과 피드백
 
-### 2. 사용자 중심 설계
-- **정보 우선**: 뉴스 키워드와 분석 결과가 주인공
-- **빠른 인사이트**: 한눈에 파악할 수 있는 데이터 시각화
-- **상호작용**: 직관적인 클릭과 호버 효과
+### 2. 새로운 사용자 중심 설계
+- **워크플로우 시각화**: 1단계부터 5단계까지의 과정 표시
+- **키워드 중심 네비게이션**: 추출된 키워드를 중심으로 한 UI
+- **실시간 피드백**: API 요청 상태와 결과를 즉시 표시
+- **원본 소스 접근**: 기사 클릭시 원본 URL로 바로 이동
 
 ## 🎨 컬러 팔레트
 
 ### Primary Colors
 ```css
 :root {
-  /* 메인 그라디언트 */
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* DeepSearch 브랜드 색상 */
+  --deepsearch-blue: #2563eb;
+  --deepsearch-purple: #7c3aed;
   
-  /* 기본 색상 */
-  --primary-blue: #667eea;
-  --primary-purple: #764ba2;
+  /* 워크플로우 단계별 색상 */
+  --step1-color: #059669; /* Tech 기사 수집 */
+  --step2-color: #dc2626; /* GPT 키워드 추출 */
+  --step3-color: #7c2d12; /* 키워드 검색 */
+  --step4-color: #1d4ed8; /* 기사 표시 */
+  --step5-color: #7c3aed; /* URL 리다이렉트 */
   
-  /* 상태 색상 */
-  --success-green: #10b981;
-  --warning-orange: #f59e0b;
-  --error-red: #ef4444;
-  --info-blue: #3b82f6;
+  /* 기본 그라디언트 */
+  --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+}
+```
+
+### Workflow Status Colors
+```css
+:root {
+  /* API 상태 색상 */
+  --status-loading: #f59e0b;
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-cached: #8b5cf6;
 }
 ```
 

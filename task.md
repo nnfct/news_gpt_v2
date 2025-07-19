@@ -1,70 +1,97 @@
-# 📋 News GPT v2 - Task Implementation Plan
+# 📋 News GPT v2 - Task Implementation Plan (2025.07.20 최신화)
 
 ## 🎯 프로젝트 목표
-Azure OpenAI와 Azure AI Search를 활용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼 구축
+DeepSearch API와 Azure OpenAI를 활용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼 구축
 
 ## 📊 현재 구현 상태 (✅ 완료 / 🔄 진행중 / ❌ 미완료)
 
 ### Phase 1: 개발 환경 및 Azure 서비스 준비 ✅
 - [x] Python 가상 환경 설정 (Python 3.11.9)
-- [x] requirements.txt 패키지 설치 (FastAPI, Uvicorn, OpenAI, Azure SDK 등)
-- [x] Azure OpenAI Service 연동 (GPT-4o, text-embedding-3-large)
-- [x] Azure AI Search 인덱스 생성 및 설정
+- [x] requirements.txt 패키지 설치 (FastAPI, OpenAI, Azure SDK 등)
+- [x] Azure OpenAI Service 연동 (GPT-4o)
+- [x] DeepSearch API v2 연동 (Tech & Keyword 검색)
 - [x] .env 파일 환경변수 관리
 
-### Phase 2: 데이터 저장소 설계 ✅
-- [x] Azure AI Search 인덱스 스키마 정의
-  - id, title, content, date, section, keyword 필드
-- [x] 벡터 검색을 위한 embedding 필드 설정
-- [x] 하이브리드 검색 (키워드 + 시맨틱) 지원
+### Phase 2: 새로운 워크플로우 아키텍처 ✅
+- [x] DeepSearch Tech API → GPT 키워드 추출 → DeepSearch Keyword API
+- [x] Azure AI Search 의존성 제거 (선택적 사용)
+- [x] 메모리 기반 캐싱 시스템
+- [x] 기사 ID 기반 URL 리다이렉트 시스템
 
-### Phase 3: 뉴스 수집 및 처리 파이프라인 ✅
-- [x] 네이버 뉴스 API 연동
-- [x] 29개 IT/기술 키워드 기반 뉴스 수집
-- [x] 중복 제거 및 데이터 정제
-- [x] Azure OpenAI를 통한 키워드 추출
-- [x] 배치 업로드 시스템 (50개씩)
+### Phase 3: 새로운 뉴스 수집 및 처리 파이프라인 ✅
+- [x] DeepSearch Tech 카테고리 기사 수집
+- [x] Azure OpenAI GPT-4o 키워드 추출
+- [x] 키워드별 관련 기사 DeepSearch API 검색
+- [x] 중복 제거 및 관련성 점수 계산
+- [x] 한국어 기사 우선 정렬
 
-### Phase 4: API 서버 구현 ✅
-- [x] FastAPI 애플리케이션 작성
-- [x] CORS 미들웨어 설정
+### Phase 4: 새로운 API 서버 구현 ✅
+- [x] FastAPI 애플리케이션 (새로운 구조)
 - [x] 주요 엔드포인트 구현:
-  - `/` - 메인 페이지
-  - `/weekly-summary` - 주간 요약
-  - `/weekly-keywords` - 주간 키워드
-  - `/chat` - 챗봇 기능
-  - `/section-analysis/{section}` - 섹션별 분석
-  - `/industry-analysis` - 산업 분석
-  - `/keyword-articles` - 키워드별 기사
+  - `/api/keywords` - Tech 기사 기반 키워드 추출
+  - `/api/keyword-articles/{keyword}` - 키워드별 관련 기사
+  - `/api/redirect/{article_id}` - 원본 URL 리다이렉트
+  - `/weekly-keywords-by-date` - 날짜별 키워드 (프론트 연동)
+  - `/chat` - AI 챗봇 기능
+  - `/industry-analysis` - 산업별 분석
 
 ### Phase 5: 웹 인터페이스 개발 ✅
 - [x] 반응형 웹 디자인 (HTML5, CSS3, JavaScript)
-- [x] Inter 폰트 적용
 - [x] 주간 키워드 시각화
 - [x] 실시간 챗봇 인터페이스
-- [x] 산업별 분석 대시보드
+- [x] 키워드 클릭 → 관련 기사 표시
+- [x] 기사 클릭 → 원본 URL 리다이렉트
 
-## 🔄 현재 진행중인 작업
-
-### 동적 키워드 클릭 기능 구현
-- [ ] 주간 TOP 3 키워드 클릭 이벤트 핸들링
+## ✅ 완료된 핵심 기능들
 - [ ] 동적 관점 분석 API 엔드포인트 생성
 - [ ] 클릭된 키워드 기반 실시간 분석 결과 반환
 
 ### Phase 5: 운영 및 배포 스크립트
-- [x] Windows 배치 파일 (`start_server.bat`)
+### 🚀 새로운 워크플로우 시스템
+- [x] **1단계**: DeepSearch Tech API로 기사 수집 (날짜 기반)
+- [x] **2단계**: Azure OpenAI GPT-4o로 키워드 추출
+- [x] **3단계**: 추출된 키워드를 메모리에 저장
+- [x] **4단계**: 키워드별 DeepSearch Keyword API 검색
+- [x] **5단계**: 키워드 클릭시 관련 기사 표시
+- [x] **6단계**: 기사 클릭시 원본 URL 리다이렉트
+
+### 🎯 핵심 API 엔드포인트
+- [x] `/api/keywords` - Tech 기사 기반 키워드 추출
+- [x] `/api/keyword-articles/{keyword}` - 키워드별 관련 기사
+- [x] `/api/redirect/{article_id}` - 원본 URL 리다이렉트
+- [x] `/weekly-keywords-by-date` - 날짜별 키워드 (프론트 연동)
+- [x] `/chat` - AI 챗봇 기능  
+- [x] `/industry-analysis` - 산업별 분석
+- [x] `/keyword-analysis` - 동적 키워드 분석
+
+### 🛠️ 기술 스택 최적화
+- [x] DeepSearch API v2 완전 전환
+- [x] Azure AI Search 선택적 사용 (레거시 호환)
+- [x] 메모리 기반 캐싱 시스템
+- [x] 한국어 기사 우선 정렬
+- [x] 관련성 점수 기반 필터링
+
+### 🔧 실행 및 배포 스크립트
 - [x] PowerShell 스크립트 (`start_server.ps1`)
-- [x] 테스트 데이터 업로드 스크립트
-- [x] 인덱스 상태 확인 스크립트
-- [x] 데이터 검증 스크립트
+- [x] 환경변수 설정 및 검증
+- [x] 가상환경 자동 활성화
+- [x] 서버 상태 모니터링
 
-## 🔄 진행 중인 작업 (In Progress)
+## 🔄 최근 완료된 개선사항 (2025.07.20)
 
-### 최적화 및 개선
-- [ ] API 요청 제한 최적화 (네이버 API 429 에러 해결)
-- [ ] Azure OpenAI 콘텐츠 필터링 정책 대응
-- [ ] 한글 인코딩 문제 해결
-- [ ] 메모리 사용량 최적화
+### 코드 구조 개선
+- [x] **새로운 워크플로우 구현**: Tech 기사 → GPT 키워드 → Keyword 검색
+- [x] **Azure AI Search 의존성 제거**: 선택적 사용으로 변경
+- [x] **메모리 캐싱 시스템**: 기사 및 키워드 정보 캐시
+- [x] **404 오류 해결**: /weekly-keywords-by-date 엔드포인트 수정
+- [x] **사용되지 않는 파일 정리**: error_logger, uvicorn 관련 파일 제거
+
+### API 품질 개선
+- [x] **DeepSearch API 정확성**: keyword 파라미터 추가
+- [x] **한국어 우선 정렬**: 관련성 점수 기반 필터링
+- [x] **재시도 메커니즘**: API 실패시 자동 재시도
+- [x] **로깅 시스템**: 구조화된 로그 메시지
+- [x] **에러 핸들링**: 예외 상황 처리 강화
 
 ## 📅 향후 계획 (Future Tasks)
 

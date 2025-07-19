@@ -1,15 +1,16 @@
-# 모든 필요한 import 문들을 파일 상단에 정리
+# News GPT v2 - 새로운 구조 (DeepSearch 기반 워크플로우)
 import os
 import re
 import time
 import logging
 import requests
+import hashlib
+import uvicorn
+from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from dotenv import load_dotenv
-from azure.search.documents import SearchClient
-from azure.core.credentials import AzureKeyCredential
 from openai import AzureOpenAI
 from functools import wraps
 
@@ -21,7 +22,7 @@ logger = logging.getLogger("news_gpt_v2")
 load_dotenv()
 
 # FastAPI 앱 인스턴스 생성
-app = FastAPI()
+app = FastAPI(title="News GPT v2", description="AI 뉴스 키워드 분석 플랫폼")
 
 # CORS 설정
 app.add_middleware(
@@ -35,9 +36,6 @@ app.add_middleware(
 # 환경변수 로드
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AZURE_SEARCH_API_KEY = os.getenv("AZURE_SEARCH_API_KEY")
-AZURE_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
-AZURE_SEARCH_INDEX = os.getenv("AZURE_SEARCH_INDEX")
 DEEPSEARCH_API_KEY = os.getenv("DEEPSEARCH_API_KEY")
 
 # Azure OpenAI 클라이언트 초기화
@@ -46,6 +44,11 @@ openai_client = AzureOpenAI(
     api_version="2024-02-15-preview",
     azure_endpoint=str(AZURE_OPENAI_ENDPOINT)
 )
+
+# DeepSearch API URLs (사용자 제공 예시 기반)
+DEEPSEARCH_TECH_URL = "https://api-v2.deepsearch.com/v1/articles/tech"
+DEEPSEARCH_KEYWORD_URL = "https://api-v2.deepsearch.com/v1/articles"
+
 
 # API 호출 재시도 데코레이터
 def retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(Exception,)):
@@ -69,7 +72,7 @@ def retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(
     return decorator
 
 # =============================================================================
-# API 엔드포인트들
+# 새로운 워크플로우 API 엔드포인트들
 # =============================================================================
 
 @app.get("/")
@@ -77,21 +80,98 @@ async def serve_home():
     """메인 페이지 제공"""
     return FileResponse("index.html")
 
+# 1단계: Tech 기사에서 키워드 추출 (프론트와 연동)
+@app.get("/api/keywords")
+async def get_weekly_keywords(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
+                            end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
+    """새로운 워크플로우: Tech 기사 → GPT 키워드 추출 → 키워드별 기사 검색 (Azure AI Search 제거)"""
+    try:
+        logger.info(f"🚀 새로운 워크플로우 시작 - 기간: {start_date} ~ {end_date}")
+        
+        # 1단계: DeepSearch Tech에서 기사 수집 (날짜 포함)
+        tech_articles = await fetch_tech_articles(start_date, end_date)
+        if not tech_articles:
+            return {"error": "Tech 기사를 찾을 수 없습니다", "keywords": [], "articles_count": 0}
+        
+        # 2단계: GPT로 키워드 추출 (Azure AI Search 건너뛰기)
+        extracted_keywords = await extract_keywords_with_gpt(tech_articles)
+        if not extracted_keywords:
+            return {"error": "키워드 추출 실패", "keywords": [], "articles_count": len(tech_articles)}
+        
+        # 3단계: 추출된 키워드들을 메모리에 저장 (관련 기사 검색용)
+        store_keywords_in_memory(extracted_keywords, start_date, end_date)
+        
+        return {
+            "keywords": extracted_keywords,
+            "date_range": f"{start_date} ~ {end_date}",
+            "tech_articles_count": len(tech_articles),
+            "workflow": "Tech기사 → GPT키워드추출 (Azure AI Search 제거)",
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"워크플로우 오류: {e}", exc_info=True)
+        return {"error": str(e), "keywords": [], "articles_count": 0}
+
+# 4단계: 키워드 클릭시 관련 기사 노출
+@app.get("/api/keyword-articles/{keyword}")
+async def get_keyword_articles(keyword: str, 
+                              start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"),
+                              end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
+    """키워드 클릭시 관련 기사들을 반환"""
+    try:
+        logger.info(f"🔍 키워드 '{keyword}' 관련 기사 검색 - 기간: {start_date} ~ {end_date}")
+        
+        # DeepSearch 키워드 검색으로 관련 기사 찾기
+        articles = await search_articles_by_keyword(keyword, start_date, end_date)
+        
+        return {
+            "keyword": keyword,
+            "articles": articles,
+            "total_count": len(articles),
+            "date_range": f"{start_date} ~ {end_date}",
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"키워드 '{keyword}' 기사 검색 오류: {e}", exc_info=True)
+        return {"error": str(e), "keyword": keyword, "articles": [], "total_count": 0}
+
+# 5단계: 기사 클릭시 원본 URL로 리다이렉트
+@app.get("/api/redirect/{article_id}")
+async def redirect_to_original(article_id: str):
+    """기사 클릭시 원본 URL로 리다이렉트"""
+    try:
+        # 메모리나 캐시에서 article_id로 원본 URL 찾기
+        original_url = get_original_url_by_id(article_id)
+        
+        if original_url:
+            logger.info(f"🔗 기사 리다이렉트: {article_id} → {original_url}")
+            return RedirectResponse(url=original_url, status_code=302)
+        else:
+            raise HTTPException(status_code=404, detail=f"기사 ID '{article_id}'를 찾을 수 없습니다")
+            
+    except Exception as e:
+        logger.error(f"리다이렉트 오류: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 기존 호환성을 위한 엔드포인트 (deprecated)
 @app.get("/keyword-articles")
-async def get_keyword_articles(
+async def get_keyword_articles_legacy(
     keyword: str = Query(..., description="검색할 키워드"),
     start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"),
     end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")
 ):
-    """키워드 기반 관련 기사 검색 API"""
+    """레거시 키워드 기반 관련 기사 검색 API (호환성용)"""
     try:
-        articles = await search_keyword_articles(keyword, start_date, end_date)
+        articles = await search_articles_by_keyword(keyword, start_date, end_date)
         return {
             "keyword": keyword,
             "total": len(articles),
             "articles": articles,
             "period": f"{start_date} ~ {end_date}",
-            "status": "success"
+            "status": "success",
+            "note": "이 엔드포인트는 deprecated됩니다. /api/keyword-articles/{keyword}를 사용하세요."
         }
     except Exception as e:
         logger.error(f"/keyword-articles 오류: {e}", exc_info=True)
@@ -103,9 +183,295 @@ async def get_keyword_articles(
         })
 
 # =============================================================================
+# 새로운 워크플로우 핵심 함수들
+# =============================================================================
+
+# 메모리 저장소 (실제 운영에서는 Redis나 데이터베이스 사용 권장)
+articles_cache = {}  # {article_id: {url, title, content, ...}}
+keywords_cache = {}  # {keyword: [article_ids]}
+
+# 1단계: DeepSearch Tech에서 기사 수집
+@retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(requests.RequestException,))
+async def fetch_tech_articles(start_date: str, end_date: str) -> List[Dict[str, Any]]:
+    """DeepSearch Tech 카테고리에서 기사들을 수집합니다"""
+    if not DEEPSEARCH_API_KEY:
+        logger.error("❌ DeepSearch API 키가 설정되지 않음")
+        return []
+    
+    try:
+        # 사용자 제공 예시 URL 구조 사용
+        base_url = DEEPSEARCH_TECH_URL
+        params = {
+            "api_key": DEEPSEARCH_API_KEY,
+            "date_from": start_date,
+            "date_to": end_date,
+            "page_size": 100  # 충분한 기사 수집
+        }
+        
+        logger.info(f"📰 Tech 기사 수집 중... URL: {base_url}")
+        logger.info(f"📰 파라미터: {params}")
+        response = requests.get(base_url, params=params, timeout=15)
+        logger.info(f"📰 응답 상태 코드: {response.status_code}")
+        
+        if response.status_code != 200:
+            logger.error(f"❌ DeepSearch API 호출 실패: {response.status_code}")
+            logger.error(f"❌ 응답 내용: {response.text}")
+            return []
+            
+        response.raise_for_status()
+        data = response.json()
+        
+        # 응답 구조 확인 및 기사 추출
+        articles = []
+        if "articles" in data:
+            articles = data["articles"]
+        elif "data" in data:
+            articles = data["data"]
+        else:
+            logger.warning(f"알 수 없는 응답 구조: {list(data.keys())}")
+            return []
+        
+        # 기사 정규화 및 ID 생성
+        processed_articles = []
+        for article in articles:
+            article_id = generate_article_id(article)
+            processed_article = {
+                "id": article_id,
+                "title": article.get("title", ""),
+                "content": article.get("summary", "") or article.get("content", ""),
+                "url": article.get("url", "") or article.get("content_url", ""),
+                "published_at": article.get("published_at", ""),
+                "source": article.get("source", ""),
+                "category": "tech"
+            }
+            
+            # 캐시에 저장 (URL 리다이렉트용)
+            articles_cache[article_id] = processed_article
+            processed_articles.append(processed_article)
+        
+        logger.info(f"✅ Tech 기사 {len(processed_articles)}개 수집 완료")
+        return processed_articles
+        
+    except Exception as e:
+        logger.error(f"❌ Tech 기사 수집 오류: {e}", exc_info=True)
+        return []
+
+# 2단계: GPT로 키워드 추출
+async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """GPT를 사용해 기사들에서 키워드를 추출합니다"""
+    if not articles:
+        logger.warning("❌ 분석할 기사가 없습니다")
+        return []
+    
+    try:
+        # 기사 내용 합치기 (처음 50개 기사만 사용)
+        articles_text = "\n".join([
+            f"제목: {article['title']}\n내용: {article['content'][:200]}..."
+            for article in articles[:50]
+        ])
+        
+        prompt = f"""
+다음 IT/기술 뉴스 기사들을 분석하고 가장 중요한 키워드 10개를 추출해주세요.
+
+기사 내용:
+{articles_text}
+
+요구사항:
+1. IT/기술 분야에서 현재 주목받는 키워드 위주로 선정
+2. 구체적이고 의미있는 키워드 (일반 명사 제외)
+3. 한국어로 응답
+4. 각 키워드는 하나의 단어로 구성
+5. 응답 형식: 키워드1:빈도1, 키워드2:빈도2 (콤마로 구분)
+6. 빈도는 5-30 범위
+
+키워드:
+"""
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "당신은 IT/기술 분야 뉴스 전문 분석가입니다. 뉴스에서 중요한 키워드를 추출합니다."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300,
+            temperature=0.2
+        )
+        
+        keywords_text = response.choices[0].message.content or ""
+        logger.info(f"GPT 응답: {keywords_text}")
+        
+        # 키워드 파싱 (번호 제거 및 정리)
+        keywords = []
+        for item in keywords_text.split(','):
+            item = item.strip()
+            if ':' in item:
+                try:
+                    keyword, count_str = item.split(':', 1)
+                    # 번호 제거 (예: "1. AI" -> "AI")
+                    keyword = re.sub(r'^\d+\.\s*', '', keyword.strip())
+                    count = int(count_str.strip())
+                    if keyword and 2 <= len(keyword) <= 20:
+                        keywords.append({
+                            "keyword": keyword,
+                            "count": count,
+                            "rank": len(keywords) + 1
+                        })
+                except ValueError:
+                    # 파싱 실패시 기본값 (번호 제거)
+                    keyword = item.split(':')[0].strip()
+                    keyword = re.sub(r'^\d+\.\s*', '', keyword)
+                    if keyword and 2 <= len(keyword) <= 20:
+                        keywords.append({
+                            "keyword": keyword,
+                            "count": 15,
+                            "rank": len(keywords) + 1
+                        })
+        
+        # 기본 키워드 제공 (추출 실패시)
+        if not keywords:
+            logger.warning("키워드 추출 실패, 기본 키워드 사용")
+            keywords = [
+                {"keyword": "인공지능", "count": 25, "rank": 1},
+                {"keyword": "반도체", "count": 20, "rank": 2},
+                {"keyword": "클라우드", "count": 18, "rank": 3},
+                {"keyword": "메타버스", "count": 15, "rank": 4},
+                {"keyword": "블록체인", "count": 12, "rank": 5}
+            ]
+        
+        # 상위 10개로 제한
+        keywords = keywords[:10]
+        logger.info(f"✅ {len(keywords)}개 키워드 추출 완료: {[k['keyword'] for k in keywords]}")
+        return keywords
+        
+    except Exception as e:
+        logger.error(f"❌ 키워드 추출 오류: {e}")
+        return []
+
+# 3단계: 키워드를 메모리에 저장
+def store_keywords_in_memory(keywords: List[Dict[str, Any]], start_date: str, end_date: str):
+    """추출된 키워드들을 메모리에 저장합니다"""
+    for keyword_data in keywords:
+        keyword = keyword_data['keyword']
+        keywords_cache[keyword] = {
+            "keyword_data": keyword_data,
+            "date_range": f"{start_date}~{end_date}",
+            "cached_at": time.time()
+        }
+    logger.info(f"📝 {len(keywords)}개 키워드를 메모리에 저장 완료")
+
+# 4단계: 키워드로 관련 기사 검색
+@retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(requests.RequestException,))
+async def search_articles_by_keyword(keyword: str, start_date: str, end_date: str) -> List[Dict[str, Any]]:
+    """특정 키워드로 DeepSearch에서 관련 기사들을 검색합니다"""
+    if not DEEPSEARCH_API_KEY:
+        logger.error("❌ DeepSearch API 키가 설정되지 않음")
+        return []
+    
+    try:
+        # 사용자 제공 예시 URL 구조 사용
+        base_url = DEEPSEARCH_KEYWORD_URL
+        params = {
+            "api_key": DEEPSEARCH_API_KEY,
+            "keyword": keyword,  # 사용자 예시에 맞춰 keyword 파라미터 사용
+            "date_from": start_date,
+            "date_to": end_date,
+            "page_size": 20
+        }
+        
+        logger.info(f"🔍 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
+        logger.info(f"🔍 파라미터: {params}")
+        response = requests.get(base_url, params=params, timeout=15)
+        logger.info(f"🔍 응답 상태 코드: {response.status_code}")
+        
+        if response.status_code != 200:
+            logger.error(f"❌ 키워드 검색 API 호출 실패: {response.status_code}")
+            logger.error(f"❌ 응답 내용: {response.text}")
+            return []
+            
+        response.raise_for_status()
+        data = response.json()
+        
+        # 응답 구조 확인 및 기사 추출
+        articles = []
+        if "articles" in data:
+            articles = data["articles"]
+        elif "data" in data:
+            articles = data["data"]
+        else:
+            logger.warning(f"알 수 없는 키워드 검색 응답 구조: {list(data.keys())}")
+            return []
+        
+        # 기사 정규화 및 캐시 저장
+        processed_articles = []
+        for article in articles:
+            article_id = generate_article_id(article)
+            processed_article = {
+                "id": article_id,
+                "title": article.get("title", ""),
+                "content": article.get("summary", "") or article.get("content", ""),
+                "url": article.get("url", "") or article.get("content_url", ""),
+                "published_at": article.get("published_at", ""),
+                "source": article.get("source", ""),
+                "keyword": keyword,
+                "relevance_score": calculate_relevance_score(article, keyword)
+            }
+            
+            # 캐시에 저장 (URL 리다이렉트용)
+            articles_cache[article_id] = processed_article
+            processed_articles.append(processed_article)
+        
+        # 관련성 점수 기준으로 정렬
+        processed_articles.sort(key=lambda x: x['relevance_score'], reverse=True)
+        
+        logger.info(f"✅ 키워드 '{keyword}' 관련 기사 {len(processed_articles)}개 검색 완료")
+        return processed_articles[:15]  # 상위 15개만 반환
+        
+    except Exception as e:
+        logger.error(f"❌ 키워드 '{keyword}' 검색 오류: {e}", exc_info=True)
+        return []
+
+# 5단계: 기사 ID로 원본 URL 찾기
+def get_original_url_by_id(article_id: str) -> Optional[str]:
+    """기사 ID로 원본 URL을 찾습니다"""
+    article = articles_cache.get(article_id)
+    if article:
+        return article.get("url")
+    return None
+
+# =============================================================================
 # 유틸리티 함수들
 # =============================================================================
-# 키워드 기반 기사 검색 함수
+
+def generate_article_id(article: Dict[str, Any]) -> str:
+    """기사 정보로 고유 ID를 생성합니다"""
+    content = f"{article.get('title', '')}{article.get('url', '')}{article.get('published_at', '')}"
+    return hashlib.md5(content.encode('utf-8')).hexdigest()[:12]
+
+def calculate_relevance_score(article: Dict[str, Any], keyword: str) -> float:
+    """기사와 키워드의 관련성 점수를 계산합니다"""
+    title = article.get("title", "").lower()
+    content = article.get("summary", "") or article.get("content", "")
+    content = content.lower()
+    keyword_lower = keyword.lower()
+    
+    score = 0.0
+    
+    # 제목에 키워드 포함시 높은 점수
+    if keyword_lower in title:
+        score += 10.0
+    
+    # 내용에 키워드 포함시 점수 추가
+    content_count = content.count(keyword_lower)
+    score += content_count * 2.0
+    
+    # 최근 기사일수록 높은 점수
+    pub_date = article.get("published_at", "")
+    if "2025-07" in pub_date:
+        score += 5.0
+    
+    return score
+
+# 기존 함수들을 새로운 워크플로우에 맞게 수정...
 async def search_keyword_articles(keyword: str, start_date: str = "2025-07-14", end_date: str = "2025-07-18"):
     """특정 키워드로 기사 검색 (더 정확한 검색, 한국어 우선, 날짜 필터링)"""
     if not DEEPSEARCH_API_KEY:
@@ -231,9 +597,7 @@ async def get_weekly_keywords(start_date: str = "2025-07-14", end_date: str = "2
                 "details": "DeepSearch API에서 기사를 가져올 수 없습니다."
             }
         logger.info(f"   ✅ {len(articles)}개 기사 수집 완료")
-        upload_success = await upload_articles_to_azure_search(articles)
-        if not upload_success:
-            logger.warning("   ⚠️ Azure AI Search 업로드 실패, 계속 진행")
+        # Azure AI Search 업로드 제거 (사용자 요청에 따라)
         logger.info("3️⃣ Azure OpenAI GPT-4o로 키워드 추출 중...")
         keywords = await extract_keywords_with_gpt4o(articles)
         if not keywords:
@@ -290,7 +654,7 @@ def deepsearch_api_request(url, params):
     return response.json()
 
 async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
-    """DeepSearch API로 IT/기술 뉴스 수집 (로깅/중복제거/샘플 fallback)"""
+    """DeepSearch API로 IT/기술 뉴스 수집 (새로운 구조에 맞춰 수정)"""
     if not DEEPSEARCH_API_KEY:
         logger.error("❌ DeepSearch API 키 없음")
         return []
@@ -298,17 +662,25 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
         articles = []
         tech_keywords = ["IT", "기술", "인공지능", "AI", "반도체"]
         logger.info(f"🔍 DeepSearch API로 뉴스 수집 중... ({start_date} ~ {end_date})")
+        
         for keyword in tech_keywords:
             try:
-                # DeepSearch API에서 경제,기술 카테고리 + 키워드 검색
-                url = f"https://api-v2.deepsearch.com/v1/articles/economy,tech"
+                # 사용자 제공 예시 URL 구조 사용
+                base_url = DEEPSEARCH_KEYWORD_URL
                 params = {
                     "api_key": DEEPSEARCH_API_KEY,
+                    "keyword": keyword,  # 사용자 예시에 맞춰 keyword 파라미터 사용
                     "date_from": start_date,
-                    "date_to": end_date,
-                    "q": keyword  # 키워드 검색 추가
+                    "date_to": end_date
                 }
-                data = deepsearch_api_request(url, params)
+                response = requests.get(base_url, params=params, timeout=15)
+                
+                if response.status_code != 200:
+                    logger.warning(f"    ❌ '{keyword}' 검색 실패: {response.status_code}")
+                    continue
+                    
+                data = response.json()
+                
                 # 응답 구조 확인
                 if "data" in data:
                     articles_data = data["data"]
@@ -317,6 +689,7 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
                 else:
                     logger.warning(f"    ⚠️ 알 수 없는 응답 구조: {list(data.keys())}")
                     continue
+                    
                 for item in articles_data:
                     pub_date = item.get("published_at", "")
                     if "T" in pub_date:
@@ -339,6 +712,7 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
             except Exception as e:
                 logger.warning(f"    ❌ '{keyword}' 처리 오류: {e}")
                 continue
+                
         # 중복 제거 (제목+내용 해시)
         unique_articles = []
         seen_hashes = set()
@@ -372,30 +746,7 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
         ]
 
 
-async def upload_articles_to_azure_search(articles):
-    """Azure AI Search에 기사 업로드 (로깅/예외처리 일관성)"""
-    try:
-        logger.info(f"Azure AI Search 연결 시도: endpoint={AZURE_SEARCH_ENDPOINT}, index={AZURE_SEARCH_INDEX}, 문서수={len(articles)}")
-        search_client = SearchClient(
-            endpoint=str(AZURE_SEARCH_ENDPOINT),
-            index_name=str(AZURE_SEARCH_INDEX),
-            credential=AzureKeyCredential(str(AZURE_SEARCH_API_KEY))
-        )
-        if articles:
-            logger.info(f"샘플 문서 구조: { {k:type(v).__name__ for k,v in articles[0].items()} }")
-        logger.info("🚀 업로드 시작...")
-        result = search_client.upload_documents(articles)
-        success_count = len([r for r in result if r.succeeded])
-        failed_count = len([r for r in result if not r.succeeded])
-        logger.info(f"✅ {success_count}개 기사 업로드 성공, ❌ {failed_count}개 실패")
-        if failed_count > 0:
-            for r in result:
-                if not r.succeeded:
-                    logger.warning(f"실패 문서 {r.key}: {r.error_message}")
-        return success_count > 0
-    except Exception as e:
-        logger.error(f"Azure AI Search 업로드 오류: {e}", exc_info=True)
-        return False
+# Azure AI Search 함수 제거됨 (사용자 요청에 따라 DeepSearch만 사용)
 
 async def extract_keywords_with_gpt4o(articles):
     """Azure OpenAI GPT-4o로 키워드 추출"""
@@ -710,6 +1061,45 @@ def generate_contextual_answer(question, current_keywords):
     except Exception as e:
         return f"죄송합니다. 답변 생성 중 오류가 발생했습니다: {str(e)}"
 
+@app.get("/weekly-keywords-by-date")
+async def get_weekly_keywords_by_date(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
+                               end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
+    """날짜별 주간 키워드 반환 (프론트에서 요청하는 엔드포인트) - 실제 API 호출"""
+    try:
+        logger.info(f"📅 날짜별 키워드 요청: {start_date} ~ {end_date}")
+        
+        # 실제 새로운 워크플로우 사용 (Tech 기사 → GPT 키워드 추출)
+        tech_articles = await fetch_tech_articles(start_date, end_date)
+        if not tech_articles:
+            logger.warning(f"❌ Tech 기사 없음: {start_date} ~ {end_date}")
+            # 샘플 키워드 반환
+            keywords = get_sample_keywords_by_date(start_date, end_date)
+        else:
+            # GPT로 키워드 추출
+            extracted_keywords = await extract_keywords_with_gpt(tech_articles)
+            if extracted_keywords:
+                keywords = [kw["keyword"] for kw in extracted_keywords[:3]]  # 상위 3개만
+            else:
+                keywords = get_sample_keywords_by_date(start_date, end_date)
+        
+        # 응답 형식을 프론트 요구사항에 맞게 조정 (키워드 배열로 반환)
+        response_data = {
+            "keywords": keywords,  # 단순 문자열 배열로 반환
+            "date_range": f"{start_date} ~ {end_date}",
+            "total_count": len(keywords),
+            "tech_articles_count": len(tech_articles) if tech_articles else 0,
+            "status": "success"
+        }
+        return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
+    except Exception as e:
+        logger.error(f"날짜별 키워드 요청 오류: {e}")
+        return JSONResponse(status_code=500, content={
+            "error": str(e),
+            "keywords": [],
+            "date_range": f"{start_date} ~ {end_date}",
+            "status": "error"
+        })
+
 @app.get("/weekly-keywords")
 def get_weekly_keywords():
     """주간 Top 3 키워드 반환"""
@@ -864,5 +1254,19 @@ def analyze_keyword_dynamically(request: dict):
             "analysis": f"키워드 분석 중 오류가 발생했습니다: {str(e)}"
         }
 
-# FastAPI 앱 실행은 외부에서 'python -m uvicorn main:app --host 0.0.0.0 --port 8000' 명령어로 실행
-# 또는 'python main.py' 실행 시에는 개발 서버로 동작하지 않음
+# =============================================================================
+# 서버 실행 설정
+# =============================================================================
+
+if __name__ == "__main__":
+    logger.info("🚀 News GPT v2 서버 시작 (새로운 워크플로우)")
+    logger.info("📋 워크플로우:")
+    logger.info("   1️⃣ Tech기사수집 (DeepSearch Tech)")
+    logger.info("   2️⃣ GPT키워드추출")
+    logger.info("   3️⃣ 키워드기사검색 (DeepSearch Keyword)")
+    logger.info("   4️⃣ 기사클릭 → URL리다이렉트")
+    logger.info("🌐 서버 주소: http://localhost:8000")
+    
+    # FastAPI 서버 직접 실행
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

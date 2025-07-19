@@ -1,19 +1,34 @@
-# 🚀 News GPT v2 - AI 뉴스 키워드 분석 플랫폼
+# 🚀 News GPT v2 - AI 뉴스 키워드 분석 플랫폼 (2025.07.20 최신화)
 
 > DeepSearch API와 Azure OpenAI를 활용한 실시간 뉴스 키워드 분석 및 트렌드 분석 플랫폼
 
 ## 📋 프로젝트 개요
 
-News GPT v2는 Azure 클라우드 서비스와 DeepSearch API를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch 뉴스 API v2를 통해 경제 및 기술 분야의 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 트렌드 분석을 제공합니다.
+News GPT v2는 **새로운 워크플로우**를 기반으로 한 AI 기반 뉴스 분석 플랫폼입니다. DeepSearch API v2를 통해 기술 분야의 실시간 뉴스를 수집하고, Azure OpenAI GPT-4o 모델을 활용하여 키워드 분석 및 관련 기사 검색을 제공합니다.
+
+### 🔄 새로운 워크플로우 (2025.07.20)
+
+```
+1️⃣ DeepSearch Tech API → 기사 수집 (날짜 기반)
+     ↓
+2️⃣ Azure OpenAI GPT-4o → 키워드 추출  
+     ↓
+3️⃣ 키워드 메모리 저장 → 캐싱
+     ↓
+4️⃣ DeepSearch Keyword API → 관련 기사 검색
+     ↓
+5️⃣ 사용자 클릭 → 원본 URL 리다이렉트
+```
 
 ### 🎯 주요 기능
 
-- **📰 실시간 뉴스 수집**: DeepSearch API v2를 통한 경제/기술 분야 뉴스 자동 수집
-- **🔍 키워드 분석**: AI 기반 주간 TOP 5 키워드 추출 및 빈도 분석
-- **🤖 다각도 분석**: 사회, 경제, IT/과학, 생활/문화, 세계 관점별 키워드 분석
+- **📰 실시간 뉴스 수집**: DeepSearch Tech API를 통한 기술 분야 뉴스 자동 수집
+- **🔍 AI 키워드 분석**: GPT-4o 기반 주간 키워드 추출 및 빈도 분석
+- **🔗 관련 기사 검색**: 키워드 클릭시 DeepSearch Keyword API로 관련 기사 표시
+- **🌐 원본 소스 연결**: 기사 클릭시 원본 URL로 즉시 리다이렉트
 - **💬 지능형 챗봇**: Azure OpenAI 기반 실시간 뉴스 분석 챗봇
-- **🔎 벡터 검색**: Azure AI Search를 활용한 의미 기반 뉴스 검색
-- **📊 산업별 분석**: 정반대 관점을 포함한 균형잡힌 산업 분석
+- **📊 산업별 분석**: 정반대 관점을 포함한 균형잡힌 분석
+- **⚡ 고성능 캐싱**: 메모리 기반 기사 및 키워드 캐시 시스템
 
 ## 📁 프로젝트 구조
 
@@ -361,11 +376,24 @@ python recreate_index.py
 ### 🔧 최신 API 구조 (2025.07.20 업데이트)
 
 ```bash
-# 키워드별 기사 검색 (수정됨 - q 파라미터 추가)
-GET /keyword-articles?keyword=AI&start_date=2025-07-14&end_date=2025-07-18
+# 새로운 워크플로우 기반 키워드 추출
+GET /api/keywords?start_date=2025-07-14&end_date=2025-07-18
+
+# 키워드별 관련 기사 검색 (새로운 구조)
+GET /api/keyword-articles/{keyword}?start_date=2025-07-14&end_date=2025-07-18
+
+# 기사 클릭시 원본 URL 리다이렉트
+GET /api/redirect/{article_id}
+
+# 날짜별 키워드 (프론트엔드 연동)
+GET /weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-18
 
 # 실제 DeepSearch API 호출 구조
-https://api-v2.deepsearch.com/v1/articles/economy,tech?q=AI&date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_API_KEY
+# Tech 기사 수집
+https://api-v2.deepsearch.com/v1/articles/tech?date_from=2025-07-14&date_to=2025-07-18&api_key=YOUR_API_KEY
+
+# 키워드 기사 검색
+https://api-v2.deepsearch.com/v1/articles?keyword=인공지능&api_key=YOUR_API_KEY
 
 # 챗봇 대화 (정상 작동)
 POST /chat
@@ -391,10 +419,11 @@ Content-Type: application/json
 - GPT-4o 기반 키워드 추출 및 분석
 
 **현재 브랜치**: `0720_upgrade`
-- DeepSearch API v2로 완전 전환 완료 ✅
-- Naver API에서 마이그레이션 완료 ✅
-- 키워드 검색 기능 개선 완료 ✅ (2025.07.20)
-- 챗봇 기능 정상 작동 확인 ✅ (2025.07.20)
+- DeepSearch API v2 새로운 워크플로우 완성 ✅ (2025.07.20)
+- Tech → GPT → Keyword → Articles → Redirect 플로우 구현 ✅
+- 메모리 기반 캐싱 시스템 구현 ✅ (2025.07.20)
+- 404 오류 해결 및 API 엔드포인트 최적화 ✅ (2025.07.20)
+- 사용되지 않는 파일 정리 완료 ✅ (2025.07.20)
 
 ## 🔧 문제 해결
 
