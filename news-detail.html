@@ -505,6 +505,146 @@
       }
     }
 
+    /* 기사 링크 스타일 */
+    .article-link {
+      transition: all 0.2s ease;
+    }
+
+    .article-link:hover {
+      color: #00D9C0 !important;
+      text-shadow: 0 0 5px rgba(0, 217, 192, 0.3);
+    }
+
+    /* 뉴스 카드 스타일 */
+    .news-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .news-card-item {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 16px;
+      border-left: 4px solid #00D9C0;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .news-card-item:hover {
+      background: #252525;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 217, 192, 0.2);
+      border-left-color: #3ea6ff;
+    }
+
+    .news-card-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 217, 192, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .news-card-item:hover::before {
+      left: 100%;
+    }
+
+    .news-card-number {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 217, 192, 0.2);
+      color: #00D9C0;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .news-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      padding-right: 40px;
+    }
+
+    .news-card-summary {
+      font-size: 14px;
+      color: #aaa;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* 다른 분야 버튼 스타일 */
+    .other-categories {
+      margin-top: 30px;
+      padding: 20px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+
+    .other-categories-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .category-btn {
+      background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+      color: #fff;
+      border: 1px solid #404040;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .category-btn:hover {
+      background: linear-gradient(135deg, #00D9C0, #1C2039);
+      border-color: #00D9C0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 217, 192, 0.3);
+    }
+
+    .category-btn.current {
+      background: linear-gradient(135deg, #404040, #2a2a2a);
+      border-color: #666;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .category-btn.current:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
     /* 로딩 애니메이션 */
     .loading {
       display: flex;
@@ -745,28 +885,44 @@
 
     // 샘플 분석 표시
     function displaySampleAnalysis() {
+      const sampleArticles = [
+        { title: `${currentKeyword} 기술의 급속한 발전과 시장 전망`, url: 'https://example.com/news1' },
+        { title: `산업 전반에 미치는 ${currentKeyword}의 영향 확대`, url: 'https://example.com/news2' },
+        { title: `${currentKeyword} 관련 정책 및 규제 논의 활발`, url: 'https://example.com/news3' },
+        { title: `${currentKeyword} 분야 투자 및 M&A 활동 증가`, url: 'https://example.com/news4' },
+        { title: `${currentKeyword} 기술 표준화 및 국제 협력 강화`, url: 'https://example.com/news5' },
+        { title: `${currentKeyword} 인재 양성 및 교육 프로그램 확대`, url: 'https://example.com/news6' },
+        { title: `${currentKeyword} 보안 및 윤리적 이슈 대두`, url: 'https://example.com/news7' },
+        { title: `${currentKeyword} 스타트업 생태계 활성화`, url: 'https://example.com/news8' },
+        { title: `${currentKeyword} 관련 특허 출원 급증`, url: 'https://example.com/news9' },
+        { title: `${currentKeyword} 국제 경쟁력 강화 방안`, url: 'https://example.com/news10' },
+        { title: `${currentKeyword} 기반 신제품 출시 러시`, url: 'https://example.com/news11' },
+        { title: `${currentKeyword} 관련 법제도 정비 논의`, url: 'https://example.com/news12' },
+        { title: `${currentKeyword} 기술 도입 기업 성과 분석`, url: 'https://example.com/news13' },
+        { title: `${currentKeyword} 분야 글로벌 트렌드 변화`, url: 'https://example.com/news14' },
+        { title: `${currentKeyword} 미래 발전 방향과 전망`, url: 'https://example.com/news15' }
+      ];
+
       const sampleDescription = `
                 <h3>${currentKeyword} 뉴스 분석 리포트</h3>
                 <p>총 15건의 관련 기사를 AI가 분석했습니다.</p>
                 <br>
                 <p><strong>주요 내용:</strong></p>
-                <ul>
-                    <li><strong>[1]</strong> ${currentKeyword} 기술의 급속한 발전과 시장 전망</li>
-                    <li><strong>[2]</strong> 산업 전반에 미치는 ${currentKeyword}의 영향 확대</li>
-                    <li><strong>[3]</strong> ${currentKeyword} 관련 정책 및 규제 논의 활발</li>
-                    <li><strong>[4]</strong> ${currentKeyword} 분야 투자 및 M&A 활동 증가</li>
-                    <li><strong>[5]</strong> ${currentKeyword} 기술 표준화 및 국제 협력 강화</li>
-                    <li><strong>[6]</strong> ${currentKeyword} 인재 양성 및 교육 프로그램 확대</li>
-                    <li><strong>[7]</strong> ${currentKeyword} 보안 및 윤리적 이슈 대두</li>
-                    <li><strong>[8]</strong> ${currentKeyword} 스타트업 생태계 활성화</li>
-                    <li><strong>[9]</strong> ${currentKeyword} 관련 특허 출원 급증</li>
-                    <li><strong>[10]</strong> ${currentKeyword} 국제 경쟁력 강화 방안</li>
-                    <li><strong>[11]</strong> ${currentKeyword} 기반 신제품 출시 러시</li>
-                    <li><strong>[12]</strong> ${currentKeyword} 관련 법제도 정비 논의</li>
-                    <li><strong>[13]</strong> ${currentKeyword} 기술 도입 기업 성과 분석</li>
-                    <li><strong>[14]</strong> ${currentKeyword} 분야 글로벌 트렌드 변화</li>
-                    <li><strong>[15]</strong> ${currentKeyword} 미래 발전 방향과 전망</li>
-                </ul>
+                <div class="news-cards-grid">
+                    ${sampleArticles.map((article, index) => `
+                        <div class="news-card-item" onclick="openOriginalArticle('${article.url}', '${article.title}')">
+                            <div class="news-card-number">${index + 1}</div>
+                            <div class="news-card-title">${article.title}</div>
+                            <div class="news-card-summary">${generateArticleSummary(article.title, currentKeyword)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="other-categories">
+                    <div class="other-categories-title">🔍 다른 분야 탐색하기</div>
+                    <div class="categories-grid">
+                        ${generateCategoryButtons()}
+                    </div>
+                </div>
                 <br>
                 <p><strong>분석 기간:</strong> 2025년 7월 14일 ~ 7월 21일</p>
                 <p><strong>분석 기사 수:</strong> 15건</p>
@@ -800,11 +956,21 @@
                 <p>총 ${articles.length}건의 관련 기사를 AI가 분석했습니다.</p>
                 <br>
                 <p><strong>주요 내용:</strong></p>
-                <ul>
-                    ${articles.slice(0, Math.min(articles.length, 15)).map((article, index) =>
-        `<li><strong>[${index + 1}]</strong> ${article.title}</li>`
-      ).join('')}
-                </ul>
+                <div class="news-cards-grid">
+                    ${articles.slice(0, Math.min(articles.length, 15)).map((article, index) => `
+                        <div class="news-card-item" onclick="openOriginalArticle('${article.url || ''}', '${article.title || ''}')">
+                            <div class="news-card-number">${index + 1}</div>
+                            <div class="news-card-title">${article.title}</div>
+                            <div class="news-card-summary">${generateArticleSummary(article.title, currentKeyword)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="other-categories">
+                    <div class="other-categories-title">🔍 다른 분야 탐색하기</div>
+                    <div class="categories-grid">
+                        ${generateCategoryButtons()}
+                    </div>
+                </div>
                 <br>
                 <p><strong>분석 일시:</strong> ${new Date().toLocaleString('ko-KR')}</p>
             `;
@@ -901,6 +1067,9 @@
         '바이오': '🧬', '의료': '🏥', '헬스케어': '💊',
         '자동차': '🚗', '전기차': '🔋', '배터리': '🔋',
         '블록체인': '⛓️', '암호화폐': '💰', '비트코인': '₿',
+        '핀테크': '💰', '금융': '💳', 'CBDC': '🪙',
+        '사이버보안': '🛡️', '보안': '🔒', '해킹': '🛡️',
+        '로봇': '🤖', '자동화': '⚙️', '산업로봇': '🦾',
         '게임': '🎮', '메타버스': '🥽', 'VR': '🥽',
         '클라우드': '☁️', '서버': '🖥️', '데이터': '📊'
       };
@@ -1003,6 +1172,77 @@
     // 키워드 검색
     function searchKeyword(keyword) {
       window.location.href = `/analysis.html?keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    // 원본 기사 열기
+    function openOriginalArticle(url, title) {
+      if (url && url.trim() !== '') {
+        console.log('원본 기사 열기:', title, url);
+        window.open(url, '_blank');
+      } else {
+        alert('원본 기사 링크를 찾을 수 없습니다.');
+        console.warn('URL이 없는 기사:', title);
+      }
+    }
+
+    // 기사 요약 생성
+    function generateArticleSummary(title, keyword) {
+      const summaries = {
+        '기술의 급속한 발전': `${keyword} 기술이 빠르게 발전하며 새로운 시장 기회를 창출하고 있습니다.`,
+        '산업 전반에 미치는': `${keyword}가 다양한 산업 분야에 미치는 파급효과가 확산되고 있습니다.`,
+        '정책 및 규제': `${keyword} 관련 정부 정책과 규제 프레임워크가 활발히 논의되고 있습니다.`,
+        '투자 및 M&A': `${keyword} 분야에 대한 투자와 인수합병 활동이 크게 증가하고 있습니다.`,
+        '표준화 및 국제 협력': `${keyword} 기술 표준화와 국제적 협력 체계 구축이 진행되고 있습니다.`,
+        '인재 양성': `${keyword} 전문 인력 양성을 위한 교육 프로그램이 확대되고 있습니다.`,
+        '보안 및 윤리': `${keyword} 기술 발전에 따른 보안과 윤리적 이슈가 대두되고 있습니다.`,
+        '스타트업 생태계': `${keyword} 분야 스타트업들의 혁신적 아이디어와 성장이 주목받고 있습니다.`,
+        '특허 출원': `${keyword} 관련 기술 특허 출원이 급격히 증가하며 기술 경쟁이 치열해지고 있습니다.`,
+        '국제 경쟁력': `${keyword} 분야에서 국가별 기술 경쟁력 강화 방안이 모색되고 있습니다.`,
+        '신제품 출시': `${keyword} 기반의 혁신적인 신제품들이 연이어 시장에 출시되고 있습니다.`,
+        '법제도 정비': `${keyword} 기술 발전에 맞춘 관련 법제도 정비 작업이 진행되고 있습니다.`,
+        '기업 성과': `${keyword} 기술을 도입한 기업들의 성과 분석 결과가 주목받고 있습니다.`,
+        '글로벌 트렌드': `${keyword} 분야의 글로벌 트렌드 변화가 국내 시장에 영향을 미치고 있습니다.`,
+        '미래 발전 방향': `${keyword} 기술의 미래 발전 방향과 장기적 전망이 제시되고 있습니다.`
+      };
+
+      for (const [key, summary] of Object.entries(summaries)) {
+        if (title.includes(key)) {
+          return summary;
+        }
+      }
+
+      return `${keyword} 관련 최신 동향과 시장 변화에 대한 심층 분석 내용입니다.`;
+    }
+
+    // 카테고리 버튼 생성
+    function generateCategoryButtons() {
+      const categories = [
+        { keyword: 'AI', name: 'AI 기술', icon: '🤖' },
+        { keyword: '반도체', name: '반도체', icon: '🔧' },
+        { keyword: '바이오', name: '바이오', icon: '🧬' },
+        { keyword: '핀테크', name: '핀테크', icon: '💰' },
+        { keyword: '사이버보안', name: '사이버보안', icon: '🛡️' },
+        { keyword: '로봇', name: '로봇', icon: '🤖' }
+      ];
+
+      return categories.map(category => {
+        const isCurrentCategory = currentKeyword === category.keyword || 
+                                 currentKeyword.includes(category.keyword) || 
+                                 category.keyword.includes(currentKeyword);
+        
+        return `
+          <div class="category-btn ${isCurrentCategory ? 'current' : ''}" 
+               onclick="${isCurrentCategory ? '' : `navigateToCategory('${category.keyword}')`}">
+            <span>${category.icon}</span>
+            <span>${category.name}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 다른 카테고리로 이동
+    function navigateToCategory(keyword) {
+      window.location.href = `/news-detail.html?keyword=${encodeURIComponent(keyword)}`;
     }
 
     // 뒤로가기
