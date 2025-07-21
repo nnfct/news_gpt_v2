@@ -130,6 +130,11 @@ async def serve_home():
     """메인 페이지 제공"""
     return FileResponse("index.html")
 
+@app.get("/analysis.html")
+async def serve_analysis():
+    """상세 분석 페이지 제공"""
+    return FileResponse("analysis.html")
+
 @app.get("/admin.html")
 async def serve_admin():
     """관리자 페이지 제공"""
@@ -498,12 +503,13 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
         prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하세요:
 {titles_text}
 
+중요: 마크다운 헤더(#) 사용 금지. 단순 텍스트로만 답변.
 형식: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5"""
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "IT기술 키워드 추출 전문가"},
+                {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=80,  # 5개 키워드에 맞게 증가
@@ -567,12 +573,14 @@ Requirements:
 - Only English words
 - Tech/Technology focused
 - No Korean words
+- No markdown headers (#)
+- Plain text only
 Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news."},
+                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=50,  # 더 짧게
@@ -1312,17 +1320,18 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
 {industry} 관점에서 '{keyword}'에 대해 답변해주세요.
 
 답변 형식:
-1. {industry} 관점에서 본 '{keyword}'의 현재 상황
-2. 주요 동향과 변화
-3. 전망과 시사점
+· {industry} 관점에서 본 '{keyword}'의 현재 상황
+· 주요 동향과 변화
+· 전망과 시사점
 
+마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
 구체적이고 전문적으로 답변해주세요.
 """
         
         completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다."},
+                {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500
@@ -1343,17 +1352,18 @@ def generate_keyword_trend_answer(question, keyword):
 '{keyword}'의 최근 트렌드를 분석해주세요.
 
 분석 내용:
-1. 최근 '{keyword}' 관련 주요 뉴스 동향
-2. 시간적 변화와 발전 방향
-3. 향후 전망과 관심 포인트
+· 최근 '{keyword}' 관련 주요 뉴스 동향
+· 시간적 변화와 발전 방향
+· 향후 전망과 관심 포인트
 
+마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
 시간순으로 정리하여 트렌드를 명확하게 설명해주세요.
 """
         
         completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": f"당신은 '{keyword}' 분야의 트렌드 분석 전문가입니다. 최신 동향과 변화를 분석합니다."},
+                {"role": "system", "content": f"당신은 '{keyword}' 분야의 트렌드 분석 전문가입니다. 최신 동향과 변화를 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500
@@ -1374,18 +1384,19 @@ def generate_comparison_answer(question, keywords):
 키워드들을 비교 분석해주세요.
 
 비교 분석 내용:
-1. 각 키워드의 현재 상황과 특징
-2. 공통점과 차이점
-3. 상호 관계와 영향
-4. 각각의 전망과 중요성
+· 각 키워드의 현재 상황과 특징
+· 공통점과 차이점
+· 상호 관계와 영향
+· 각각의 전망과 중요성
 
+마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
 객관적이고 균형잡힌 시각으로 비교해주세요.
 """
         
         completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 객관적으로 비교 분석합니다."},
+                {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 객관적으로 비교 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=600
@@ -1409,11 +1420,12 @@ def generate_contextual_answer(question, current_keywords):
 현재 주간 핵심 키워드들과 연관지어 답변하되, 질문의 맥락을 정확히 파악하여 답변해주세요.
 
 답변 시 고려사항:
-1. 현재 주간 핵심 키워드와의 연관성 언급
-2. 구체적인 사례와 데이터 활용  
-3. 균형잡힌 시각으로 설명
-4. 실용적인 정보 제공
+· 현재 주간 핵심 키워드와의 연관성 언급
+· 구체적인 사례와 데이터 활용  
+· 균형잡힌 시각으로 설명
+· 실용적인 정보 제공
 
+마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
 명확하고 도움이 되는 답변을 제공해주세요.
 """
         
@@ -1685,19 +1697,20 @@ def analyze_keyword_dynamically(request: dict):
 키워드: '{keyword}'
 
 다음 5가지 관점에서 이 키워드를 분석해주세요:
-1. 사회적 영향
-2. 경제적 측면  
-3. 기술적 관점
-4. 문화적 의미
-5. 미래 전망
+· 사회적 영향
+· 경제적 측면  
+· 기술적 관점
+· 문화적 의미
+· 미래 전망
 
 각 관점별로 2-3문장씩 간결하게 설명해주세요.
+마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요.
 """
         
         completion = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "당신은 다양한 관점에서 키워드를 분석하는 전문가입니다."},
+                {"role": "system", "content": "당신은 다양한 관점에서 키워드를 분석하는 전문가입니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=500
@@ -1935,39 +1948,40 @@ async def generate_weekly_insight(keywords_data):
 AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전문적이면서도 읽기 쉽게 작성해주세요.
 
 📊 이번 주 분석 데이터:
-- 분석 기간: {keywords_data["period"]}
-- 국내 TOP 키워드: {", ".join(domestic_details)}
-- 해외 TOP 키워드: {", ".join(global_details)}
+· 분석 기간: {keywords_data["period"]}
+· 국내 TOP 키워드: {", ".join(domestic_details)}
+· 해외 TOP 키워드: {", ".join(global_details)}
 
 다음 구조로 작성해주세요:
 
 � 이번 주 핫 키워드
 
 📈 국내 기술 동향
-- 가장 주목받은 키워드와 그 배경
-- 관련 산업/기업에 미치는 영향
-- 실무진이 알아야 할 포인트
+· 가장 주목받은 키워드와 그 배경
+· 관련 산업/기업에 미치는 영향
+· 실무진이 알아야 할 포인트
 
 🌍 글로벌 기술 트렌드
-- 해외에서 화제가 된 기술 이슈
-- 국내 시장에 미칠 영향 예측
-- 글로벌 vs 국내 트렌드 비교
+· 해외에서 화제가 된 기술 이슈
+· 국내 시장에 미칠 영향 예측
+· 글로벌 vs 국내 트렌드 비교
 
-💡 다음 주 전망 & 실행 포인트
-- 주목해야 할 기술/키워드
-- 비즈니스 기회나 위험 요소
-- 실무진을 위한 액션 아이템
+💡 다음 주 전망 및 실행 포인트
+· 주목해야 할 기술/키워드
+· 비즈니스 기회나 위험 요소
+· 실무진을 위한 액션 아이템
 
 🎯 한 줄 요약
-- 이번 주 가장 중요한 인사이트를 한 문장으로
+· 이번 주 가장 중요한 인사이트를 한 문장으로
 
+⚠️ 중요: 마크다운 헤더 기호 절대 사용하지 말고, 이모지와 중간점만 사용해서 구분해주세요.
 전체 분량: 1000자 내외로 작성해주세요.
 """
         
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다."},
+                {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다. 마크다운 헤더(#) 절대 사용 금지. 대신 이모지와 중간점(·)만 사용하여 구분하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
@@ -1981,18 +1995,22 @@ AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전�
         return f"""
 🔍 이번 주 AI 뉴스 하이라이트
 
-📈 국내 트렌드
-- 인공지능과 반도체 분야의 지속적인 성장
-- 기술 혁신과 산업 변화 가속화
+� 국내 기술 트렌드
+• 인공지능과 반도체 분야의 지속적인 성장
+• 기술 혁신과 산업 변화 가속화
+• 정부 정책과 기업 투자 확대
 
-🌍 글로벌 트렌드
-- AI 기술의 전 산업 확산
-- 글로벌 기술 경쟁 심화
+� 글로벌 기술 동향
+• AI 기술의 전 산업 확산
+• 글로벌 기술 경쟁 심화
+• 신기술 도입과 활용 사례 증가
 
-💡 인사이트
-이번 주는 AI와 반도체 기술이 주요 화두였습니다. 
-국내외 모두 기술 혁신에 대한 관심이 높아지고 있어 
-관련 산업의 성장이 기대됩니다.
+💡 주간 인사이트
+이번 주는 AI와 반도체 기술이 주요 화두였습니다. 국내외 모두 기술 혁신에 대한 관심이 높아지고 있어 관련 산업의 성장이 기대됩니다.
+
+🎯 다음 주 전망
+• AI 기술 발전 지속 관찰 필요
+• 관련 투자 기회 모니터링 권장
 
 📧 News GPT v2 팀 드림
         """
