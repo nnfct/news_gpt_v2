@@ -623,7 +623,7 @@
 
         // 페이지 로드시 실행
         document.addEventListener('DOMContentLoaded', function () {
-            loadNewsData();
+            loadDomesticNews(); // 기본적으로 국내뉴스 로드
         });
 
         // 뉴스 데이터 로드
@@ -740,25 +740,33 @@
         function displayNewsCards(cards) {
             const newsGrid = document.getElementById('newsGrid');
 
-            newsGrid.innerHTML = cards.map(card => `
-                <div class="news-card" onclick="window.location.href='/news-detail.html?keyword=${encodeURIComponent(card.keyword)}'">
-                    <div class="news-thumbnail">
-                        <div class="thumbnail-icon">${card.thumbnail}</div>
-                    </div>
-                    <div class="news-content">
-                        <div class="news-title">${card.title}</div>
-                        <div class="news-meta">
-                            <span>📊 ${card.count}건</span>
-                            <span>•</span>
-                            <span>${card.publishedAt}</span>
+            newsGrid.innerHTML = cards.map(card => {
+                // 해외뉴스인지 국내뉴스인지 구분하여 다른 URL로 이동
+                const detailUrl = card.region === 'global'
+                    ? `/news-detail.html?keyword=${encodeURIComponent(card.keyword)}&region=global`
+                    : `/news-detail.html?keyword=${encodeURIComponent(card.keyword)}`;
+
+                return `
+                    <div class="news-card" onclick="window.location.href='${detailUrl}'">
+                        <div class="news-thumbnail">
+                            <div class="thumbnail-icon">${card.thumbnail}</div>
                         </div>
-                        <div class="news-insight">
-                            <div class="insight-label">AI 인사이트</div>
-                            ${card.insight}
+                        <div class="news-content">
+                            <div class="news-title">${card.title}</div>
+                            <div class="news-meta">
+                                <span>📊 ${card.count}건</span>
+                                <span>•</span>
+                                <span>${card.publishedAt}</span>
+                                ${card.region === 'global' ? '<span>• 🌍 해외</span>' : ''}
+                            </div>
+                            <div class="news-insight">
+                                <div class="insight-label">AI 인사이트</div>
+                                ${card.insight}
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // 샘플 뉴스 표시
@@ -843,8 +851,221 @@
             });
             event.target.closest('.sidebar-item').classList.add('active');
 
-            // 카테고리별 필터링 (구현 예정)
+            // 카테고리별 데이터 로드
+            if (category === 'domestic') {
+                loadDomesticNews();
+            } else if (category === 'global') {
+                loadGlobalNews();
+            } else if (category === 'all') {
+                loadNewsData(); // 기본 국내뉴스
+            }
+
             console.log('카테고리 로드:', category);
+        }
+
+        // 해외뉴스 로드 함수
+        async function loadGlobalNews() {
+            try {
+                showLoadingGrid();
+
+                // 해외뉴스 API 호출
+                const response = await fetch('/api/global-keywords?start_date=2025-07-14&end_date=2025-07-21');
+
+                if (!response.ok) {
+                    throw new Error(`해외뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('🌍 해외뉴스 키워드 데이터:', data);
+
+                hideLoadingGrid();
+
+                // 콘텐츠 헤더 업데이트
+                document.querySelector('.content-title').textContent = '이번 주 해외 AI 뉴스 분석';
+                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 해외 최신 뉴스 트렌드와 키워드를 확인하세요';
+
+                if (data.keywords && data.keywords.length > 0) {
+                    const globalNewsData = await generateGlobalNewsCards(data.keywords);
+                    displayNewsCards(globalNewsData);
+                } else {
+                    console.warn('해외 키워드 데이터가 비어있어 샘플 데이터 사용');
+                    displayGlobalSampleNews();
+                }
+            } catch (error) {
+                console.error('❌ 해외뉴스 데이터 로드 오류:', error);
+                hideLoadingGrid();
+                displayGlobalSampleNews();
+            }
+        }
+
+        // 국내뉴스 로드 함수 (기존 로직)
+        async function loadDomesticNews() {
+            try {
+                showLoadingGrid();
+
+                // 콘텐츠 헤더 업데이트
+                document.querySelector('.content-title').textContent = '이번 주 국내 AI 뉴스 분석';
+                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내 최신 뉴스 트렌드와 키워드를 확인하세요';
+
+                // 기존 국내뉴스 로직 실행
+                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+
+                if (!response.ok) {
+                    throw new Error(`국내뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('🇰🇷 국내뉴스 키워드 데이터:', data);
+
+                hideLoadingGrid();
+
+                if (data.keywords && data.keywords.length > 0) {
+                    newsData = await generateNewsCards(data.keywords);
+                    displayNewsCards(newsData);
+                } else {
+                    console.warn('국내 키워드 데이터가 비어있어 샘플 데이터 사용');
+                    displaySampleNews();
+                }
+            } catch (error) {
+                console.error('❌ 국내뉴스 데이터 로드 오류:', error);
+                hideLoadingGrid();
+                displaySampleNews();
+            }
+        }
+
+        // 해외 키워드를 뉴스 카드로 변환
+        async function generateGlobalNewsCards(keywords) {
+            const cards = [];
+
+            for (let i = 0; i < Math.min(keywords.length, 12); i++) {
+                const keyword = keywords[i];
+                const insight = await generateGlobalKeywordInsight(keyword.keyword);
+
+                cards.push({
+                    id: i,
+                    title: `${keyword.keyword} Analysis Report`,
+                    keyword: keyword.keyword,
+                    count: keyword.count,
+                    category: 'global',
+                    insight: insight,
+                    thumbnail: getGlobalKeywordIcon(keyword.keyword),
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                });
+            }
+
+            return cards;
+        }
+
+        // 해외 키워드 인사이트 생성
+        async function generateGlobalKeywordInsight(keyword) {
+            const globalKeywordInsights = {
+                'AI': `AI technology advancement, policy discussions, investment growth, standardization efforts, talent development, security issues, startup ecosystem growth, patent surge, international competitiveness, and new product launches show comprehensive growth trends.`,
+                'Technology': `Technology innovation acceleration, industry application expansion, regulatory improvements, investment activation, international cooperation, expert talent acquisition, technical standardization, and startup growth are prominent trends.`,
+                'Innovation': `Innovation-driven transformation, digital disruption, emerging technologies, venture capital investments, R&D initiatives, patent competitions, global market expansion, and technological breakthroughs are key themes.`,
+                'Digital Transformation': `Digital transformation initiatives, cloud adoption, automation processes, data analytics, cybersecurity measures, workforce reskilling, digital infrastructure, and business model innovations are accelerating globally.`,
+                'Machine Learning': `Machine learning applications, algorithm improvements, data processing capabilities, AI model training, predictive analytics, automation solutions, research breakthroughs, and industry implementations are expanding rapidly.`,
+                'Cloud Computing': `Cloud infrastructure growth, hybrid cloud solutions, edge computing, serverless architectures, cloud security, cost optimization, migration strategies, and multi-cloud environments are driving digital transformation.`
+            };
+
+            // 키워드별 맞춤 인사이트가 있으면 사용, 없으면 일반적인 인사이트 생성
+            if (globalKeywordInsights[keyword]) {
+                return globalKeywordInsights[keyword];
+            }
+
+            // 일반적인 해외 인사이트
+            const generalInsights = [
+                `${keyword} technology development, policy support, investment expansion, standardization work, talent development, security enhancement, ecosystem creation, patent competition, global expansion, and future prospects are major trends.`,
+                `${keyword} field innovation acceleration, industry application expansion, regulatory improvements, investment activation, international cooperation, expert talent acquisition, technical standardization, and startup growth are notable.`,
+                `${keyword} related technology advancement, market expansion, government support, private investment, talent acquisition, security issues, innovation ecosystem, patent applications, and international competitiveness are key topics.`
+            ];
+
+            return generalInsights[Math.floor(Math.random() * generalInsights.length)];
+        }
+
+        // 해외 키워드별 아이콘 반환
+        function getGlobalKeywordIcon(keyword) {
+            const globalIcons = {
+                'AI': '🤖', 'Artificial Intelligence': '🤖', 'Machine Learning': '🤖',
+                'Technology': '💻', 'Tech': '💻', 'Innovation': '💡',
+                'Digital': '📱', 'Digital Transformation': '🔄', 'Cloud': '☁️',
+                'Data': '📊', 'Analytics': '📈', 'Big Data': '📊',
+                'Cybersecurity': '🛡️', 'Security': '🔒', 'Privacy': '🔐',
+                'Blockchain': '⛓️', 'Cryptocurrency': '💰', 'Bitcoin': '₿',
+                'IoT': '🌐', 'Internet of Things': '🌐', 'Smart': '🏠',
+                'Automation': '⚙️', 'Robot': '🤖', 'Manufacturing': '🏭',
+                'Healthcare': '🏥', 'Biotech': '🧬', 'Medical': '💊',
+                'Finance': '💳', 'Fintech': '💰', 'Banking': '🏦',
+                'Energy': '⚡', 'Green': '🌱', 'Sustainability': '♻️'
+            };
+
+            for (const [key, icon] of Object.entries(globalIcons)) {
+                if (keyword.toLowerCase().includes(key.toLowerCase())) return icon;
+            }
+
+            return '🌍';
+        }
+
+        // 해외 샘플 뉴스 표시
+        function displayGlobalSampleNews() {
+            const globalSampleCards = [
+                {
+                    title: 'AI Technology Trends Analysis',
+                    keyword: 'AI Technology',
+                    count: 247,
+                    thumbnail: '🤖',
+                    insight: 'AI technology advancement, policy discussions, investment growth, standardization efforts, talent development, security issues, startup ecosystem growth, patent surge, international competitiveness, and new product launches show comprehensive growth trends.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: 'Innovation & Digital Transformation',
+                    keyword: 'Innovation',
+                    count: 183,
+                    thumbnail: '💡',
+                    insight: 'Innovation-driven transformation, digital disruption, emerging technologies, venture capital investments, R&D initiatives, patent competitions, global market expansion, and technological breakthroughs are key themes.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: 'Machine Learning Applications',
+                    keyword: 'Machine Learning',
+                    count: 156,
+                    thumbnail: '🤖',
+                    insight: 'Machine learning applications, algorithm improvements, data processing capabilities, AI model training, predictive analytics, automation solutions, research breakthroughs, and industry implementations are expanding rapidly.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: 'Cloud Computing Evolution',
+                    keyword: 'Cloud Computing',
+                    count: 142,
+                    thumbnail: '☁️',
+                    insight: 'Cloud infrastructure growth, hybrid cloud solutions, edge computing, serverless architectures, cloud security, cost optimization, migration strategies, and multi-cloud environments are driving digital transformation.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: 'Cybersecurity & Privacy',
+                    keyword: 'Cybersecurity',
+                    count: 128,
+                    thumbnail: '🛡️',
+                    insight: 'Cybersecurity threats increase, security solution development, privacy protection enhancement, government policy support, international cooperation expansion, security expert training, corporate security investment, and global security standardization are core trends.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: 'Digital Transformation Trends',
+                    keyword: 'Digital Transformation',
+                    count: 134,
+                    thumbnail: '🔄',
+                    insight: 'Digital transformation initiatives, cloud adoption, automation processes, data analytics, cybersecurity measures, workforce reskilling, digital infrastructure, and business model innovations are accelerating globally.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                }
+            ];
+
+            displayNewsCards(globalSampleCards);
         }
 
         // 검색 기능

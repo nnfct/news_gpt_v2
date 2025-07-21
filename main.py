@@ -220,6 +220,40 @@ async def redirect_to_original(article_id: str):
         logger.error(f"리다이렉트 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+# 해외뉴스용 키워드 추출 엔드포인트
+@app.get("/api/global-keywords")
+async def get_global_weekly_keywords(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
+                                   end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
+    """해외뉴스 워크플로우: Global Tech 기사 → GPT 키워드 추출"""
+    try:
+        logger.info(f"🌍 해외뉴스 워크플로우 시작 - 기간: {start_date} ~ {end_date}")
+        
+        # 1단계: DeepSearch Global Tech에서 기사 수집
+        global_articles = await fetch_global_tech_articles(start_date, end_date)
+        if not global_articles:
+            return {"error": "해외 Tech 기사를 찾을 수 없습니다", "keywords": [], "articles_count": 0}
+        
+        # 2단계: GPT로 영어 키워드 추출
+        extracted_keywords = await extract_global_keywords_with_gpt(global_articles)
+        if not extracted_keywords:
+            return {"error": "해외 키워드 추출 실패", "keywords": [], "articles_count": len(global_articles)}
+        
+        # 3단계: 추출된 키워드들을 메모리에 저장
+        store_keywords_in_memory(extracted_keywords, start_date, end_date)
+        
+        return {
+            "keywords": extracted_keywords,
+            "date_range": f"{start_date} ~ {end_date}",
+            "tech_articles_count": len(global_articles),
+            "workflow": "Global Tech기사 → GPT 영어키워드추출",
+            "region": "global",
+            "status": "success"
+        }
+        
+    except Exception as e:
+        logger.error(f"해외뉴스 워크플로우 오류: {e}", exc_info=True)
+        return {"error": str(e), "keywords": [], "articles_count": 0}
+
 # 기존 호환성을 위한 엔드포인트 (deprecated)
 @app.get("/keyword-articles")
 async def get_keyword_articles_legacy(
@@ -639,6 +673,95 @@ def store_keywords_in_memory(keywords: List[Dict[str, Any]], start_date: str, en
             "cached_at": time.time()
         }
     logger.info(f"📝 {len(keywords)}개 키워드를 메모리에 저장 완료")
+
+# 4단계: 해외 키워드로 관련 기사 검색
+@retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(requests.RequestException,))
+async def search_global_keyword_articles(keyword: str, start_date: str, end_date: str) -> List[Dict[str, Any]]:
+    """특정 키워드로 DeepSearch Global API에서 해외 관련 기사들을 검색합니다"""
+    if not DEEPSEARCH_API_KEY:
+        logger.error("❌ DeepSearch API 키가 설정되지 않음")
+        return []
+    
+    try:
+        # 해외 키워드 검색을 위한 URL 구성
+        base_url = DEEPSEARCH_GLOBAL_KEYWORD_URL
+        params = {
+            "api_key": DEEPSEARCH_API_KEY,
+            "keyword": keyword,  # 영어 키워드로 검색
+            "date_from": start_date,
+            "date_to": end_date,
+            "page_size": 50  # 충분한 기사 수집
+        }
+        
+        logger.info(f"🌍 해외 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
+        logger.info(f"🌍 파라미터: {params}")
+        response = requests.get(base_url, params=params, timeout=5)
+        logger.info(f"🌍 응답 상태 코드: {response.status_code}")
+        
+        if response.status_code != 200:
+            logger.error(f"❌ 해외 키워드 검색 API 호출 실패: {response.status_code}")
+            logger.error(f"❌ 응답 내용: {response.text}")
+            return []
+            
+        response.raise_for_status()
+        data = response.json()
+        
+        # 응답 구조 확인 및 기사 추출
+        articles = []
+        if 'data' in data:
+            articles = data['data']
+        elif 'articles' in data:
+            articles = data['articles']
+        elif isinstance(data, list):
+            articles = data
+        else:
+            logger.warning(f"알 수 없는 해외 키워드 검색 응답 구조: {list(data.keys())}")
+            return []
+        
+        # 기사 정규화 및 캐시 저장
+        processed_articles = []
+        for article in articles:
+            article_id = generate_article_id(article)
+            
+            # 날짜 정보 처리 개선
+            published_at = article.get("published_at", "")
+            formatted_date = "날짜 정보 없음"
+            if published_at:
+                try:
+                    if "T" in published_at:
+                        formatted_date = published_at.split("T")[0]  # YYYY-MM-DD
+                    else:
+                        formatted_date = published_at[:10]  # 처음 10자리만
+                except:
+                    formatted_date = "날짜 정보 없음"
+            
+            processed_article = {
+                "id": article_id,
+                "title": article.get("title", "제목 없음"),
+                "summary": (article.get("summary", "") or article.get("content", ""))[:150] + "..." if article.get("summary") or article.get("content") else "요약 정보 없음",
+                "content": article.get("summary", "") or article.get("content", ""),
+                "url": article.get("content_url", "") or article.get("url", ""),
+                "date": formatted_date,
+                "published_at": published_at,
+                "source": "해외",
+                "keyword": keyword,
+                "region": "global",
+                "relevance_score": calculate_relevance_score(article, keyword)
+            }
+            
+            # 캐시에 저장 (URL 리다이렉트용)
+            articles_cache[article_id] = processed_article
+            processed_articles.append(processed_article)
+        
+        # 관련성 점수 기준으로 정렬
+        processed_articles.sort(key=lambda x: x['relevance_score'], reverse=True)
+        
+        logger.info(f"✅ 해외 키워드 '{keyword}' 관련 기사 {len(processed_articles)}개 검색 완료")
+        return processed_articles[:15]  # 상위 15개만 반환
+        
+    except Exception as e:
+        logger.error(f"❌ 해외 키워드 '{keyword}' 검색 오류: {e}", exc_info=True)
+        return []
 
 # 4단계: 키워드로 관련 기사 검색
 @retry_on_exception(max_retries=3, delay=0.5, backoff=2, allowed_exceptions=(requests.RequestException,))

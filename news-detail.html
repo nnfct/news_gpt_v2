@@ -806,15 +806,17 @@
 
   <script>
     let currentKeyword = '';
+    let currentRegion = 'domestic';
     let isSubscribed = false;
     let isLiked = false;
     let isDescriptionExpanded = false;
 
     // 페이지 로드시 실행
     document.addEventListener('DOMContentLoaded', function () {
-      // URL에서 키워드 파라미터 가져오기
+      // URL에서 키워드와 지역 파라미터 가져오기
       const urlParams = new URLSearchParams(window.location.search);
       currentKeyword = urlParams.get('keyword') || 'AI';
+      currentRegion = urlParams.get('region') || 'domestic'; // 기본값은 국내
 
       initializePage();
     });
@@ -829,10 +831,11 @@
 
     // 페이지 제목 업데이트
     function updatePageTitle() {
-      const title = `${currentKeyword} 분석 리포트`;
+      const regionText = currentRegion === 'global' ? '해외' : '국내';
+      const title = `${currentKeyword} ${regionText} 분석 리포트`;
       document.getElementById('videoTitle').textContent = title;
       document.getElementById('mainTitle').textContent = title;
-      document.getElementById('videoSubtitle').textContent = `${currentKeyword} 관련 뉴스 트렌드 분석`;
+      document.getElementById('videoSubtitle').textContent = `${currentKeyword} 관련 ${regionText} 뉴스 트렌드 분석`;
       document.title = `📺 ${title} - News TUBE GPT v2`;
     }
 
@@ -842,9 +845,16 @@
         // 필수 파라미터 추가 (start_date, end_date)
         const startDate = '2025-07-14';
         const endDate = '2025-07-21';
-        const apiUrl = `/api/keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
 
-        console.log('API 호출:', apiUrl);
+        // 지역에 따라 다른 API 엔드포인트 사용
+        let apiUrl;
+        if (currentRegion === 'global') {
+          apiUrl = `/api/global-keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
+        } else {
+          apiUrl = `/api/keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        console.log('API 호출:', apiUrl, '지역:', currentRegion);
         const response = await fetch(apiUrl);
 
         if (response.ok) {
@@ -1226,10 +1236,10 @@
       ];
 
       return categories.map(category => {
-        const isCurrentCategory = currentKeyword === category.keyword || 
-                                 currentKeyword.includes(category.keyword) || 
-                                 category.keyword.includes(currentKeyword);
-        
+        const isCurrentCategory = currentKeyword === category.keyword ||
+          currentKeyword.includes(category.keyword) ||
+          category.keyword.includes(currentKeyword);
+
         return `
           <div class="category-btn ${isCurrentCategory ? 'current' : ''}" 
                onclick="${isCurrentCategory ? '' : `navigateToCategory('${category.keyword}')`}">
