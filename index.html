@@ -717,7 +717,7 @@
             const newsGrid = document.getElementById('newsGrid');
 
             newsGrid.innerHTML = cards.map(card => `
-                <div class="news-card" onclick="openNewsDetail('${card.keyword}')">
+                <div class="news-card" onclick="window.location.href='/news-detail.html?keyword=${encodeURIComponent(card.keyword)}'">
                     <div class="news-thumbnail">
                         <div class="thumbnail-icon">${card.thumbnail}</div>
                     </div>
@@ -771,7 +771,7 @@
 
         // 뉴스 상세 페이지로 이동
         function openNewsDetail(keyword) {
-            window.location.href = `/analysis.html?keyword=${encodeURIComponent(keyword)}`;
+            window.location.href = `/news-detail.html?keyword=${encodeURIComponent(keyword)}`;
         }
 
         // 상세 분석 페이지로 이동

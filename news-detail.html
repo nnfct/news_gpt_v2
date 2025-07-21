@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📺 News Detail - AI 뉴스 분석</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      line-height: 1.6;
+    }
+
+    /* 유튜브 스타일 헤더 */
+    .header {
+      background: #212121;
+      padding: 12px 16px;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 500;
+    }
+
+    .back-btn {
+      background: #303030;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .back-btn:hover {
+      background: #404040;
+    }
+
+    /* 메인 컨테이너 */
+    .main-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      gap: 24px;
+      padding: 24px 16px;
+    }
+
+    /* 메인 콘텐츠 */
+    .main-content {
+      flex: 1;
+      max-width: 854px;
+    }
+
+    /* 비디오 플레이어 영역 */
+    .video-container {
+      background: #1a1a1a;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .video-player {
+      width: 100%;
+      height: 360px;
+      background: linear-gradient(135deg, #1C2039, #00D9C0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .video-player::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg,
+          rgba(28, 32, 57, 0.9) 0%,
+          rgba(0, 217, 192, 0.1) 100%);
+    }
+
+    .play-button {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 2;
+      margin-bottom: 15px;
+    }
+
+    .play-button:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: scale(1.1);
+    }
+
+    .play-button::after {
+      content: '▶';
+      font-size: 24px;
+      color: #1C2039;
+      margin-left: 3px;
+    }
+
+    .video-title-overlay {
+      text-align: center;
+      z-index: 2;
+      max-width: 80%;
+    }
+
+    .video-title-overlay h2 {
+      font-size: 21px;
+      margin-bottom: 9px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    }
+
+    .video-subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    }
+
+    /* 비디오 정보 */
+    .video-info {
+      padding: 20px;
+      border-bottom: 1px solid #333;
+    }
+
+    .video-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .video-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .video-stats {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .video-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-btn {
+      background: #303030;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .action-btn:hover {
+      background: #404040;
+    }
+
+    .action-btn.liked {
+      background: #065fd4;
+    }
+
+    /* 채널 정보 */
+    .channel-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 0;
+    }
+
+    .channel-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #00D9C0, #1C2039);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .channel-details {
+      flex: 1;
+    }
+
+    .channel-name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .channel-subscribers {
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    .subscribe-channel-btn {
+      background: #cc0000;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 18px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .subscribe-channel-btn:hover {
+      background: #aa0000;
+    }
+
+    .subscribe-channel-btn.subscribed {
+      background: #606060;
+    }
+
+    /* 설명 */
+    .description {
+      padding: 16px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    .description-content {
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    .show-more {
+      color: #3ea6ff;
+      cursor: pointer;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .show-more:hover {
+      text-decoration: underline;
+    }
+
+    /* 사이드바 */
+    .sidebar {
+      width: 402px;
+      padding-left: 24px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 32px;
+    }
+
+    .sidebar-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    /* 관련 뉴스 */
+    .related-news {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .related-item {
+      display: flex;
+      gap: 12px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .related-item:hover {
+      background: #1a1a1a;
+    }
+
+    .related-thumbnail {
+      width: 168px;
+      height: 94px;
+      background: linear-gradient(135deg, #1C2039, #00D9C0);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .related-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .related-title {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .related-meta {
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    /* 키워드 태그 */
+    .keyword-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .keyword-tag {
+      background: #303030;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .keyword-tag:hover {
+      background: #404040;
+    }
+
+    /* AI 인사이트 카드 */
+    .insight-card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid #00D9C0;
+    }
+
+    .insight-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .insight-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: #00D9C0;
+    }
+
+    .insight-content {
+      line-height: 1.6;
+      color: #ccc;
+    }
+
+    /* 통계 차트 */
+    .stats-chart {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .chart-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .chart-label {
+      width: 80px;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .chart-progress {
+      flex: 1;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      margin: 0 12px;
+      overflow: hidden;
+    }
+
+    .chart-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00D9C0, #1C2039);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .chart-value {
+      font-size: 12px;
+      color: #fff;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* 반응형 */
+    @media (max-width: 1024px) {
+      .main-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        padding-left: 0;
+      }
+
+      .video-player {
+        height: 270px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 16px 12px;
+      }
+
+      .video-player {
+        height: 180px;
+      }
+
+      .video-title-overlay h2 {
+        font-size: 15px;
+      }
+
+      .video-subtitle {
+        font-size: 10px;
+      }
+
+      .related-thumbnail {
+        width: 120px;
+        height: 68px;
+      }
+    }
+
+    /* 로딩 애니메이션 */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: #aaa;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid #333;
+      border-top: 2px solid #00D9C0;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 유튜브 스타일 헤더 -->
+  <div class="header">
+    <div class="logo-section">
+      <button class="back-btn" onclick="goBack()">
+        <span>←</span>
+        <span>뒤로가기</span>
+      </button>
+      <a href="/" class="logo">
+        <span style="font-size: 24px;">📺</span>
+        <h1>News TUBE GPT v2</h1>
+      </a>
+    </div>
+  </div>
+
+  <div class="main-container">
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+      <!-- 비디오 플레이어 영역 -->
+      <div class="video-container">
+        <div class="video-player" id="videoPlayer">
+          <div class="play-button" onclick="playVideo()"></div>
+          <div class="video-title-overlay">
+            <h2 id="videoTitle">뉴스 분석 리포트</h2>
+            <p class="video-subtitle" id="videoSubtitle">AI가 분석한 최신 뉴스 트렌드</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 비디오 정보 -->
+      <div class="video-info">
+        <h1 class="video-title" id="mainTitle">뉴스 분석 리포트</h1>
+
+        <div class="video-meta">
+          <div class="video-stats">
+            <span id="viewCount">조회수 1,234회</span>
+            <span>•</span>
+            <span id="publishDate">2025년 7월 21일</span>
+          </div>
+
+          <div class="video-actions">
+            <button class="action-btn" onclick="toggleLike()">
+              <span>👍</span>
+              <span id="likeCount">42</span>
+            </button>
+            <button class="action-btn" onclick="shareVideo()">
+              <span>📤</span>
+              <span>공유</span>
+            </button>
+            <button class="action-btn" onclick="saveVideo()">
+              <span>💾</span>
+              <span>저장</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 채널 정보 -->
+        <div class="channel-info">
+          <div class="channel-avatar">🤖</div>
+          <div class="channel-details">
+            <div class="channel-name">AI News Analyzer</div>
+            <div class="channel-subscribers">구독자 12.5만명</div>
+          </div>
+          <button class="subscribe-channel-btn" onclick="toggleSubscribe()">구독</button>
+        </div>
+
+        <!-- 키워드 태그 -->
+        <div class="keyword-tags" id="keywordTags">
+          <!-- 키워드 태그들이 여기에 표시됩니다 -->
+        </div>
+
+        <!-- 설명 -->
+        <div class="description">
+          <div class="description-content" id="descriptionContent">
+            <div class="loading">
+              <div class="spinner"></div>
+              <span>뉴스 분석 데이터를 불러오는 중...</span>
+            </div>
+          </div>
+          <div class="show-more" onclick="toggleDescription()">더보기</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 사이드바 -->
+    <div class="sidebar">
+      <!-- AI 인사이트 -->
+      <div class="sidebar-section">
+        <div class="insight-card">
+          <div class="insight-header">
+            <span>🤖</span>
+            <div class="insight-title">AI 인사이트</div>
+          </div>
+          <div class="insight-content" id="aiInsight">
+            <div class="loading">
+              <div class="spinner"></div>
+              <span>AI 분석 중...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 통계 차트 -->
+      <div class="sidebar-section">
+        <div class="stats-chart">
+          <div class="chart-title">📊 키워드 트렌드</div>
+          <div id="trendChart">
+            <div class="loading">
+              <div class="spinner"></div>
+              <span>차트 로딩 중...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 관련 뉴스 -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">관련 뉴스</div>
+        <div class="related-news" id="relatedNews">
+          <div class="loading">
+            <div class="spinner"></div>
+            <span>관련 뉴스 로딩 중...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentKeyword = '';
+    let isSubscribed = false;
+    let isLiked = false;
+    let isDescriptionExpanded = false;
+
+    // 페이지 로드시 실행
+    document.addEventListener('DOMContentLoaded', function () {
+      // URL에서 키워드 파라미터 가져오기
+      const urlParams = new URLSearchParams(window.location.search);
+      currentKeyword = urlParams.get('keyword') || 'AI';
+
+      initializePage();
+    });
+
+    // 페이지 초기화
+    async function initializePage() {
+      updatePageTitle();
+      await loadNewsData();
+      await loadRelatedNews();
+      generateKeywordTags();
+    }
+
+    // 페이지 제목 업데이트
+    function updatePageTitle() {
+      const title = `${currentKeyword} 분석 리포트`;
+      document.getElementById('videoTitle').textContent = title;
+      document.getElementById('mainTitle').textContent = title;
+      document.getElementById('videoSubtitle').textContent = `${currentKeyword} 관련 뉴스 트렌드 분석`;
+      document.title = `📺 ${title} - News TUBE GPT v2`;
+    }
+
+    // 뉴스 데이터 로드
+    async function loadNewsData() {
+      try {
+        // 필수 파라미터 추가 (start_date, end_date)
+        const startDate = '2025-07-14';
+        const endDate = '2025-07-21';
+        const apiUrl = `/api/keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
+
+        console.log('API 호출:', apiUrl);
+        const response = await fetch(apiUrl);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('API 응답 데이터:', data);
+          console.log('받아온 기사 수:', data.articles ? data.articles.length : 0);
+          displayNewsAnalysis(data);
+        } else {
+          console.error('API 응답 오류:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('오류 상세:', errorText);
+          displaySampleAnalysis();
+        }
+      } catch (error) {
+        console.error('뉴스 데이터 로드 오류:', error);
+        displaySampleAnalysis();
+      }
+    }
+
+    // 뉴스 분석 표시
+    function displayNewsAnalysis(data) {
+      const articles = data.articles || [];
+
+      // 설명 업데이트
+      const description = generateDescription(articles);
+      document.getElementById('descriptionContent').innerHTML = description;
+
+      // AI 인사이트 업데이트
+      const insight = generateAIInsight(articles);
+      document.getElementById('aiInsight').innerHTML = insight;
+
+      // 트렌드 차트 업데이트
+      generateTrendChart(articles);
+
+      // 조회수 업데이트
+      document.getElementById('viewCount').textContent = `조회수 ${articles.length * 47}회`;
+    }
+
+    // 샘플 분석 표시
+    function displaySampleAnalysis() {
+      const sampleDescription = `
+                <h3>${currentKeyword} 뉴스 분석 리포트</h3>
+                <p>총 15건의 관련 기사를 AI가 분석했습니다.</p>
+                <br>
+                <p><strong>주요 내용:</strong></p>
+                <ul>
+                    <li><strong>[1]</strong> ${currentKeyword} 기술의 급속한 발전과 시장 전망</li>
+                    <li><strong>[2]</strong> 산업 전반에 미치는 ${currentKeyword}의 영향 확대</li>
+                    <li><strong>[3]</strong> ${currentKeyword} 관련 정책 및 규제 논의 활발</li>
+                    <li><strong>[4]</strong> ${currentKeyword} 분야 투자 및 M&A 활동 증가</li>
+                    <li><strong>[5]</strong> ${currentKeyword} 기술 표준화 및 국제 협력 강화</li>
+                    <li><strong>[6]</strong> ${currentKeyword} 인재 양성 및 교육 프로그램 확대</li>
+                    <li><strong>[7]</strong> ${currentKeyword} 보안 및 윤리적 이슈 대두</li>
+                    <li><strong>[8]</strong> ${currentKeyword} 스타트업 생태계 활성화</li>
+                    <li><strong>[9]</strong> ${currentKeyword} 관련 특허 출원 급증</li>
+                    <li><strong>[10]</strong> ${currentKeyword} 국제 경쟁력 강화 방안</li>
+                    <li><strong>[11]</strong> ${currentKeyword} 기반 신제품 출시 러시</li>
+                    <li><strong>[12]</strong> ${currentKeyword} 관련 법제도 정비 논의</li>
+                    <li><strong>[13]</strong> ${currentKeyword} 기술 도입 기업 성과 분석</li>
+                    <li><strong>[14]</strong> ${currentKeyword} 분야 글로벌 트렌드 변화</li>
+                    <li><strong>[15]</strong> ${currentKeyword} 미래 발전 방향과 전망</li>
+                </ul>
+                <br>
+                <p><strong>분석 기간:</strong> 2025년 7월 14일 ~ 7월 21일</p>
+                <p><strong>분석 기사 수:</strong> 15건</p>
+                <p><strong>주요 키워드:</strong> ${currentKeyword}, 혁신, 기술, 발전, 미래</p>
+            `;
+
+      document.getElementById('descriptionContent').innerHTML = sampleDescription;
+
+      const sampleInsight = `
+                ${currentKeyword}는 현재 가장 주목받는 기술 분야 중 하나로, 
+                다양한 산업에서 혁신을 이끌고 있습니다. 
+                특히 최근 일주일간의 뉴스 분석 결과, 
+                ${currentKeyword} 관련 투자와 개발이 급속도로 증가하고 있으며, 
+                이는 향후 시장에 큰 변화를 가져올 것으로 예상됩니다.
+            `;
+
+      document.getElementById('aiInsight').innerHTML = sampleInsight;
+
+      // 샘플 트렌드 차트
+      generateSampleTrendChart();
+    }
+
+    // 설명 생성
+    function generateDescription(articles) {
+      if (articles.length === 0) {
+        return displaySampleAnalysis();
+      }
+
+      return `
+                <h3>${currentKeyword} 뉴스 분석 리포트</h3>
+                <p>총 ${articles.length}건의 관련 기사를 AI가 분석했습니다.</p>
+                <br>
+                <p><strong>주요 내용:</strong></p>
+                <ul>
+                    ${articles.slice(0, Math.min(articles.length, 15)).map((article, index) =>
+        `<li><strong>[${index + 1}]</strong> ${article.title}</li>`
+      ).join('')}
+                </ul>
+                <br>
+                <p><strong>분석 일시:</strong> ${new Date().toLocaleString('ko-KR')}</p>
+            `;
+    }
+
+    // AI 인사이트 생성
+    function generateAIInsight(articles) {
+      const insights = [
+        `${currentKeyword}는 현재 매우 활발한 논의가 이루어지고 있는 주제입니다.`,
+        `최근 ${currentKeyword} 관련 뉴스가 급증하며 업계의 주목을 받고 있습니다.`,
+        `${currentKeyword} 분야의 기술 발전이 다양한 산업에 영향을 미치고 있습니다.`,
+        `${currentKeyword}에 대한 투자와 연구개발이 활발히 진행되고 있습니다.`
+      ];
+
+      return insights[Math.floor(Math.random() * insights.length)];
+    }
+
+    // 트렌드 차트 생성
+    function generateTrendChart(articles) {
+      const chartData = [
+        { label: '이번 주', value: articles.length || 247, percentage: 100 },
+        { label: '지난 주', value: Math.floor((articles.length || 247) * 0.8), percentage: 80 },
+        { label: '2주 전', value: Math.floor((articles.length || 247) * 0.6), percentage: 60 },
+        { label: '3주 전', value: Math.floor((articles.length || 247) * 0.4), percentage: 40 }
+      ];
+
+      const chartHTML = chartData.map(item => `
+                <div class="chart-bar">
+                    <div class="chart-label">${item.label}</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" style="width: ${item.percentage}%"></div>
+                    </div>
+                    <div class="chart-value">${item.value}</div>
+                </div>
+            `).join('');
+
+      document.getElementById('trendChart').innerHTML = chartHTML;
+    }
+
+    // 샘플 트렌드 차트 생성
+    function generateSampleTrendChart() {
+      const chartData = [
+        { label: '이번 주', value: 247, percentage: 100 },
+        { label: '지난 주', value: 198, percentage: 80 },
+        { label: '2주 전', value: 148, percentage: 60 },
+        { label: '3주 전', value: 99, percentage: 40 }
+      ];
+
+      const chartHTML = chartData.map(item => `
+                <div class="chart-bar">
+                    <div class="chart-label">${item.label}</div>
+                    <div class="chart-progress">
+                        <div class="chart-fill" style="width: ${item.percentage}%"></div>
+                    </div>
+                    <div class="chart-value">${item.value}</div>
+                </div>
+            `).join('');
+
+      document.getElementById('trendChart').innerHTML = chartHTML;
+    }
+
+    // 관련 뉴스 로드
+    async function loadRelatedNews() {
+      try {
+        // 다른 키워드들의 뉴스 가져오기
+        const keywords = ['AI', '반도체', '바이오', '전기차', '메타버스', '블록체인'];
+        const relatedKeywords = keywords.filter(k => k !== currentKeyword).slice(0, 5);
+
+        const relatedHTML = relatedKeywords.map((keyword, index) => `
+                    <div class="related-item" onclick="openRelatedNews('${keyword}')">
+                        <div class="related-thumbnail">${getKeywordIcon(keyword)}</div>
+                        <div class="related-info">
+                            <div class="related-title">${keyword} 분석 리포트</div>
+                            <div class="related-meta">
+                                <div>AI News Analyzer</div>
+                                <div>조회수 ${Math.floor(Math.random() * 1000) + 500}회 • ${Math.floor(Math.random() * 7) + 1}일 전</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+        document.getElementById('relatedNews').innerHTML = relatedHTML;
+      } catch (error) {
+        console.error('관련 뉴스 로드 오류:', error);
+        document.getElementById('relatedNews').innerHTML = '<p>관련 뉴스를 불러올 수 없습니다.</p>';
+      }
+    }
+
+    // 키워드별 아이콘 반환
+    function getKeywordIcon(keyword) {
+      const icons = {
+        'AI': '🤖', '인공지능': '🤖', 'GPT': '🤖',
+        '반도체': '🔧', '메모리': '💾', 'CPU': '⚡',
+        '바이오': '🧬', '의료': '🏥', '헬스케어': '💊',
+        '자동차': '🚗', '전기차': '🔋', '배터리': '🔋',
+        '블록체인': '⛓️', '암호화폐': '💰', '비트코인': '₿',
+        '게임': '🎮', '메타버스': '🥽', 'VR': '🥽',
+        '클라우드': '☁️', '서버': '🖥️', '데이터': '📊'
+      };
+
+      for (const [key, icon] of Object.entries(icons)) {
+        if (keyword.includes(key)) return icon;
+      }
+
+      return '📰';
+    }
+
+    // 키워드 태그 생성
+    function generateKeywordTags() {
+      const relatedKeywords = [
+        currentKeyword,
+        '기술트렌드',
+        '혁신',
+        '미래기술',
+        '산업분석'
+      ];
+
+      const tagsHTML = relatedKeywords.map(tag =>
+        `<div class="keyword-tag" onclick="searchKeyword('${tag}')">#${tag}</div>`
+      ).join('');
+
+      document.getElementById('keywordTags').innerHTML = tagsHTML;
+    }
+
+    // 비디오 재생 (실제로는 analysis.html로 이동)
+    function playVideo() {
+      window.location.href = `/analysis.html?keyword=${encodeURIComponent(currentKeyword)}`;
+    }
+
+    // 좋아요 토글
+    function toggleLike() {
+      isLiked = !isLiked;
+      const likeBtn = document.querySelector('.action-btn');
+      const likeCount = document.getElementById('likeCount');
+
+      if (isLiked) {
+        likeBtn.classList.add('liked');
+        likeCount.textContent = parseInt(likeCount.textContent) + 1;
+      } else {
+        likeBtn.classList.remove('liked');
+        likeCount.textContent = parseInt(likeCount.textContent) - 1;
+      }
+    }
+
+    // 구독 토글
+    function toggleSubscribe() {
+      isSubscribed = !isSubscribed;
+      const subscribeBtn = document.querySelector('.subscribe-channel-btn');
+
+      if (isSubscribed) {
+        subscribeBtn.textContent = '구독중';
+        subscribeBtn.classList.add('subscribed');
+      } else {
+        subscribeBtn.textContent = '구독';
+        subscribeBtn.classList.remove('subscribed');
+      }
+    }
+
+    // 설명 토글
+    function toggleDescription() {
+      isDescriptionExpanded = !isDescriptionExpanded;
+      const showMoreBtn = document.querySelector('.show-more');
+
+      if (isDescriptionExpanded) {
+        showMoreBtn.textContent = '간략히';
+      } else {
+        showMoreBtn.textContent = '더보기';
+      }
+    }
+
+    // 비디오 공유
+    function shareVideo() {
+      if (navigator.share) {
+        navigator.share({
+          title: `${currentKeyword} 분석 리포트`,
+          text: `${currentKeyword} 관련 뉴스 트렌드 분석`,
+          url: window.location.href
+        });
+      } else {
+        // 클립보드에 URL 복사
+        navigator.clipboard.writeText(window.location.href);
+        alert('링크가 클립보드에 복사되었습니다!');
+      }
+    }
+
+    // 비디오 저장
+    function saveVideo() {
+      alert('저장 기능은 준비 중입니다!');
+    }
+
+    // 관련 뉴스 열기
+    function openRelatedNews(keyword) {
+      window.location.href = `/news-detail.html?keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    // 키워드 검색
+    function searchKeyword(keyword) {
+      window.location.href = `/analysis.html?keyword=${encodeURIComponent(keyword)}`;
+    }
+
+    // 뒤로가기
+    function goBack() {
+      if (document.referrer) {
+        window.history.back();
+      } else {
+        window.location.href = '/';
+      }
+    }
+  </script>
+</body>
+
+</html>

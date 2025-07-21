@@ -135,6 +135,11 @@ async def serve_analysis():
     """상세 분석 페이지 제공"""
     return FileResponse("analysis.html")
 
+@app.get("/news-detail.html")
+async def serve_news_detail():
+    """뉴스 상세 페이지 제공 (유튜브 스타일)"""
+    return FileResponse("news-detail.html")
+
 @app.get("/admin.html")
 async def serve_admin():
     """관리자 페이지 제공"""
