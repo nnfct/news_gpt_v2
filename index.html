@@ -40,10 +40,30 @@
             font-size: 1.1em;
             opacity: 0.9;
             color: #E9ECEF;
+            margin-bottom: 20px;
+        }
+
+        .subscribe-btn {
+            background: linear-gradient(135deg, #00D9C0, #00B8A9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 217, 192, 0.3);
+        }
+
+        .subscribe-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 217, 192, 0.4);
         }
 
         .main-container {
-            max-width: 1400px;  /* 1200px에서 1400px로 확대 */
+            max-width: 1400px;
+            /* 1200px에서 1400px로 확대 */
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -55,7 +75,8 @@
             margin: 30px 0;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid #E9ECEF;
-            min-height: 700px;  /* 600px에서 700px로 확대 */
+            min-height: 700px;
+            /* 600px에서 700px로 확대 */
         }
 
         .summary-container {
@@ -65,7 +86,8 @@
 
         .summary-half {
             flex: 1;
-            min-height: 620px;  /* 520px에서 620px로 확대 */
+            min-height: 620px;
+            /* 520px에서 620px로 확대 */
         }
 
         .summary-title {
@@ -177,18 +199,22 @@
 
         .keywords-container {
             display: flex;
-            gap: 8px;  /* 10px에서 8px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
+            gap: 8px;
+            /* 10px에서 8px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
             flex-wrap: wrap;
-            min-height: 150px;  /* 120px에서 150px로 확대하여 Top 5 키워드 수용 */
+            min-height: 150px;
+            /* 120px에서 150px로 확대하여 Top 5 키워드 수용 */
             align-content: flex-start;
             justify-content: flex-start;
-            width: 100%;  /* 전체 너비 사용 */
+            width: 100%;
+            /* 전체 너비 사용 */
         }
 
         .keyword-tag {
             background: #F0F2F5;
             color: #555555;
-            padding: 8px 14px;  /* 10px 16px에서 8px 14px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
+            padding: 8px 14px;
+            /* 10px 16px에서 8px 14px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
             border-radius: 25px;
             font-weight: 500;
             cursor: pointer;
@@ -196,9 +222,12 @@
             box-shadow: 0 4px 15px rgba(240, 242, 245, 0.4);
             position: relative;
             border: 1px solid #E9ECEF;
-            font-size: 0.85em;  /* 0.9em에서 0.85em로 더 줄여서 공간 효율성 */
-            white-space: nowrap;  /* 키워드가 줄바꿈 되지 않도록 */
-            flex-shrink: 0;  /* 크기 축소 방지 */
+            font-size: 0.85em;
+            /* 0.9em에서 0.85em로 더 줄여서 공간 효율성 */
+            white-space: nowrap;
+            /* 키워드가 줄바꿈 되지 않도록 */
+            flex-shrink: 0;
+            /* 크기 축소 방지 */
         }
 
         .keyword-tag:hover {
@@ -541,9 +570,19 @@
         }
 
         @keyframes typing {
-            0%, 20% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+
+            0%,
+            20% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         @keyframes pulse {
@@ -551,10 +590,12 @@
                 transform: scale(1);
                 box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
             }
+
             50% {
                 transform: scale(1.02);
                 box-shadow: 0 0 0 8px rgba(0, 217, 192, 0.3);
             }
+
             100% {
                 transform: scale(1);
                 box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
@@ -567,13 +608,17 @@
             background-size: 200% 100%;
             animation: loading-skeleton 1.2s ease-in-out infinite;
             border-radius: 8px;
-            transform: translateZ(0); /* GPU 가속 */
+            transform: translateZ(0);
+            /* GPU 가속 */
         }
 
         .skeleton-keyword {
-            height: 35px;  /* 40px에서 35px로 줄여서 Top 5가 한줄에 들어가도록 */
-            width: 100px;  /* 120px에서 100px로 줄여서 공간 효율성 */
-            margin: 6px;  /* 8px에서 6px로 줄여서 더 촘촘하게 */
+            height: 35px;
+            /* 40px에서 35px로 줄여서 Top 5가 한줄에 들어가도록 */
+            width: 100px;
+            /* 120px에서 100px로 줄여서 공간 효율성 */
+            margin: 6px;
+            /* 8px에서 6px로 줄여서 더 촘촘하게 */
             border-radius: 20px;
             display: inline-block;
             position: relative;
@@ -591,13 +636,27 @@
         }
 
         @keyframes pulse-icon {
-            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
         }
 
         @keyframes loading-skeleton {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
         }
 
         /* 🔥 즉시 반응 효과 시스템 */
@@ -615,7 +674,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
             transition: left 0.5s ease;
         }
 
@@ -658,13 +717,27 @@
         }
 
         @keyframes fadeInFast {
-            from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
-            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         @keyframes fadeOut {
-            from { opacity: 1; transform: scale(1); }
-            to { opacity: 0; transform: scale(0.95); }
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: scale(0.95);
+            }
         }
 
         /* 🏃‍♂️ 성능 상태 인디케이터 */
@@ -684,8 +757,15 @@
         }
 
         @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         /* 💨 빠른 로딩 상태 */
@@ -706,8 +786,13 @@
         }
 
         @keyframes fastSweep {
-            0% { left: -100%; }
-            100% { left: 100%; }
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
         }
 
         /* 🚀 일반 성능 모드 (GPU 가속 제거) */
@@ -749,13 +834,17 @@
             }
 
             .keywords-container {
-                gap: 6px;  /* 8px에서 6px로 줄여서 Top 5가 모바일에서도 한줄에 */
-                min-height: 140px;  /* 120px에서 140px로 확대하여 Top 5 수용 */
+                gap: 6px;
+                /* 8px에서 6px로 줄여서 Top 5가 모바일에서도 한줄에 */
+                min-height: 140px;
+                /* 120px에서 140px로 확대하여 Top 5 수용 */
             }
 
             .keyword-tag {
-                padding: 8px 12px;  /* 10px 16px에서 8px 12px로 줄여서 Top 5 수용 */
-                font-size: 0.85em;  /* 0.9em에서 0.85em로 줄여서 공간 확보 */
+                padding: 8px 12px;
+                /* 10px 16px에서 8px 12px로 줄여서 Top 5 수용 */
+                font-size: 0.85em;
+                /* 0.9em에서 0.85em로 줄여서 공간 확보 */
                 text-align: center;
             }
 
@@ -775,6 +864,131 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* 구독 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal h2 {
+            color: #00D9C0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .modal p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .email-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .email-input {
+            padding: 12px 16px;
+            border: 2px solid #E9ECEF;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: #00D9C0;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #00D9C0, #00B8A9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0, 217, 192, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin-top: 15px;
+            display: none;
+        }
     </style>
 </head>
 
@@ -782,6 +996,9 @@
     <div class="header">
         <h1>🔍 AI 뉴스 키워드 분석</h1>
         <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        <button class="subscribe-btn" onclick="openSubscribeModal()">
+            📧 주간 인사이트 구독하기
+        </button>
     </div>
 
     <div class="main-container">
@@ -948,7 +1165,7 @@
             badge.className = 'performance-badge';
             badge.innerHTML = text;
             document.body.appendChild(badge);
-            
+
             // 3초 후 자동 숨김
             setTimeout(() => {
                 if (badge && badge.parentNode) {
@@ -966,7 +1183,7 @@
                 showSkeletonForWeek(week, 'domestic');
                 showSkeletonForWeek(week, 'global');
             }
-            
+
             // 스켈레톤 표시 후 즉시 애니메이션 효과 적용
             setTimeout(() => {
                 document.querySelectorAll('.skeleton').forEach((el, index) => {
@@ -1024,18 +1241,18 @@
                 indicator.classList.remove('show');
                 // 성능 메트릭 업데이트
                 const elapsed = Date.now() - performanceMetrics.startTime;
-                showPerformanceBadge(`✅ 완료 (${(elapsed/1000).toFixed(1)}초)`);
+                showPerformanceBadge(`✅ 완료 (${(elapsed / 1000).toFixed(1)}초)`);
             }
         }
 
         // 즉시 피드백 효과 적용 (간소화)
         function applyInstantFeedback(element) {
-            element.addEventListener('mouseenter', function() {
+            element.addEventListener('mouseenter', function () {
                 this.style.transform = 'translateY(-2px) scale(1.02)';
                 this.style.transition = 'all 0.2s ease';
             });
-            
-            element.addEventListener('mouseleave', function() {
+
+            element.addEventListener('mouseleave', function () {
                 this.style.transform = 'translateY(0) scale(1)';
                 this.style.transition = 'all 0.2s ease';
             });
@@ -1045,16 +1262,16 @@
         document.addEventListener('DOMContentLoaded', function () {
             console.log('🚀 고성능 모드 시작');
             performanceMetrics.startTime = Date.now();
-            
+
             // 즉시 성능 배지 표시
             showPerformanceBadge('⚡ 초고속 로딩 시작');
-            
+
             // 0ms 딜레이로 즉시 스켈레톤 UI 표시
             showSkeletonUI();
-            
+
             // 즉시 피드백 시스템 활성화
             document.body.classList.add('high-performance-mode');
-            
+
             // 100ms 후 실제 로딩 시작 (즉시 시작)
             setTimeout(() => {
                 console.log('🔥 로딩 함수들 호출 시작');
@@ -1064,14 +1281,14 @@
                 } catch (error) {
                     console.error('❌ setupIndustryTabs 오류:', error);
                 }
-                
+
                 try {
                     initializeChatSuggestions();
                     console.log('✅ initializeChatSuggestions 완료');
                 } catch (error) {
                     console.error('❌ initializeChatSuggestions 오류:', error);
                 }
-                
+
                 try {
                     loadAllWeeklyKeywordsOptimized();
                     console.log('✅ loadAllWeeklyKeywordsOptimized 호출 완료');
@@ -1079,7 +1296,7 @@
                     console.error('❌ loadAllWeeklyKeywordsOptimized 오류:', error);
                 }
             }, 100); // 500ms → 100ms로 단축
-            
+
             // 1초 후 최종 완료
             setTimeout(() => {
                 hidePreloadIndicator();
@@ -1106,16 +1323,16 @@
         // 🔥 최적화된 키워드 로딩 (캐싱 + 병렬 처리)
         async function loadAllWeeklyKeywordsOptimized() {
             showPerformanceBadge('🔥 전체 키워드 로딩 시작');
-            
+
             const weeks = [1, 2, 3];
             const promises = [];
-            
+
             for (const week of weeks) {
                 // 국내 및 해외 키워드 병렬 로딩
                 promises.push(loadWeekKeywordsOptimized(week, 'domestic'));
                 promises.push(loadWeekKeywordsOptimized(week, 'global'));
             }
-            
+
             try {
                 await Promise.all(promises);
                 showPerformanceBadge('✅ 모든 키워드 로딩 완료!');
@@ -1142,23 +1359,23 @@
                     keywordElement.className = 'keyword-tag instant-feedback quick-hover';
                     keywordElement.textContent = keyword;
                     keywordElement.setAttribute('data-region', region);
-                    
+
                     // 캐시된 항목 표시
                     if (dataCache.has(`${region}-${weekNumber}-${weekDateRanges[weekNumber].start}-${weekDateRanges[weekNumber].end}`)) {
                         keywordElement.style.borderLeft = '3px solid #10b981';
                         keywordElement.title = '캐시된 데이터 (빠른 로딩)';
                     }
-                    
+
                     // 클릭 이벤트
-                    keywordElement.addEventListener('click', function() {
+                    keywordElement.addEventListener('click', function () {
                         // 즉시 피드백
                         this.style.transform = 'scale(0.95)';
                         setTimeout(() => this.style.transform = '', 100);
-                        
+
                         selectedKeyword = keyword;
                         currentKeywords = [keyword];
                         const dateRange = weekDateRanges[weekNumber];
-                        
+
                         performKeywordAnalysis(keyword);
                         openArticleModalOptimized(keyword, dateRange, region);
                     });
@@ -1167,14 +1384,14 @@
                     keywordElement.style.opacity = '0';
                     keywordElement.style.transform = 'translateY(20px)';
                     container.appendChild(keywordElement);
-                    
+
                     // 부드러운 등장 애니메이션
                     requestAnimationFrame(() => {
                         keywordElement.style.transition = 'all 0.3s ease';
                         keywordElement.style.opacity = '1';
                         keywordElement.style.transform = 'translateY(0)';
                     });
-                    
+
                 }, index * 100); // 순차적 등장 (100ms 간격)
             });
         }
@@ -1182,7 +1399,7 @@
         // 🚀 최적화된 주차별 키워드 로딩 (빠른 버전)
         async function loadWeekKeywordsOptimized(weekNumber, region = 'domestic') {
             console.log(`🔄 ${weekNumber}주차 ${region} 키워드 로딩 시작`);
-            
+
             try {
                 // 날짜 범위 계산
                 const weekDateRanges = {
@@ -1215,33 +1432,33 @@
                 }
 
                 // 해외는 global-weekly-keywords-by-date, 국내는 weekly-keywords-by-date 사용
-                const apiEndpoint = region === 'global' 
+                const apiEndpoint = region === 'global'
                     ? `http://127.0.0.1:8000/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
                     : `http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
-                
+
                 console.log(`🌐 API 호출: ${apiEndpoint}`);
-                
+
                 // 타임아웃을 5초로 늘리고 에러 처리 개선
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => {
                     console.log('⏰ 타임아웃으로 요청 취소');
                     controller.abort();
                 }, 5000); // 5초로 증가
-                
-                const response = await fetch(apiEndpoint, { 
+
+                const response = await fetch(apiEndpoint, {
                     signal: controller.signal,
                     headers: {
                         'Cache-Control': 'no-cache'
                     }
                 });
                 clearTimeout(timeoutId);
-                
+
                 console.log(`📡 응답 상태: ${response.status} ${response.statusText}`);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const data = await response.json();
                 console.log(`✅ API 응답 받음:`, data);
 
@@ -1263,7 +1480,7 @@
 
             } catch (error) {
                 console.error(`❌ ${weekNumber}주차 ${region === 'global' ? '해외' : '국내'} 키워드 로딩 오류:`, error);
-                
+
                 // 날짜 범위 재정의
                 const weekDateRanges = {
                     1: { start: '2025-07-01', end: '2025-07-05' },
@@ -1271,21 +1488,21 @@
                     3: { start: '2025-07-14', end: '2025-07-18' }
                 };
                 const { start: startDate, end: endDate } = weekDateRanges[weekNumber];
-                
+
                 const elementPrefix = region === 'global' ? 'global-' : '';
                 const loadingElement = document.getElementById(`${elementPrefix}week${weekNumber}-loading`);
-                
+
                 // 빠르게 샘플 데이터로 대체 (즉시 표시)
                 const sampleKeywords = getSampleKeywords(weekNumber, region);
                 const keywordsContainer = document.getElementById(`${elementPrefix}week${weekNumber}-keywords`);
-                
+
                 // 캐시에 샘플 데이터 저장
                 const cacheKey = `${region}-${weekNumber}-${startDate}-${endDate}`;
                 dataCache[cacheKey] = sampleKeywords;
-                
+
                 displayWeekKeywords(keywordsContainer, sampleKeywords, weekNumber, region);
                 console.log(`🔄 샘플 데이터로 대체: ${weekNumber}주차 ${region}`, sampleKeywords);
-                
+
                 if (loadingElement) {
                     loadingElement.textContent = '✅ 준비 완료 (샘플)';
                     loadingElement.style.color = '#28a745';
@@ -1301,13 +1518,13 @@
                 2: ['메타버스', 'VR', '가상현실', 'AR', 'NFT'],
                 3: ['인공지능', 'AI', 'ChatGPT', '머신러닝', '딥러닝']
             };
-            
+
             const globalData = {
                 1: ['Tesla', 'Apple', 'Microsoft', 'Google', 'Amazon'],
                 2: ['ChatGPT', 'OpenAI', 'Meta', 'Twitter', 'TikTok'],
                 3: ['NVIDIA', 'AMD', 'Intel', 'Samsung', 'TSMC']
             };
-            
+
             const dataSource = region === 'global' ? globalData : domesticData;
             return dataSource[weekNumber] || ['키워드1', '키워드2', '키워드3', '키워드4', '키워드5'];
         }
@@ -1315,18 +1532,18 @@
         // 주차별 키워드 표시 (최적화 버전)
         function displayWeekKeywords(container, keywords, weekNumber, region = 'domestic') {
             console.log(`🎨 키워드 표시 시작: ${weekNumber}주차 ${region}`, { container, keywords });
-            
+
             if (!container) {
                 console.error(`❌ 컨테이너를 찾을 수 없음: ${region === 'global' ? 'global-' : ''}week${weekNumber}-keywords`);
                 return;
             }
-            
+
             if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
                 console.warn(`⚠️ 키워드 데이터가 없음: ${weekNumber}주차 ${region}`);
                 container.innerHTML = '<div class="keyword-tag">데이터 없음</div>';
                 return;
             }
-            
+
             container.innerHTML = '';
 
             // 주차별 날짜 범위 매핑
@@ -1340,28 +1557,28 @@
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag'; // GPU 가속 클래스 제거
                 keywordElement.textContent = keyword;
-                
+
                 // 지역별 구분을 위한 데이터 속성 추가
                 keywordElement.setAttribute('data-region', region);
-                
+
                 // 즉시 피드백 효과 적용
                 applyInstantFeedback(keywordElement);
-                
+
                 // 클릭 이벤트 - 관련 기사 표시 및 키워드 분석 (지역 정보 포함)
-                keywordElement.addEventListener('click', function(e) {
+                keywordElement.addEventListener('click', function (e) {
                     // 즉시 시각적 피드백
                     this.style.transform = 'scale(0.95)';
                     setTimeout(() => {
                         this.style.transform = '';
                     }, 150);
-                    
+
                     selectedKeyword = keyword;
                     currentKeywords = [keyword];
                     const dateRange = weekDateRanges[weekNumber];
-                    
+
                     // 즉시 로딩 상태 표시
                     showPreloadIndicator(`"${keyword}" 관련 기사 검색 중...`);
-                    
+
                     // 키워드 분석 수행
                     performKeywordAnalysis(keyword);
 
@@ -1449,7 +1666,7 @@
             // AI 응답 - 단순화된 분석 결과
             const analysisMessage = document.createElement('div');
             analysisMessage.className = 'chat-message';
-            
+
             let analysisContent = '';
             if (analysis.analysis) {
                 analysisContent = analysis.analysis;
@@ -1458,7 +1675,7 @@
             } else {
                 analysisContent = `${keyword}에 대한 분석 결과를 표시할 수 없습니다.`;
             }
-            
+
             analysisMessage.innerHTML = `
                 <div class="chat-bot">
                     <strong>🔍 ${keyword} 분석 결과</strong><br><br>
@@ -1470,7 +1687,7 @@
             // 스크롤을 가장 아래로
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
-        
+
 
         // 키워드 더블클릭시 분석 선택 모드
         document.addEventListener('dblclick', function (e) {
@@ -1568,11 +1785,11 @@
             // 지역 정보에 따른 타이틀 설정
             const regionFlag = region === 'global' ? '🌍' : '🇰🇷';
             const regionText = region === 'global' ? '해외' : '국내';
-            
+
             // 날짜 범위 정보 표시
             const dateInfo = dateRange ? `(${dateRange.start} ~ ${dateRange.end})` : '';
             title.innerHTML = `<span style="color: #667eea;">${regionFlag}</span> "${keyword}" ${regionText} 관련 Top 5 기사 ${dateInfo}`;
-            
+
             // 즉시 모달 표시 (빈 상태로)
             modal.style.display = 'block';
             articles.innerHTML = `
@@ -1590,7 +1807,7 @@
 
             // 캐시 키 생성
             const cacheKey = `articles-${keyword}-${region}-${dateRange?.start || ''}-${dateRange?.end || ''}`;
-            
+
             // 캐시에서 먼저 확인
             if (dataCache[cacheKey]) {
                 displayArticles(articles, dataCache[cacheKey], regionText);
@@ -1600,10 +1817,10 @@
 
             try {
                 // 지역에 따른 API 엔드포인트 선택
-                let baseUrl = region === 'global' 
+                let baseUrl = region === 'global'
                     ? `http://127.0.0.1:8000/api/global-keyword-articles/${encodeURIComponent(keyword)}`
                     : `http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
-                
+
                 // 날짜 범위가 있으면 쿼리 파라미터로 전달
                 let url = baseUrl;
                 if (dateRange) {
@@ -1612,16 +1829,16 @@
                 }
 
                 console.log(`📡 ${regionText} API 호출:`, url);
-                
+
                 // 빠른 타임아웃 설정 (3초)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 3000);
-                
+
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
-                
+
                 const data = await response.json();
-                
+
                 // API 응답 데이터 디버깅 (URL 필드 확인)
                 console.log(`📊 ${regionText} API 응답:`, data);
                 if (data.articles && data.articles.length > 0) {
@@ -1635,7 +1852,7 @@
 
                 // 캐시에 저장
                 dataCache[cacheKey] = data;
-                
+
                 displayArticles(articles, data, regionText);
 
             } catch (error) {
@@ -1651,7 +1868,7 @@
                     </div>
                 `;
             }
-            
+
             hidePreloadIndicator();
         }
 
@@ -1666,13 +1883,13 @@
                 data.articles.forEach((article, index) => {
                     const card = document.createElement('div');
                     const articleHasValidUrl = article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined';
-                    
+
                     // URL 상태에 따른 클래스 설정
                     card.className = articleHasValidUrl ? 'article-card quick-hover' : 'article-card no-url';
                     if (articleHasValidUrl) {
                         card.style.cursor = 'pointer';
                     }
-                    
+
                     // 즉시 피드백 효과 적용 (URL이 있는 경우만)
                     if (articleHasValidUrl) {
                         applyInstantFeedback(card);
@@ -1681,7 +1898,7 @@
                     // 날짜 포맷 개선 + URL 상태 표시
                     const displayDate = article.date || article.published_at || '날짜 정보 없음';
                     const dateColor = '#6c757d';
-                    
+
                     // URL 상태 아이콘
                     const urlIcon = articleHasValidUrl ? '🔗' : '🚫';
                     const urlStatus = articleHasValidUrl ? '클릭하여 원문 보기' : '원문 링크 없음';
@@ -1696,8 +1913,8 @@
                         </div>
                         <div class="article-title">${article.title}</div>
                         <div class="article-summary">${article.summary || article.content || '요약 정보 없음'}</div>
-                        ${articleHasValidUrl ? 
-                            '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' : 
+                        ${articleHasValidUrl ?
+                            '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' :
                             '<div style="font-size: 11px; color: #dc3545; margin-top: 8px;">⚠ 원문 링크가 제공되지 않습니다</div>'
                         }
                     `;
@@ -1714,15 +1931,15 @@
                     // 기사 클릭시 원본 URL로 이동 (해외/국내 구분 강화)
                     card.addEventListener('click', () => {
                         console.log(`🔗 기사 클릭 - 지역: ${regionText}, URL: ${article.url || '없음'}`, article);
-                        
+
                         if (article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined') {
                             // 즉시 시각적 피드백
                             card.style.transform = 'scale(0.98)';
                             card.style.backgroundColor = '#e8f5e8';
-                            
+
                             // URL 유효성 추가 체크
                             const url = article.url.startsWith('http') ? article.url : `https://${article.url}`;
-                            
+
                             setTimeout(() => {
                                 window.open(url, '_blank');
                                 card.style.transform = '';
@@ -1735,9 +1952,9 @@
                             setTimeout(() => {
                                 card.style.backgroundColor = '';
                             }, 1000);
-                            
+
                             console.warn(`❌ ${regionText} 기사 URL이 없습니다:`, article);
-                            
+
                             // 사용자에게 알림
                             const notification = document.createElement('div');
                             notification.style.cssText = `
@@ -1748,7 +1965,7 @@
                             `;
                             notification.innerHTML = `⚠️ ${regionText} 기사 링크가 없습니다`;
                             document.body.appendChild(notification);
-                            
+
                             setTimeout(() => {
                                 notification.remove();
                             }, 3000);
@@ -1792,12 +2009,12 @@
 
             // 캐시 키 생성
             const cacheKey = `articles-${keyword}-${region}-${dateRange?.start}-${dateRange?.end}`;
-            
+
             // 즉시 모달 표시 (빠른 피드백)
             const regionFlag = region === 'global' ? '🌍' : '🇰🇷';
             const regionText = region === 'global' ? '해외' : '국내';
             const dateInfo = dateRange ? `(${dateRange.start} ~ ${dateRange.end})` : '';
-            
+
             title.innerHTML = `<span style="color: #667eea;">${regionFlag}</span> "${keyword}" ${regionText} 관련 기사 ${dateInfo}`;
             modal.style.display = 'block';
             modal.style.animation = 'fadeInFast 0.2s ease';
@@ -1806,7 +2023,7 @@
             if (dataCache.has(cacheKey)) {
                 performanceMetrics.cacheHits++;
                 console.log(`⚡ 기사 캐시 적중: ${keyword}`);
-                
+
                 articles.innerHTML = '<div style="text-align: center; color: #10b981; padding: 20px;">⚡ 캐시된 데이터 (즉시 로딩)</div>';
                 setTimeout(() => {
                     displayCachedArticles(articles, dataCache.get(cacheKey), regionFlag, regionText);
@@ -1829,10 +2046,10 @@
                 const startTime = Date.now();
 
                 // API 호출
-                let baseUrl = region === 'global' 
+                let baseUrl = region === 'global'
                     ? `http://127.0.0.1:8000/api/global-keyword-articles/${encodeURIComponent(keyword)}`
                     : `http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
-                
+
                 let url = baseUrl;
                 if (dateRange) {
                     const separator = region === 'global' ? '?' : '&';
@@ -1888,7 +2105,7 @@
                     setTimeout(() => {
                         const card = document.createElement('div');
                         const articleHasValidUrl = article.url && article.url.trim() && article.url !== 'null' && article.url !== 'undefined';
-                        
+
                         // URL 상태에 따른 클래스 설정
                         card.className = articleHasValidUrl ? 'article-card instant-feedback quick-hover' : 'article-card no-url';
                         if (articleHasValidUrl) {
@@ -1898,12 +2115,12 @@
                         card.style.transform = 'translateY(20px)';
 
                         const displayDate = article.date || article.published_at || '날짜 정보 없음';
-                        
+
                         // URL 상태 표시
                         const urlIcon = articleHasValidUrl ? '🔗' : '🚫';
                         const urlStatus = articleHasValidUrl ? '클릭하여 원문 보기' : '원문 링크 없음';
                         const urlColor = articleHasValidUrl ? '#28a745' : '#dc3545';
-                        
+
                         card.innerHTML = `
                             <div class="article-date" style="color: #6c757d;">
                                 ${displayDate}
@@ -1914,8 +2131,8 @@
                             </div>
                             <div class="article-title">${article.title}</div>
                             <div class="article-summary">${article.summary || article.content || '요약 정보 없음'}</div>
-                            ${articleHasValidUrl ? 
-                                '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' : 
+                            ${articleHasValidUrl ?
+                                '<div style="font-size: 11px; color: #28a745; margin-top: 8px; font-weight: 500;">▶ 클릭하여 원문 보기</div>' :
                                 '<div style="font-size: 11px; color: #dc3545; margin-top: 8px;">⚠ 원문 링크가 제공되지 않습니다</div>'
                             }
                         `;
@@ -1923,14 +2140,14 @@
                         // 클릭 이벤트 (즉시 피드백 + 해외/국내 URL 처리 강화)
                         card.addEventListener('click', () => {
                             console.log(`🔗 ${regionText} 기사 클릭 - URL: ${article.url || '없음'}`, article);
-                            
+
                             if (articleHasValidUrl) {
                                 card.style.transform = 'scale(0.98)';
                                 card.style.backgroundColor = '#f0fdfc';
-                                
+
                                 // URL 유효성 추가 체크
                                 const url = article.url.startsWith('http') ? article.url : `https://${article.url}`;
-                                
+
                                 setTimeout(() => {
                                     window.open(url, '_blank');
                                     card.style.transform = '';
@@ -1941,14 +2158,14 @@
                                 // URL이 없는 경우 더 명확한 피드백
                                 card.style.backgroundColor = '#ffebee';
                                 card.style.borderLeft = '4px solid #ff5252';
-                                
+
                                 setTimeout(() => {
                                     card.style.backgroundColor = '';
                                     card.style.borderLeft = '4px solid #5A7DBC';
                                 }, 2000);
-                                
+
                                 console.warn(`❌ ${regionText} 기사 URL이 없습니다:`, article);
-                                
+
                                 // 향상된 사용자 알림
                                 const notification = document.createElement('div');
                                 notification.style.cssText = `
@@ -1964,7 +2181,7 @@
                                     <div>이 ${regionText} 기사는 원본 링크가 제공되지 않습니다.</div>
                                 `;
                                 document.body.appendChild(notification);
-                                
+
                                 setTimeout(() => {
                                     notification.style.opacity = '0';
                                     setTimeout(() => notification.remove(), 300);
@@ -1998,12 +2215,12 @@
                     border-radius: 6px;
                     border-left: 4px solid ${fromCache ? '#10b981' : '#28a745'};
                 `;
-                
+
                 const cacheRate = ((performanceMetrics.cacheHits / performanceMetrics.totalRequests) * 100).toFixed(1);
-                performanceInfo.innerHTML = fromCache 
+                performanceInfo.innerHTML = fromCache
                     ? `⚡ 캐시에서 즉시 로드됨 (${articles.length}개) | 캐시 적중률: ${cacheRate}%`
                     : `✅ DeepSearch API 응답 (${responseTime}ms, ${articles.length}개) | 캐시 적중률: ${cacheRate}%`;
-                    
+
                 articlesContainer.appendChild(performanceInfo);
 
             } else {
@@ -2126,7 +2343,7 @@
                     body: JSON.stringify({ question: message }),
                     signal: controller.signal
                 });
-                
+
                 clearTimeout(timeoutId);
                 const data = await response.json();
 
@@ -2139,11 +2356,11 @@
             } catch (error) {
                 console.error('Chat error:', error);
                 typingIndicator.remove();
-                
-                const errorMessage = error.name === 'AbortError' 
+
+                const errorMessage = error.name === 'AbortError'
                     ? '⏰ 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
                     : '🔄 서버와의 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-                    
+
                 addChatMessage(errorMessage, 'bot');
             } finally {
                 // 전송 버튼 복구
@@ -2182,7 +2399,7 @@
             // 애니메이션 효과
             messageContent.style.opacity = '0';
             messageContent.style.transform = 'translateY(10px)';
-            
+
             messageDiv.appendChild(messageContent);
             chatHistory.appendChild(messageDiv);
 
@@ -2259,7 +2476,7 @@
                 // 즉시 시각적 피드백
                 showSkeletonUI();
                 showPerformanceBadge('⚡ 초고속 검색 시작');
-                
+
                 const query = document.getElementById('search').value;
                 if (!query.trim()) {
                     alert('검색어를 입력해주세요.');
@@ -2291,10 +2508,10 @@
                 }
 
                 const data = await response.json();
-                
+
                 // 결과 캐싱
                 performanceCache.set(cacheKey, { results: data, timestamp: Date.now() });
-                
+
                 // 결과 표시
                 displayResults(data);
                 hideSkeletonUI();
@@ -2319,6 +2536,163 @@
                     modal.style.opacity = '1';
                     modal.style.transform = 'scale(1)';
                 }, 300);
+            }
+        }
+    </script>
+
+    <!-- 구독 모달 -->
+    <div id="subscribeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSubscribeModal()">&times;</span>
+            <h2>📧 주간 인사이트 구독</h2>
+            <p>AI가 분석한 주간 키워드 트렌드와 인사이트를 매주 이메일로 받아보세요!</p>
+
+            <form class="email-form" onsubmit="subscribeEmail(event)">
+                <input type="email" class="email-input" placeholder="이메일 주소를 입력하세요" required id="emailInput">
+                <button type="submit" class="submit-btn" id="submitBtn">구독하기</button>
+            </form>
+
+            <div class="success-message" id="successMessage">
+                ✅ 구독이 완료되었습니다! 매주 인사이트를 받아보세요.
+            </div>
+            <div class="error-message" id="errorMessage">
+                ❌ 구독 중 오류가 발생했습니다. 다시 시도해주세요.
+            </div>
+
+            <!-- 즉시 테스트 버튼 -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+                    📧 즉시 테스트: 구독하신 이메일로 인사이트 샘플을 보내드립니다
+                </p>
+                <button type="button" class="submit-btn" id="testSendBtn" onclick="sendTestInsight()"
+                    style="background: #28a745;">
+                    💡 인사이트 테스트 발송
+                </button>
+                <div class="success-message" id="testSuccessMessage" style="display: none;">
+                    ✅ 테스트 인사이트가 발송되었습니다!
+                </div>
+                <div class="error-message" id="testErrorMessage" style="display: none;">
+                    ❌ 테스트 발송 실패. 다시 시도해주세요.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 구독 모달 관련 함수들
+        function openSubscribeModal() {
+            document.getElementById('subscribeModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSubscribeModal() {
+            document.getElementById('subscribeModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+
+            // 폼 초기화
+            document.getElementById('emailInput').value = '';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').textContent = '구독하기';
+        }
+
+        async function subscribeEmail(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('emailInput').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+
+            // 버튼 비활성화
+            submitBtn.disabled = true;
+            submitBtn.textContent = '구독 중...';
+
+            try {
+                const response = await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    successMsg.style.display = 'block';
+                    errorMsg.style.display = 'none';
+                    document.getElementById('emailInput').value = '';
+
+                    // 3초 후 모달 닫기
+                    setTimeout(() => {
+                        closeSubscribeModal();
+                    }, 3000);
+                } else {
+                    throw new Error(result.detail || '구독 실패');
+                }
+            } catch (error) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = `❌ ${error.message}`;
+                successMsg.style.display = 'none';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '구독하기';
+            }
+        }
+
+        // 테스트 인사이트 발송 함수
+        async function sendTestInsight() {
+            const email = document.getElementById('emailInput').value;
+            const testBtn = document.getElementById('testSendBtn');
+            const testSuccessMsg = document.getElementById('testSuccessMessage');
+            const testErrorMsg = document.getElementById('testErrorMessage');
+
+            if (!email) {
+                alert('이메일을 먼저 입력해주세요!');
+                return;
+            }
+
+            // 버튼 비활성화
+            testBtn.disabled = true;
+            testBtn.textContent = '발송 중...';
+            testSuccessMsg.style.display = 'none';
+            testErrorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/send-insights', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    testSuccessMsg.style.display = 'block';
+                    testErrorMsg.style.display = 'none';
+                } else {
+                    throw new Error(result.detail || '발송 실패');
+                }
+            } catch (error) {
+                testErrorMsg.style.display = 'block';
+                testErrorMsg.textContent = `❌ ${error.message}`;
+                testSuccessMsg.style.display = 'none';
+            } finally {
+                // 버튼 복원
+                testBtn.disabled = false;
+                testBtn.textContent = '💡 인사이트 테스트 발송';
+            }
+        }
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function (event) {
+            const modal = document.getElementById('subscribeModal');
+            if (event.target === modal) {
+                closeSubscribeModal();
             }
         }
     </script>

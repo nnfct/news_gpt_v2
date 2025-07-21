@@ -82,3 +82,4 @@ data/
 # 테스트 파일
 test_*.py
 *_test.py
+.env.template

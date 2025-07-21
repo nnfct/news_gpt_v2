@@ -11,9 +11,15 @@ from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from functools import wraps
+import smtplib
+import json
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
 # 로깅 설정 (최적화)
 logging.basicConfig(
@@ -42,6 +48,19 @@ app.add_middleware(
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 DEEPSEARCH_API_KEY = os.getenv("DEEPSEARCH_API_KEY")
+
+# 이메일 설정 (Gmail SMTP 사용)
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USER = os.getenv("EMAIL_USER")  # Gmail 주소
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")  # Gmail 앱 비밀번호
+
+# Pydantic 모델
+class SubscriptionRequest(BaseModel):
+    email: str
+
+class EmailInsightRequest(BaseModel):
+    email: str
 
 # Azure OpenAI 클라이언트 초기화
 openai_client = AzureOpenAI(
@@ -110,6 +129,11 @@ def retry_on_exception(max_retries=1, delay=0.1, backoff=1.2, allowed_exceptions
 async def serve_home():
     """메인 페이지 제공"""
     return FileResponse("index.html")
+
+@app.get("/admin.html")
+async def serve_admin():
+    """관리자 페이지 제공"""
+    return FileResponse("admin.html")
 
 # 1단계: Tech 기사에서 키워드 추출 (프론트와 연동)
 @app.get("/api/keywords")
@@ -1689,6 +1713,344 @@ def analyze_keyword_dynamically(request: dict):
             "keyword": keyword,
             "analysis": f"키워드 분석 중 오류가 발생했습니다: {str(e)}"
         }
+
+# =============================================================================
+# 이메일 구독 기능
+# =============================================================================
+
+# 간단한 구독자 저장 (JSON 파일 사용)
+SUBSCRIBERS_FILE = "subscribers.json"
+
+def load_subscribers():
+    """구독자 목록 로드"""
+    try:
+        if os.path.exists(SUBSCRIBERS_FILE):
+            with open(SUBSCRIBERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        return []
+    except Exception as e:
+        logger.error(f"구독자 로드 오류: {e}")
+        return []
+
+def save_subscribers(subscribers):
+    """구독자 목록 저장"""
+    try:
+        with open(SUBSCRIBERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(subscribers, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logger.error(f"구독자 저장 오류: {e}")
+        return False
+
+@app.post("/api/subscribe")
+async def subscribe_email(subscription: SubscriptionRequest):
+    """이메일 구독 API"""
+    try:
+        email = subscription.email
+        
+        # 기존 구독자 확인
+        subscribers = load_subscribers()
+        
+        # 이미 구독된 이메일인지 확인
+        for subscriber in subscribers:
+            if subscriber.get("email") == email:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "이미 구독된 이메일입니다."}
+                )
+        
+        # 새 구독자 추가
+        new_subscriber = {
+            "email": email,
+            "subscribed_at": datetime.now().isoformat(),
+            "active": True
+        }
+        
+        subscribers.append(new_subscriber)
+        
+        if save_subscribers(subscribers):
+            logger.info(f"✅ 새 구독자 추가: {email}")
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "message": "구독이 완료되었습니다!",
+                    "email": email
+                }
+            )
+        else:
+            raise HTTPException(status_code=500, detail="구독 저장 중 오류가 발생했습니다.")
+            
+    except Exception as e:
+        logger.error(f"❌ 구독 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"구독 처리 중 오류: {str(e)}")
+
+@app.get("/api/subscribers")
+async def get_subscribers():
+    """구독자 목록 조회 API"""
+    try:
+        subscribers = load_subscribers()
+        return JSONResponse(
+            status_code=200,
+            content=subscribers
+        )
+    except Exception as e:
+        logger.error(f"❌ 구독자 목록 조회 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"구독자 목록 조회 중 오류: {str(e)}")
+
+@app.post("/api/send-insights")
+async def send_weekly_insights(request: EmailInsightRequest):
+    """주간 인사이트 이메일 발송 API (수동 발송용)"""
+    try:
+        # 이메일 설정 확인
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "이메일 설정이 필요합니다",
+                    "detail": ".env 파일에 EMAIL_USER와 EMAIL_PASSWORD를 설정해주세요.",
+                    "instruction": "Gmail 앱 비밀번호 설정 후 .env 파일을 업데이트하세요."
+                }
+            )
+        
+        email = request.email
+        
+        # 주간 키워드 가져오기
+        keywords_data = await get_weekly_keywords_data()
+        
+        # 인사이트 생성
+        insight_content = await generate_weekly_insight(keywords_data)
+        
+        # 이메일 발송
+        success = await send_email(email, "📊 주간 AI 뉴스 인사이트", insight_content)
+        
+        if success:
+            return JSONResponse(
+                status_code=200,
+                content={"message": f"인사이트가 {email}로 발송되었습니다."}
+            )
+        else:
+            raise HTTPException(status_code=500, detail="이메일 발송 실패")
+            
+    except Exception as e:
+        logger.error(f"❌ 인사이트 발송 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"발송 중 오류: {str(e)}")
+
+@app.post("/api/send-to-all-subscribers")
+async def send_to_all_subscribers():
+    """모든 구독자에게 주간 인사이트 발송"""
+    try:
+        subscribers = load_subscribers()
+        active_subscribers = [s for s in subscribers if s.get("active", True)]
+        
+        if not active_subscribers:
+            return JSONResponse(
+                status_code=200,
+                content={"message": "활성 구독자가 없습니다.", "sent_count": 0}
+            )
+        
+        # 주간 키워드 및 인사이트 생성
+        keywords_data = await get_weekly_keywords_data()
+        insight_content = await generate_weekly_insight(keywords_data)
+        
+        sent_count = 0
+        failed_count = 0
+        
+        for subscriber in active_subscribers:
+            email = subscriber.get("email")
+            try:
+                success = await send_email(email, "📊 주간 AI 뉴스 인사이트", insight_content)
+                if success:
+                    sent_count += 1
+                    logger.info(f"✅ 발송 성공: {email}")
+                else:
+                    failed_count += 1
+                    logger.warning(f"❌ 발송 실패: {email}")
+                    
+                # 발송 간격 (Gmail 제한 고려)
+                await asyncio.sleep(1)
+                
+            except Exception as e:
+                failed_count += 1
+                logger.error(f"❌ {email} 발송 오류: {e}")
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": f"발송 완료: 성공 {sent_count}건, 실패 {failed_count}건",
+                "sent_count": sent_count,
+                "failed_count": failed_count,
+                "total_subscribers": len(active_subscribers)
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ 전체 발송 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"전체 발송 중 오류: {str(e)}")
+
+async def get_weekly_keywords_data():
+    """주간 키워드 데이터 수집"""
+    try:
+        # 현재 주차 키워드 가져오기
+        start_date = "2025-07-14"
+        end_date = "2025-07-21"
+        
+        # 국내 키워드
+        domestic_articles = await fetch_tech_articles(start_date, end_date)
+        domestic_keywords = await extract_keywords_with_gpt(domestic_articles)
+        
+        # 해외 키워드
+        global_articles = await fetch_global_tech_articles(start_date, end_date)
+        global_keywords = await extract_global_keywords_with_gpt(global_articles)
+        
+        return {
+            "domestic_keywords": domestic_keywords[:5],
+            "global_keywords": global_keywords[:5],
+            "period": f"{start_date} ~ {end_date}"
+        }
+    except Exception as e:
+        logger.error(f"키워드 데이터 수집 오류: {e}")
+        return {
+            "domestic_keywords": [
+                {"keyword": "인공지능", "count": 25, "rank": 1},
+                {"keyword": "반도체", "count": 20, "rank": 2}
+            ],
+            "global_keywords": [
+                {"keyword": "AI Technology", "count": 30, "rank": 1},
+                {"keyword": "Innovation", "count": 25, "rank": 2}
+            ],
+            "period": f"{start_date} ~ {end_date}"
+        }
+
+async def generate_weekly_insight(keywords_data):
+    """주간 인사이트 생성 (개선된 구조)"""
+    try:
+        domestic_keywords = [k["keyword"] for k in keywords_data["domestic_keywords"]]
+        global_keywords = [k["keyword"] for k in keywords_data["global_keywords"]]
+        
+        # 키워드 카운트 정보 포함
+        domestic_details = [f"{k['keyword']} ({k['count']}건)" for k in keywords_data["domestic_keywords"][:3]]
+        global_details = [f"{k['keyword']} ({k['count']}건)" for k in keywords_data["global_keywords"][:3]]
+        
+        prompt = f"""
+AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전문적이면서도 읽기 쉽게 작성해주세요.
+
+📊 이번 주 분석 데이터:
+- 분석 기간: {keywords_data["period"]}
+- 국내 TOP 키워드: {", ".join(domestic_details)}
+- 해외 TOP 키워드: {", ".join(global_details)}
+
+다음 구조로 작성해주세요:
+
+� 이번 주 핫 키워드
+
+📈 국내 기술 동향
+- 가장 주목받은 키워드와 그 배경
+- 관련 산업/기업에 미치는 영향
+- 실무진이 알아야 할 포인트
+
+🌍 글로벌 기술 트렌드
+- 해외에서 화제가 된 기술 이슈
+- 국내 시장에 미칠 영향 예측
+- 글로벌 vs 국내 트렌드 비교
+
+💡 다음 주 전망 & 실행 포인트
+- 주목해야 할 기술/키워드
+- 비즈니스 기회나 위험 요소
+- 실무진을 위한 액션 아이템
+
+🎯 한 줄 요약
+- 이번 주 가장 중요한 인사이트를 한 문장으로
+
+전체 분량: 1000자 내외로 작성해주세요.
+"""
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        logger.error(f"인사이트 생성 오류: {e}")
+        return f"""
+🔍 이번 주 AI 뉴스 하이라이트
+
+📈 국내 트렌드
+- 인공지능과 반도체 분야의 지속적인 성장
+- 기술 혁신과 산업 변화 가속화
+
+🌍 글로벌 트렌드
+- AI 기술의 전 산업 확산
+- 글로벌 기술 경쟁 심화
+
+💡 인사이트
+이번 주는 AI와 반도체 기술이 주요 화두였습니다. 
+국내외 모두 기술 혁신에 대한 관심이 높아지고 있어 
+관련 산업의 성장이 기대됩니다.
+
+📧 News GPT v2 팀 드림
+        """
+
+async def send_email(to_email: str, subject: str, content: str):
+    """실제 이메일 발송 함수 (Gmail SMTP)"""
+    try:
+        if not EMAIL_USER or not EMAIL_PASSWORD:
+            logger.error("이메일 설정이 없습니다. EMAIL_USER, EMAIL_PASSWORD 환경변수를 확인하세요.")
+            return False
+        
+        # HTML 이메일 생성
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = EMAIL_USER
+        msg['To'] = to_email
+        
+        # 개선된 HTML 템플릿
+        html_body = content.replace('\n', '<br>')
+        html_content = f'''
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <div style="background: linear-gradient(135deg, #1C2039, #00D9C0); padding: 25px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 22px;">🚀 News GPT v2</h1>
+                    <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 13px;">AI 뉴스 키워드 분석 주간 인사이트</p>
+                </div>
+                <div style="padding: 25px;">
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; border-left: 4px solid #00D9C0;">
+                        {html_body}
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <a href="http://localhost:8000" style="display: inline-block; background: #00D9C0; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">📊 자세한 분석 보기</a>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #eee;">
+                    <p style="color: #666; font-size: 12px; margin: 0;">구독 해지: 이 메일에 회신 | <a href="http://localhost:8000" style="color: #00D9C0;">웹사이트 방문</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+        '''
+        
+        html_part = MIMEText(html_content, 'html', 'utf-8')
+        msg.attach(html_part)
+        
+        # SMTP 발송
+        with smtplib.SMTP(EMAIL_HOST, EMAIL_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_USER, EMAIL_PASSWORD)
+            server.send_message(msg)
+        
+        logger.info(f"✅ 실제 이메일 발송 성공: {to_email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ 이메일 발송 실패 ({to_email}): {e}")
+        return False
 
 # =============================================================================
 # 서버 실행 설정
