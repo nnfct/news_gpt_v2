@@ -7,7 +7,7 @@
     <title>📺 News GPT v2 - AI 뉴스 분석</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -16,7 +16,7 @@
         }
 
         body {
-            font-family: 'Roboto', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: #0f0f0f;
             color: #fff;
             line-height: 1.4;
@@ -126,42 +126,46 @@
             display: flex;
             max-width: 1280px;
             margin: 0 auto;
-            gap: 24px;
+            gap: 16px;
             padding: 24px 16px;
         }
 
-        /* 사이드바 */
+        /* 사이드바 - 유튜브 스타일 */
         .sidebar {
-            width: 240px;
+            width: 80px;
             background: #212121;
             border-radius: 12px;
-            padding: 16px;
+            padding: 8px 4px;
             height: fit-content;
             position: sticky;
             top: 80px;
         }
 
         .sidebar-section {
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
 
         .sidebar-title {
-            font-size: 14px;
+            font-size: 10px;
             font-weight: 500;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             color: #aaa;
             text-transform: uppercase;
+            text-align: center;
+            padding: 0 4px;
         }
 
         .sidebar-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 12px;
-            padding: 8px 12px;
+            justify-content: center;
+            padding: 12px 4px 8px 4px;
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s;
             margin-bottom: 4px;
+            text-align: center;
         }
 
         .sidebar-item:hover {
@@ -170,6 +174,23 @@
 
         .sidebar-item.active {
             background: #065fd4;
+        }
+
+        .sidebar-item span:first-child {
+            font-size: 20px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .sidebar-item span:last-child {
+            font-size: 10px;
+            color: #ccc;
+            line-height: 1.2;
+            font-weight: 400;
+        }
+
+        .sidebar-item.active span:last-child {
+            color: #fff;
         }
 
         /* 메인 콘텐츠 */
@@ -340,6 +361,20 @@
                 width: 100%;
                 position: relative;
                 top: 0;
+                display: flex;
+                justify-content: center;
+                gap: 8px;
+                padding: 12px;
+            }
+
+            .sidebar-section {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 0;
+            }
+
+            .sidebar-title {
+                display: none;
             }
 
             .search-container {
@@ -533,7 +568,7 @@
                     <span>전체</span>
                 </div>
                 <div class="sidebar-item" onclick="loadCategory('domestic')">
-                    <span>🇰🇷</span>
+                    <span>📰</span>
                     <span>국내 뉴스</span>
                 </div>
                 <div class="sidebar-item" onclick="loadCategory('global')">
@@ -616,43 +651,20 @@
             </div>
         </div>
     </div>
-
     <script>
         let currentCategory = 'all';
         let newsData = [];
-
-        // 디버깅용 함수 - 브라우저 콘솔에서 테스트 가능
-        window.testGlobalNews = async function () {
-            console.log('🧪 해외뉴스 테스트 시작');
-            try {
-                const response = await fetch('/api/global-keywords?start_date=2025-07-14&end_date=2025-07-21');
-                console.log('📡 API 응답 상태:', response.status);
-                const data = await response.json();
-                console.log('📊 API 응답 데이터:', data);
-                return data;
-            } catch (error) {
-                console.error('❌ 테스트 오류:', error);
-                return null;
-            }
-        };
-
-        // 디버깅용 함수 - 카테고리 로드 테스트
-        window.testLoadCategory = function (category) {
-            console.log('🧪 카테고리 로드 테스트:', category);
-            loadCategory(category);
-        };
 
         // 페이지 로드시 실행
         document.addEventListener('DOMContentLoaded', function () {
             loadDomesticNews(); // 기본적으로 국내뉴스 로드
         });
 
-        // 뉴스 데이터 로드
+        // 뉴스 데이터 로드 (기존 로직)
         async function loadNewsData() {
             try {
                 showLoadingGrid();
 
-                // 실제로 동작하는 엔드포인트 사용 (analysis.html과 동일)
                 const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
 
                 if (!response.ok) {
@@ -665,6 +677,8 @@
                 hideLoadingGrid();
 
                 if (data.keywords && data.keywords.length > 0) {
+                    console.log('🔍 받은 키워드 개수:', data.keywords.length);
+                    console.log('🔍 키워드 목록:', data.keywords);
                     newsData = await generateNewsCards(data.keywords);
                     displayNewsCards(newsData);
                 } else {
@@ -675,6 +689,64 @@
                 console.error('❌ 뉴스 데이터 로드 오류:', error);
                 hideLoadingGrid();
                 displaySampleNews();
+            }
+        }
+
+        // 국내뉴스 로드 함수
+        async function loadDomesticNews() {
+            try {
+                console.log('🇰🇷 loadDomesticNews 호출됨');
+                showLoadingGrid();
+
+                // 콘텐츠 헤더 업데이트
+                document.querySelector('.content-title').textContent = '이번 주 국내 AI 뉴스 분석';
+                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내 최신 뉴스 트렌드와 키워드를 확인하세요';
+
+                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+
+                if (!response.ok) {
+                    throw new Error(`국내뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('🇰🇷 국내뉴스 키워드 데이터:', data);
+
+                hideLoadingGrid();
+
+                if (data.keywords && data.keywords.length > 0) {
+                    console.log('🔍 받은 키워드 개수:', data.keywords.length);
+                    console.log('🔍 키워드 목록:', data.keywords);
+                    newsData = await generateNewsCards(data.keywords);
+                    displayNewsCards(newsData);
+                } else {
+                    console.warn('국내 키워드 데이터가 비어있어 샘플 데이터 사용');
+                    displaySampleNews();
+                }
+            } catch (error) {
+                console.error('❌ 국내뉴스 데이터 로드 오류:', error);
+                hideLoadingGrid();
+                displaySampleNews();
+            }
+        }
+
+        // 해외뉴스 로드 함수 (샘플 데이터만)
+        async function loadGlobalNews() {
+            try {
+                console.log('🌍 loadGlobalNews 호출됨');
+                showLoadingGrid();
+
+                // 콘텐츠 헤더 업데이트
+                document.querySelector('.content-title').textContent = '이번 주 해외 AI 뉴스 분석';
+                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 해외 최신 뉴스 트렌드와 키워드를 확인하세요';
+
+                hideLoadingGrid();
+
+                // 해외 샘플 데이터 표시
+                displayGlobalSampleNews();
+            } catch (error) {
+                console.error('❌ 해외뉴스 데이터 로드 오류:', error);
+                hideLoadingGrid();
+                displayGlobalSampleNews();
             }
         }
 
@@ -701,31 +773,22 @@
             return cards;
         }
 
-        // 키워드 인사이트 생성 (15개 기사 분석 기반)
+        // 키워드 인사이트 생성
         async function generateKeywordInsight(keyword) {
             const keywordInsights = {
                 'AI': `AI 기술 발전, 정책 논의, 투자 증가, 표준화, 인재 양성, 보안 이슈, 스타트업 활성화, 특허 급증, 국제 경쟁력 강화, 신제품 출시 등 전방위적 성장세를 보이고 있습니다.`,
                 '인공지능': `인공지능 기술 혁신, 산업 적용 확대, 규제 정비, 투자 활성화, 국제 협력, 전문 인력 확보, 윤리적 이슈, 생태계 조성, 특허 경쟁, 미래 전망 등이 주요 화두입니다.`,
                 '반도체': `반도체 기술 혁신, 공급망 안정화, 정부 정책 지원, 투자 확대, 국제 협력, 인재 확보, 보안 강화, 신규 업체 진입, 특허 경쟁, 글로벌 시장 확대 등이 주요 동향입니다.`,
                 '바이오': `바이오 기술 발전, 의료 혁신, 규제 개선, 투자 활성화, 국제 표준화, 전문 인력 양성, 데이터 보안, 스타트업 성장, 특허 출원 증가, 글로벌 경쟁력 제고가 핵심 트렌드입니다.`,
-                '헬스케어': `헬스케어 디지털 전환, 개인 맞춤 의료, 정책 지원, 투자 확대, 기술 표준화, 인재 양성, 개인정보 보호, 혁신 기업 성장, 의료 특허 증가, 글로벌 진출이 가속화되고 있습니다.`,
-                '전기차': `전기차 기술 발전, 시장 확대, 정부 지원, 배터리 투자, 충전 인프라, 전문 인력, 안전 기준, 스타트업 활성화, 특허 경쟁, 글로벌 시장 진출이 활발합니다.`,
-                '메타버스': `메타버스 플랫폼 발전, 콘텐츠 확대, 규제 논의, 투자 증가, 기술 표준화, 크리에이터 양성, 보안 강화, 스타트업 성장, 특허 출원, 글로벌 경쟁이 치열합니다.`,
-                '블록체인': `블록체인 기술 혁신, 실용화 확산, 법제도 정비, 투자 활성화, 표준화 작업, 전문가 양성, 보안 강화, 스타트업 생태계, 특허 경쟁, 국제 협력이 주요 이슈입니다.`,
-                '핀테크': `디지털 금융 혁신, 암호화폐 규제 정비, 블록체인 기술 발전, 핀테크 투자 확대, CBDC 연구, 결제 시스템 고도화, 금융 보안 강화, 스타트업 생태계 조성, 특허 출원 증가, 글로벌 금융 경쟁력이 주요 이슈입니다.`,
                 '암호화폐': `암호화폐 규제 정비, 디지털 자산 제도화, 블록체인 기술 발전, 투자 시장 성숙화, 중앙은행 디지털화폐, 거래소 보안 강화, 전문 인력 양성, 핀테크 생태계 확장, 특허 경쟁 심화, 글로벌 표준화가 핵심 동향입니다.`,
                 '사이버보안': `사이버 위협 증가, 보안 솔루션 발전, 개인정보보호 강화, 정부 정책 지원, 국제 협력 확대, 보안 전문가 양성, 기업 보안 투자, 보안 스타트업 성장, 보안 특허 경쟁, 글로벌 보안 표준화가 핵심 동향입니다.`,
-                '보안': `정보보안 기술 발전, 사이버 위협 대응, 보안 정책 강화, 보안 투자 확대, 국제 보안 협력, 보안 전문가 확보, 보안 솔루션 혁신, 보안 기업 성장, 보안 특허 증가, 글로벌 보안 경쟁력이 주요 트렌드입니다.`,
-                '로봇': `로봇 기술 혁신, 산업 자동화 확산, 서비스 로봇 상용화, 정부 지원 정책, 로봇 표준화 작업, 전문 인력 확보, 로봇 보안 이슈, 로봇 스타트업 활성화, 로봇 특허 급증, 글로벌 로봇 시장 진출이 주요 트렌드입니다.`,
-                '자동화': `산업 자동화 가속화, 로봇 기술 발전, 스마트팩토리 확산, 자동화 투자 증가, 기술 표준화, 자동화 전문가 양성, 보안 이슈 대응, 자동화 기업 성장, 관련 특허 급증, 글로벌 자동화 경쟁이 치열합니다.`
+                '로봇': `로봇 기술 혁신, 산업 자동화 확산, 서비스 로봇 상용화, 정부 지원 정책, 로봇 표준화 작업, 전문 인력 확보, 로봇 보안 이슈, 로봇 스타트업 활성화, 로봇 특허 급증, 글로벌 로봇 시장 진출이 주요 트렌드입니다.`
             };
 
-            // 키워드별 맞춤 인사이트가 있으면 사용, 없으면 일반적인 인사이트 생성
             if (keywordInsights[keyword]) {
                 return keywordInsights[keyword];
             }
 
-            // 일반적인 인사이트 (키워드별 맞춤 인사이트가 없는 경우)
             const generalInsights = [
                 `${keyword} 기술 발전, 정책 지원, 투자 확대, 표준화 작업, 인재 양성, 보안 강화, 생태계 조성, 특허 경쟁, 글로벌 진출, 미래 전망 등이 주요 트렌드입니다.`,
                 `${keyword} 분야의 혁신 가속화, 산업 적용 확대, 규제 정비, 투자 활성화, 국제 협력, 전문 인력 확보, 기술 표준화, 스타트업 성장이 두드러집니다.`,
@@ -737,7 +800,6 @@
 
         // 키워드별 아이콘 반환
         function getKeywordIcon(keyword) {
-            // keyword가 undefined, null, 또는 빈 문자열인 경우 기본 아이콘 반환
             if (!keyword || typeof keyword !== 'string') {
                 return '📰';
             }
@@ -746,11 +808,11 @@
                 'AI': '🤖', '인공지능': '🤖', 'GPT': '🤖',
                 '반도체': '🔧', '메모리': '💾', 'CPU': '⚡',
                 '바이오': '🧬', '의료': '🏥', '헬스케어': '💊',
-                '자동차': '🚗', '전기차': '🔋', '배터리': '🔋',
-                '블록체인': '⛓️', '암호화폐': '💰', '비트코인': '₿',
-                '핀테크': '💰', '금융': '💳', 'CBDC': '🪙',
+                '암호화폐': '💰', '블록체인': '⛓️', '비트코인': '₿',
                 '사이버보안': '🛡️', '보안': '🔒', '해킹': '🛡️',
                 '로봇': '🤖', '자동화': '⚙️', '산업로봇': '🦾',
+                '자동차': '🚗', '전기차': '🔋', '배터리': '🔋',
+                '핀테크': '💰', '금융': '💳', 'CBDC': '🪙',
                 '게임': '🎮', '메타버스': '🥽', 'VR': '🥽',
                 '클라우드': '☁️', '서버': '🖥️', '데이터': '📊'
             };
@@ -767,7 +829,6 @@
             const newsGrid = document.getElementById('newsGrid');
 
             newsGrid.innerHTML = cards.map(card => {
-                // 해외뉴스인지 국내뉴스인지 구분하여 다른 URL로 이동
                 const detailUrl = card.region === 'global'
                     ? `/news-detail.html?keyword=${encodeURIComponent(card.keyword)}&region=global`
                     : `/news-detail.html?keyword=${encodeURIComponent(card.keyword)}`;
@@ -795,11 +856,11 @@
             }).join('');
         }
 
-        // 샘플 뉴스 표시
+        // 국내 샘플 뉴스 표시
         function displaySampleNews() {
             const sampleCards = [
                 {
-                    title: 'AI 기술 동향 분석 리포트',
+                    title: 'AI 분석 리포트',
                     keyword: 'AI',
                     count: 247,
                     thumbnail: '🤖',
@@ -807,7 +868,7 @@
                     publishedAt: new Date().toLocaleDateString('ko-KR')
                 },
                 {
-                    title: '반도체 산업 트렌드',
+                    title: '반도체 분석 리포트',
                     keyword: '반도체',
                     count: 183,
                     thumbnail: '🔧',
@@ -815,7 +876,7 @@
                     publishedAt: new Date().toLocaleDateString('ko-KR')
                 },
                 {
-                    title: '바이오 헬스케어 혁신',
+                    title: '바이오 분석 리포트',
                     keyword: '바이오',
                     count: 156,
                     thumbnail: '🧬',
@@ -823,15 +884,15 @@
                     publishedAt: new Date().toLocaleDateString('ko-KR')
                 },
                 {
-                    title: '핀테크 & 암호화폐 동향',
-                    keyword: '핀테크',
+                    title: '암호화폐 분석 리포트',
+                    keyword: '암호화폐',
                     count: 142,
                     thumbnail: '💰',
-                    insight: '디지털 금융 혁신, 암호화폐 규제 정비, 블록체인 기술 발전, 핀테크 투자 확대, CBDC 연구, 결제 시스템 고도화, 금융 보안 강화, 스타트업 생태계 조성, 특허 출원 증가, 글로벌 금융 경쟁력이 주요 이슈입니다.',
+                    insight: '암호화폐 규제 정비, 디지털 자산 제도화, 블록체인 기술 발전, 투자 시장 성숙화, 중앙은행 디지털화폐, 거래소 보안 강화, 전문 인력 양성, 핀테크 생태계 확장, 특허 경쟁 심화, 글로벌 표준화가 핵심 동향입니다.',
                     publishedAt: new Date().toLocaleDateString('ko-KR')
                 },
                 {
-                    title: '사이버보안 & 프라이버시',
+                    title: '사이버보안 분석 리포트',
                     keyword: '사이버보안',
                     count: 128,
                     thumbnail: '🛡️',
@@ -839,7 +900,7 @@
                     publishedAt: new Date().toLocaleDateString('ko-KR')
                 },
                 {
-                    title: '로봇 & 자동화 기술',
+                    title: '로봇 분석 리포트',
                     keyword: '로봇',
                     count: 134,
                     thumbnail: '🤖',
@@ -851,9 +912,192 @@
             displayNewsCards(sampleCards);
         }
 
-        // 뉴스 상세 페이지로 이동
-        function openNewsDetail(keyword) {
-            window.location.href = `/news-detail.html?keyword=${encodeURIComponent(keyword)}`;
+        // 전체 뉴스 로드 함수 (국내 + 해외)
+        async function loadAllNews() {
+            try {
+                showLoadingGrid();
+
+                // 콘텐츠 헤더 업데이트
+                document.querySelector('.content-title').textContent = '이번 주 전체 AI 뉴스 분석';
+                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내외 최신 뉴스 트렌드와 키워드를 확인하세요';
+
+                hideLoadingGrid();
+
+                // 국내 + 해외 뉴스 모두 표시
+                displayAllNews();
+            } catch (error) {
+                console.error('❌ 전체뉴스 데이터 로드 오류:', error);
+                hideLoadingGrid();
+                displayAllNews();
+            }
+        }
+
+        // 전체 뉴스 표시 (국내 + 해외)
+        function displayAllNews() {
+            // 국내 뉴스 카드
+            const domesticCards = [
+                {
+                    title: 'AI 분석 리포트',
+                    keyword: 'AI',
+                    count: 250,
+                    thumbnail: '🤖',
+                    insight: 'AI 기술 발전, 정책 논의, 투자 증가, 표준화, 인재 양성, 보안 이슈, 스타트업 활성화, 특허 급증, 국제 경쟁력 강화, 신제품 출시 등 전방위적 성장세를 보이고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR')
+                },
+                {
+                    title: '반도체 분석 리포트',
+                    keyword: '반도체',
+                    count: 230,
+                    thumbnail: '🔧',
+                    insight: '반도체 기술 혁신, 공급망 안정화, 정부 정책 지원, 투자 확대, 국제 협력, 인재 확보, 보안 강화, 신규 업체 진입, 특허 경쟁, 글로벌 시장 확대 등이 주요 동향입니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR')
+                },
+                {
+                    title: '바이오 분석 리포트',
+                    keyword: '바이오',
+                    count: 210,
+                    thumbnail: '🧬',
+                    insight: '바이오 기술 발전, 의료 혁신, 규제 개선, 투자 활성화, 국제 표준화, 전문 인력 양성, 데이터 보안, 스타트업 성장, 특허 출원 증가, 글로벌 경쟁력 제고가 핵심 트렌드입니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR')
+                }
+            ];
+
+            // 해외 뉴스 카드
+            const globalCards = [
+                {
+                    title: 'AI 기술 동향 분석',
+                    keyword: 'AI',
+                    count: 247,
+                    thumbnail: '🤖',
+                    insight: 'AI 기술 발전, 정책 논의, 투자 증가, 표준화 노력, 인재 개발, 보안 이슈, 스타트업 생태계 성장, 특허 급증, 국제 경쟁력 강화, 신제품 출시 등 종합적인 성장 트렌드를 보이고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '혁신과 디지털 전환',
+                    keyword: 'Innovation',
+                    count: 183,
+                    thumbnail: '💡',
+                    insight: '혁신 주도 변화, 디지털 파괴, 신기술 등장, 벤처 캐피털 투자, R&D 이니셔티브, 특허 경쟁, 글로벌 시장 확장, 기술적 돌파구 등이 핵심 테마로 부상하고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '머신러닝 응용 분야',
+                    keyword: 'Machine Learning',
+                    count: 156,
+                    thumbnail: '🤖',
+                    insight: '머신러닝 응용, 알고리즘 개선, 데이터 처리 능력, AI 모델 훈련, 예측 분석, 자동화 솔루션, 연구 혁신, 산업 구현 등이 빠르게 확산되고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                }
+            ];
+
+            // 국내 + 해외 뉴스 합치기
+            const allCards = [...domesticCards, ...globalCards];
+            displayNewsCards(allCards);
+        }
+
+        // 해외 샘플 뉴스 표시
+        function displayGlobalSampleNews() {
+            const globalSampleCards = [
+                {
+                    title: 'AI 기술 동향 분석',
+                    keyword: 'AI',
+                    count: 247,
+                    thumbnail: '🤖',
+                    insight: 'AI 기술 발전, 정책 논의, 투자 증가, 표준화 노력, 인재 개발, 보안 이슈, 스타트업 생태계 성장, 특허 급증, 국제 경쟁력 강화, 신제품 출시 등 종합적인 성장 트렌드를 보이고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '혁신과 디지털 전환',
+                    keyword: 'Innovation',
+                    count: 183,
+                    thumbnail: '💡',
+                    insight: '혁신 주도 변화, 디지털 파괴, 신기술 등장, 벤처 캐피털 투자, R&D 이니셔티브, 특허 경쟁, 글로벌 시장 확장, 기술적 돌파구 등이 핵심 테마로 부상하고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '머신러닝 응용 분야',
+                    keyword: 'Machine Learning',
+                    count: 156,
+                    thumbnail: '🤖',
+                    insight: '머신러닝 응용, 알고리즘 개선, 데이터 처리 능력, AI 모델 훈련, 예측 분석, 자동화 솔루션, 연구 혁신, 산업 구현 등이 빠르게 확산되고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '클라우드 컴퓨팅 진화',
+                    keyword: 'Cloud Computing',
+                    count: 142,
+                    thumbnail: '☁️',
+                    insight: '클라우드 인프라 성장, 하이브리드 클라우드 솔루션, 엣지 컴퓨팅, 서버리스 아키텍처, 클라우드 보안, 비용 최적화, 마이그레이션 전략, 멀티클라우드 환경이 디지털 전환을 주도하고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '사이버보안과 프라이버시',
+                    keyword: 'Cybersecurity',
+                    count: 128,
+                    thumbnail: '🛡️',
+                    insight: '사이버 위협 증가, 보안 솔루션 개발, 개인정보 보호 강화, 정부 정책 지원, 국제 협력 확대, 보안 전문가 양성, 기업 보안 투자, 글로벌 보안 표준화가 핵심 동향입니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                },
+                {
+                    title: '디지털 전환 트렌드',
+                    keyword: 'Digital Transformation',
+                    count: 134,
+                    thumbnail: '🔄',
+                    insight: '디지털 전환 이니셔티브, 클라우드 도입, 자동화 프로세스, 데이터 분석, 사이버보안 조치, 인력 재교육, 디지털 인프라, 비즈니스 모델 혁신이 전 세계적으로 가속화되고 있습니다.',
+                    publishedAt: new Date().toLocaleDateString('ko-KR'),
+                    region: 'global'
+                }
+            ];
+
+            displayNewsCards(globalSampleCards);
+        }
+
+        // 카테고리 로드
+        function loadCategory(category) {
+            // 즉시 사이드바 활성화 상태 변경 (UI 최적화)
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.closest('.sidebar-item').classList.add('active');
+
+            // 카테고리 상태 업데이트
+            currentCategory = category;
+
+            // 비동기 데이터 로드 (UI 블로킹 방지)
+            setTimeout(() => {
+                if (category === 'domestic') {
+                    loadDomesticNews();
+                } else if (category === 'global') {
+                    loadGlobalNews();
+                } else if (category === 'all') {
+                    loadAllNews();
+                }
+            }, 0);
+
+            console.log('🔄 카테고리 로드:', category, '현재 시간:', Date.now());
+        }
+
+        // 로딩 그리드 표시/숨김
+        function showLoadingGrid() {
+            const loadingGrid = document.getElementById('loadingGrid');
+            if (loadingGrid) {
+                loadingGrid.style.display = 'grid';
+            }
+        }
+
+        function hideLoadingGrid() {
+            const loadingGrid = document.getElementById('loadingGrid');
+            if (loadingGrid) {
+                loadingGrid.style.display = 'none';
+            }
         }
 
         // 상세 분석 페이지로 이동
@@ -861,237 +1105,9 @@
             window.location.href = '/analysis.html';
         }
 
-        // AI 인사이트 보기 (임시로 상세 분석 페이지로 이동)
+        // AI 인사이트 보기
         function showInsights() {
-            // 향후 별도 인사이트 페이지 구현 예정
             window.location.href = '/analysis.html';
-        }
-
-        // 카테고리 로드
-        function loadCategory(category) {
-            currentCategory = category;
-
-            // 사이드바 활성화 상태 변경
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.target.closest('.sidebar-item').classList.add('active');
-
-            // 카테고리별 데이터 로드
-            if (category === 'domestic') {
-                loadDomesticNews();
-            } else if (category === 'global') {
-                loadGlobalNews();
-            } else if (category === 'all') {
-                loadNewsData(); // 기본 국내뉴스
-            }
-
-            console.log('카테고리 로드:', category);
-        }
-
-        // 해외뉴스 로드 함수
-        async function loadGlobalNews() {
-            try {
-                showLoadingGrid();
-
-                // 해외뉴스 API 호출
-                const response = await fetch('/api/global-keywords?start_date=2025-07-14&end_date=2025-07-21');
-
-                if (!response.ok) {
-                    throw new Error(`해외뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('🌍 해외뉴스 키워드 데이터:', data);
-
-                hideLoadingGrid();
-
-                // 콘텐츠 헤더 업데이트
-                document.querySelector('.content-title').textContent = '이번 주 해외 AI 뉴스 분석';
-                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 해외 최신 뉴스 트렌드와 키워드를 확인하세요';
-
-                if (data.keywords && data.keywords.length > 0) {
-                    const globalNewsData = await generateGlobalNewsCards(data.keywords);
-                    displayNewsCards(globalNewsData);
-                } else {
-                    console.warn('해외 키워드 데이터가 비어있어 샘플 데이터 사용');
-                    displayGlobalSampleNews();
-                }
-            } catch (error) {
-                console.error('❌ 해외뉴스 데이터 로드 오류:', error);
-                hideLoadingGrid();
-                displayGlobalSampleNews();
-            }
-        }
-
-        // 국내뉴스 로드 함수 (기존 로직)
-        async function loadDomesticNews() {
-            try {
-                showLoadingGrid();
-
-                // 콘텐츠 헤더 업데이트
-                document.querySelector('.content-title').textContent = '이번 주 국내 AI 뉴스 분석';
-                document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내 최신 뉴스 트렌드와 키워드를 확인하세요';
-
-                // 기존 국내뉴스 로직 실행
-                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
-
-                if (!response.ok) {
-                    throw new Error(`국내뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                console.log('🇰🇷 국내뉴스 키워드 데이터:', data);
-
-                hideLoadingGrid();
-
-                if (data.keywords && data.keywords.length > 0) {
-                    newsData = await generateNewsCards(data.keywords);
-                    displayNewsCards(newsData);
-                } else {
-                    console.warn('국내 키워드 데이터가 비어있어 샘플 데이터 사용');
-                    displaySampleNews();
-                }
-            } catch (error) {
-                console.error('❌ 국내뉴스 데이터 로드 오류:', error);
-                hideLoadingGrid();
-                displaySampleNews();
-            }
-        }
-
-        // 해외 키워드를 뉴스 카드로 변환
-        async function generateGlobalNewsCards(keywords) {
-            const cards = [];
-
-            for (let i = 0; i < Math.min(keywords.length, 12); i++) {
-                const keyword = keywords[i];
-                const insight = await generateGlobalKeywordInsight(keyword.keyword);
-
-                cards.push({
-                    id: i,
-                    title: `${keyword.keyword} Analysis Report`,
-                    keyword: keyword.keyword,
-                    count: keyword.count,
-                    category: 'global',
-                    insight: insight,
-                    thumbnail: getGlobalKeywordIcon(keyword.keyword),
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                });
-            }
-
-            return cards;
-        }
-
-        // 해외 키워드 인사이트 생성
-        async function generateGlobalKeywordInsight(keyword) {
-            const globalKeywordInsights = {
-                'AI': `AI technology advancement, policy discussions, investment growth, standardization efforts, talent development, security issues, startup ecosystem growth, patent surge, international competitiveness, and new product launches show comprehensive growth trends.`,
-                'Technology': `Technology innovation acceleration, industry application expansion, regulatory improvements, investment activation, international cooperation, expert talent acquisition, technical standardization, and startup growth are prominent trends.`,
-                'Innovation': `Innovation-driven transformation, digital disruption, emerging technologies, venture capital investments, R&D initiatives, patent competitions, global market expansion, and technological breakthroughs are key themes.`,
-                'Digital Transformation': `Digital transformation initiatives, cloud adoption, automation processes, data analytics, cybersecurity measures, workforce reskilling, digital infrastructure, and business model innovations are accelerating globally.`,
-                'Machine Learning': `Machine learning applications, algorithm improvements, data processing capabilities, AI model training, predictive analytics, automation solutions, research breakthroughs, and industry implementations are expanding rapidly.`,
-                'Cloud Computing': `Cloud infrastructure growth, hybrid cloud solutions, edge computing, serverless architectures, cloud security, cost optimization, migration strategies, and multi-cloud environments are driving digital transformation.`
-            };
-
-            // 키워드별 맞춤 인사이트가 있으면 사용, 없으면 일반적인 인사이트 생성
-            if (globalKeywordInsights[keyword]) {
-                return globalKeywordInsights[keyword];
-            }
-
-            // 일반적인 해외 인사이트
-            const generalInsights = [
-                `${keyword} technology development, policy support, investment expansion, standardization work, talent development, security enhancement, ecosystem creation, patent competition, global expansion, and future prospects are major trends.`,
-                `${keyword} field innovation acceleration, industry application expansion, regulatory improvements, investment activation, international cooperation, expert talent acquisition, technical standardization, and startup growth are notable.`,
-                `${keyword} related technology advancement, market expansion, government support, private investment, talent acquisition, security issues, innovation ecosystem, patent applications, and international competitiveness are key topics.`
-            ];
-
-            return generalInsights[Math.floor(Math.random() * generalInsights.length)];
-        }
-
-        // 해외 키워드별 아이콘 반환
-        function getGlobalKeywordIcon(keyword) {
-            const globalIcons = {
-                'AI': '🤖', 'Artificial Intelligence': '🤖', 'Machine Learning': '🤖',
-                'Technology': '💻', 'Tech': '💻', 'Innovation': '💡',
-                'Digital': '📱', 'Digital Transformation': '🔄', 'Cloud': '☁️',
-                'Data': '📊', 'Analytics': '📈', 'Big Data': '📊',
-                'Cybersecurity': '🛡️', 'Security': '🔒', 'Privacy': '🔐',
-                'Blockchain': '⛓️', 'Cryptocurrency': '💰', 'Bitcoin': '₿',
-                'IoT': '🌐', 'Internet of Things': '🌐', 'Smart': '🏠',
-                'Automation': '⚙️', 'Robot': '🤖', 'Manufacturing': '🏭',
-                'Healthcare': '🏥', 'Biotech': '🧬', 'Medical': '💊',
-                'Finance': '💳', 'Fintech': '💰', 'Banking': '🏦',
-                'Energy': '⚡', 'Green': '🌱', 'Sustainability': '♻️'
-            };
-
-            for (const [key, icon] of Object.entries(globalIcons)) {
-                if (keyword.toLowerCase().includes(key.toLowerCase())) return icon;
-            }
-
-            return '🌍';
-        }
-
-        // 해외 샘플 뉴스 표시
-        function displayGlobalSampleNews() {
-            const globalSampleCards = [
-                {
-                    title: 'AI Technology Trends Analysis',
-                    keyword: 'AI Technology',
-                    count: 247,
-                    thumbnail: '🤖',
-                    insight: 'AI technology advancement, policy discussions, investment growth, standardization efforts, talent development, security issues, startup ecosystem growth, patent surge, international competitiveness, and new product launches show comprehensive growth trends.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                },
-                {
-                    title: 'Innovation & Digital Transformation',
-                    keyword: 'Innovation',
-                    count: 183,
-                    thumbnail: '💡',
-                    insight: 'Innovation-driven transformation, digital disruption, emerging technologies, venture capital investments, R&D initiatives, patent competitions, global market expansion, and technological breakthroughs are key themes.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                },
-                {
-                    title: 'Machine Learning Applications',
-                    keyword: 'Machine Learning',
-                    count: 156,
-                    thumbnail: '🤖',
-                    insight: 'Machine learning applications, algorithm improvements, data processing capabilities, AI model training, predictive analytics, automation solutions, research breakthroughs, and industry implementations are expanding rapidly.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                },
-                {
-                    title: 'Cloud Computing Evolution',
-                    keyword: 'Cloud Computing',
-                    count: 142,
-                    thumbnail: '☁️',
-                    insight: 'Cloud infrastructure growth, hybrid cloud solutions, edge computing, serverless architectures, cloud security, cost optimization, migration strategies, and multi-cloud environments are driving digital transformation.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                },
-                {
-                    title: 'Cybersecurity & Privacy',
-                    keyword: 'Cybersecurity',
-                    count: 128,
-                    thumbnail: '🛡️',
-                    insight: 'Cybersecurity threats increase, security solution development, privacy protection enhancement, government policy support, international cooperation expansion, security expert training, corporate security investment, and global security standardization are core trends.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                },
-                {
-                    title: 'Digital Transformation Trends',
-                    keyword: 'Digital Transformation',
-                    count: 134,
-                    thumbnail: '🔄',
-                    insight: 'Digital transformation initiatives, cloud adoption, automation processes, data analytics, cybersecurity measures, workforce reskilling, digital infrastructure, and business model innovations are accelerating globally.',
-                    publishedAt: new Date().toLocaleDateString('ko-KR'),
-                    region: 'global'
-                }
-            ];
-
-            displayNewsCards(globalSampleCards);
         }
 
         // 검색 기능
@@ -1108,25 +1124,6 @@
                 searchNews();
             }
         });
-
-        // 로딩 그리드 표시/숨김
-        function showLoadingGrid() {
-            const loadingGrid = document.getElementById('loadingGrid');
-            if (loadingGrid) {
-                loadingGrid.style.display = 'grid';
-            } else {
-                console.warn('loadingGrid 요소를 찾을 수 없습니다');
-            }
-        }
-
-        function hideLoadingGrid() {
-            const loadingGrid = document.getElementById('loadingGrid');
-            if (loadingGrid) {
-                loadingGrid.style.display = 'none';
-            } else {
-                console.warn('loadingGrid 요소를 찾을 수 없습니다');
-            }
-        }
 
         // 구독 모달 관련 함수들
         function openSubscribeModal() {
@@ -1154,7 +1151,6 @@
             const successMsg = document.getElementById('successMessage');
             const errorMsg = document.getElementById('errorMessage');
 
-            // 버튼 비활성화
             submitBtn.disabled = true;
             submitBtn.textContent = '구독 중...';
 
@@ -1181,6 +1177,7 @@
                     successMsg.style.display = 'none';
                 }
             } catch (error) {
+                console.error('구독 오류:', error);
                 errorMsg.style.display = 'block';
                 errorMsg.textContent = '네트워크 오류가 발생했습니다.';
                 successMsg.style.display = 'none';
@@ -1193,7 +1190,7 @@
         // 모달 외부 클릭시 닫기
         window.onclick = function (event) {
             const modal = document.getElementById('subscribeModal');
-            if (event.target === modal) {
+            if (event.target == modal) {
                 closeSubscribeModal();
             }
         }
