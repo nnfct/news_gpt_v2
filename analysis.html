@@ -17,37 +17,47 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #1C2039;
+            background: #0f0f0f;
             min-height: 100vh;
-            color: #343A40;
+            color: #fff;
         }
 
         .header {
-            text-align: center;
-            padding: 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
             color: white;
-            background: linear-gradient(135deg, #1C2039 0%, #2C2C3A 100%);
+            background: #212121;
             position: relative;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-content {
+            text-align: center;
+            flex: 1;
         }
 
         .back-btn {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
+            background: #303030;
             color: white;
-            border: none;
-            padding: 10px 15px;
+            border: 1px solid #333;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-50%) scale(1.05);
+            background: #404040;
+            border-color: #00D9C0;
+            transform: translateX(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.2);
         }
 
         .header h1 {
@@ -64,24 +74,7 @@
             margin-bottom: 20px;
         }
 
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #1C2039;
-            min-height: 100vh;
-            color: #343A40;
-        }
-
-        .header {
-            text-align: center;
-            padding: 40px 20px;
-            color: white;
-            background: linear-gradient(135deg, #1C2039 0%, #2C2C3A 100%);
-        }
 
         .header h1 {
             font-size: 2.5em;
@@ -123,12 +116,12 @@
         }
 
         .weekly-summary {
-            background: white;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 40px;
             margin: 30px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
             min-height: 700px;
             /* 600px에서 700px로 확대 */
         }
@@ -147,10 +140,10 @@
         .summary-title {
             font-size: 1.5em;
             font-weight: 600;
-            color: #343A40;
+            color: #fff;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #E9ECEF;
+            border-bottom: 2px solid #333;
         }
 
         .summary-title.domestic {
@@ -171,9 +164,9 @@
         .week-section {
             margin-bottom: 40px;
             padding: 20px;
-            background: #FAFBFC;
+            background: #2a2a2a;
             border-radius: 12px;
-            border: 1px solid #F0F2F5;
+            border: 1px solid #333;
         }
 
         .week-header {
@@ -186,12 +179,12 @@
         .week-title {
             font-size: 1.3em;
             font-weight: 600;
-            color: #343A40;
+            color: #fff;
         }
 
         .week-loading {
             font-size: 0.9em;
-            color: #6C757D;
+            color: #aaa;
             font-style: italic;
         }
 
@@ -200,12 +193,12 @@
         }
 
         .industry-analysis {
-            background: white;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 40px;
             margin: 30px 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
             min-height: 600px;
         }
 
@@ -217,15 +210,15 @@
         }
 
         .industry-tab {
-            background: #F0F2F5;
-            color: #555555;
-            border: 2px solid #E9ECEF;
+            background: #303030;
+            color: #ccc;
+            border: 2px solid #333;
             padding: 14px 22px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(240, 242, 245, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .industry-tab.active {
@@ -236,7 +229,7 @@
         }
 
         .industry-tab:hover:not(.active) {
-            background: #F5F7FA;
+            background: #404040;
             border-color: #5A7DBC;
             transform: translateY(-1px);
         }
@@ -244,7 +237,7 @@
         .section-title {
             font-size: 1.4em;
             font-weight: 600;
-            color: #343A40;
+            color: #fff;
             margin-bottom: 20px;
             border-bottom: 3px solid #00D9C0;
             padding-bottom: 10px;
@@ -265,17 +258,17 @@
         }
 
         .keyword-tag {
-            background: #F0F2F5;
-            color: #555555;
+            background: #303030;
+            color: #ccc;
             padding: 8px 14px;
             /* 10px 16px에서 8px 14px로 줄여서 Top 5가 한줄에 더 잘 들어가도록 */
             border-radius: 25px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(240, 242, 245, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
             position: relative;
-            border: 1px solid #E9ECEF;
+            border: 1px solid #333;
             font-size: 0.85em;
             /* 0.9em에서 0.85em로 더 줄여서 공간 효율성 */
             white-space: nowrap;
@@ -298,13 +291,13 @@
         }
 
         .analysis-content {
-            background: white;
+            background: #2a2a2a;
             padding: 25px;
             border-radius: 12px;
             min-height: 200px;
             line-height: 1.6;
-            color: #343A40;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            color: #ccc;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .analysis-grid {
@@ -318,16 +311,16 @@
             padding: 20px;
             border-radius: 8px;
             border-left: 4px solid #5A7DBC;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #2a2a2a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .counter-analysis-section {
             padding: 20px;
             border-radius: 8px;
             border-left: 4px solid #DC3545;
-            background: #FFF5F5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #2a2a2a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .analysis-title {
@@ -371,7 +364,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #F5F7FA;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 30px;
             max-width: 800px;
@@ -380,6 +373,7 @@
             overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             z-index: 1001;
+            border: 1px solid #333;
         }
 
         .modal-header {
@@ -387,7 +381,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #E9ECEF;
+            border-bottom: 2px solid #333;
             padding-bottom: 15px;
         }
 
@@ -396,12 +390,12 @@
             border: none;
             font-size: 1.5em;
             cursor: pointer;
-            color: #6C757D;
+            color: #aaa;
             transition: color 0.3s ease;
         }
 
         .close-btn:hover {
-            color: #5A7DBC;
+            color: #fff;
         }
 
         .articles-grid {
@@ -411,24 +405,24 @@
         }
 
         .article-card {
-            background: white;
+            background: #2a2a2a;
             border-radius: 12px;
             padding: 20px;
             border-left: 4px solid #5A7DBC;
             transition: all 0.3s ease;
             position: relative;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .article-card:hover {
-            background: #F5F7FA;
+            background: #333;
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(90, 125, 188, 0.2);
         }
 
         .article-card[style*="cursor: pointer"]:hover {
             border-left-color: #00D9C0;
-            background: #F0FDFC;
+            background: #1a3a3a;
             box-shadow: 0 4px 12px rgba(0, 217, 192, 0.3);
         }
 
@@ -449,7 +443,7 @@
 
         .article-card.no-url:hover {
             border-left-color: #dc3545;
-            background: #fff5f5;
+            background: #3a1a1a;
             box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
             transform: none;
         }
@@ -465,42 +459,42 @@
 
         .article-date {
             font-size: 12px;
-            color: #6C757D;
+            color: #aaa;
             margin-bottom: 5px;
         }
 
         .article-title {
             font-weight: 600;
-            color: #343A40;
+            color: #fff;
             margin-bottom: 8px;
         }
 
         .article-summary {
-            color: #6C757D;
+            color: #ccc;
             line-height: 1.5;
         }
 
         .chatbot-section {
-            background: #F5F7FA;
+            background: #1a1a1a;
             border-radius: 16px;
             padding: 40px;
             margin-top: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
             min-height: 600px;
         }
 
         .chat-suggestions {
-            background: white;
+            background: #2a2a2a;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .suggestion-title {
             font-weight: 600;
-            color: #343A40;
+            color: #fff;
             margin-bottom: 15px;
             font-size: 14px;
         }
@@ -512,8 +506,8 @@
         }
 
         .suggestion-item {
-            background: #F0F2F5;
-            color: #555555;
+            background: #303030;
+            color: #ccc;
             padding: 10px 16px;
             border-radius: 20px;
             cursor: pointer;
@@ -521,8 +515,8 @@
             text-align: center;
             font-size: 13px;
             font-weight: 500;
-            box-shadow: 0 2px 8px rgba(240, 242, 245, 0.3);
-            border: 1px solid #E9ECEF;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
         }
 
         .suggestion-item:hover {
@@ -538,10 +532,10 @@
             overflow-y: auto;
             margin-bottom: 20px;
             padding: 15px;
-            border: 1px solid #E9ECEF;
+            border: 1px solid #333;
             border-radius: 12px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: #2a2a2a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .chat-message {
@@ -563,14 +557,14 @@
 
         .chat-bot {
             align-self: flex-start;
-            background: #E9ECEF;
-            color: #343A40;
+            background: #303030;
+            color: #fff;
             padding: 10px 16px;
             border-radius: 18px 18px 18px 4px;
             max-width: 70%;
             word-wrap: break-word;
             line-height: 1.5;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .chat-input-container {
@@ -581,13 +575,13 @@
         .chat-input {
             flex: 1;
             padding: 12px 16px;
-            border: 2px solid #E9ECEF;
+            border: 2px solid #333;
             border-radius: 25px;
             outline: none;
             font-size: 14px;
             transition: border-color 0.3s ease;
-            background: white;
-            color: #343A40;
+            background: #2a2a2a;
+            color: #fff;
         }
 
         .chat-input:focus {
@@ -869,8 +863,18 @@
         }
 
         @media (max-width: 768px) {
-            .header h1 {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 20px;
+            }
+
+            .header-content h1 {
                 font-size: 2em;
+            }
+
+            .back-btn {
+                align-self: flex-start;
             }
 
             .main-container {
@@ -924,8 +928,13 @@
 
 <body>
     <div class="header">
-        <h1>🔍 AI 뉴스 키워드 분석</h1>
-        <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        <button class="back-btn" onclick="goBackToIndex()">
+            ← 뉴스 홈
+        </button>
+        <div class="header-content">
+            <h1>🔍 AI 뉴스 키워드 분석</h1>
+            <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        </div>
         <button class="subscribe-btn" onclick="openSubscribeModal()">
             📧 주간 인사이트 구독하기
         </button>
@@ -1483,13 +1492,38 @@
                 3: { start: '2025-07-14', end: '2025-07-18' }
             };
 
-            keywords.forEach((keyword, index) => {
+            // Top 5 키워드만 표시
+            const top5Keywords = keywords.slice(0, 5);
+
+            top5Keywords.forEach((keywordData, index) => {
                 const keywordElement = document.createElement('div');
-                keywordElement.className = 'keyword-tag'; // GPU 가속 클래스 제거
-                keywordElement.textContent = keyword;
+                keywordElement.className = 'keyword-tag';
+
+                // 키워드 데이터가 객체인지 문자열인지 확인
+                let keywordText, keywordCount;
+                if (typeof keywordData === 'object' && keywordData !== null) {
+                    // 객체인 경우 keyword 속성 사용
+                    keywordText = keywordData.keyword || keywordData.name || keywordData.text || String(keywordData);
+                    keywordCount = keywordData.count || keywordData.frequency || '';
+                } else {
+                    // 문자열인 경우 그대로 사용
+                    keywordText = String(keywordData);
+                    keywordCount = '';
+                }
+
+                // 키워드 텍스트 설정
+                keywordElement.textContent = keywordText;
+
+                // 카운트가 있으면 툴팁으로 표시
+                if (keywordCount) {
+                    keywordElement.title = `언급 횟수: ${keywordCount}회`;
+                }
+
+                console.log(`🏷️ 키워드 생성: "${keywordText}" (${keywordCount || '카운트 없음'})`);
 
                 // 지역별 구분을 위한 데이터 속성 추가
                 keywordElement.setAttribute('data-region', region);
+                keywordElement.setAttribute('data-keyword', keywordText);
 
                 // 즉시 피드백 효과 적용
                 applyInstantFeedback(keywordElement);
@@ -1502,18 +1536,18 @@
                         this.style.transform = '';
                     }, 150);
 
-                    selectedKeyword = keyword;
-                    currentKeywords = [keyword];
+                    selectedKeyword = keywordText;
+                    currentKeywords = [keywordText];
                     const dateRange = weekDateRanges[weekNumber];
 
                     // 즉시 로딩 상태 표시
-                    showPreloadIndicator(`"${keyword}" 관련 기사 검색 중...`);
+                    showPreloadIndicator(`"${keywordText}" 관련 기사 검색 중...`);
 
                     // 키워드 분석 수행
-                    performKeywordAnalysis(keyword);
+                    performKeywordAnalysis(keywordText);
 
                     // 해당 주차 날짜로 관련 기사 표시 (지역 정보 전달)
-                    openArticleModal(keyword, dateRange, region);
+                    openArticleModal(keywordText, dateRange, region);
                 });
 
                 // 애니메이션 지연으로 순차적 등장 효과
@@ -2624,6 +2658,11 @@
             if (event.target === modal) {
                 closeSubscribeModal();
             }
+        }
+
+        // 뒤로가기 함수
+        function goBackToIndex() {
+            window.location.href = 'index.html';
         }
     </script>
 </body>
