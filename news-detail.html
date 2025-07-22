@@ -967,13 +967,19 @@
                 <br>
                 <p><strong>주요 내용:</strong></p>
                 <div class="news-cards-grid">
-                    ${articles.slice(0, Math.min(articles.length, 15)).map((article, index) => `
-                        <div class="news-card-item" onclick="openOriginalArticle('${article.url || ''}', '${article.title || ''}')">
-                            <div class="news-card-number">${index + 1}</div>
-                            <div class="news-card-title">${article.title}</div>
-                            <div class="news-card-summary">${generateArticleSummary(article.title, currentKeyword)}</div>
-                        </div>
-                    `).join('')}
+                    ${articles.slice(0, Math.min(articles.length, 15)).map((article, index) => {
+        // 제목에 포함된 작은따옴표를 이스케이프 처리합니다.
+        const safeTitle = (article.title || '').replace(/'/g, "\\'");
+        const safeUrl = article.url || '';
+
+        return `
+        <div class="news-card-item" onclick="openOriginalArticle('${safeUrl}', '${safeTitle}')">
+            <div class="news-card-number">${index + 1}</div>
+            <div class="news-card-title">${article.title}</div>
+            <div class="news-card-summary">${generateArticleSummary(article.title, currentKeyword)}</div>
+        </div>
+    `;
+      }).join('')}
                 </div>
                 <div class="other-categories">
                     <div class="other-categories-title">🔍 다른 분야 탐색하기</div>
