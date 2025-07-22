@@ -924,6 +924,32 @@
                 grid-template-columns: 1fr;
             }
         }
+                /* '내 직무' 탭의 상세 분석 섹션을 기본적으로 숨김 */
+        #job-detailed-analysis-content {
+            display: none; /* JavaScript에서 내용이 있을 때 'block'으로 변경 */
+            margin-top: 20px; /* 직무 요약과 상세 분석 사이의 여백 조절 */
+        }
+
+        /* 로딩 메시지의 최소 높이 및 텍스트 정렬 설정 */
+        #job-detailed-analysis-content .loading {
+            min-height: 20px; /* 로딩 텍스트가 표시될 최소 높이 */
+            text-align: center;
+            color: #888;
+        }
+
+        /* 상세 분석 섹션 내부의 패딩 및 하단 여백 조절 */
+        #job-detailed-analysis-content .analysis-section,
+        #job-detailed-analysis-content .counter-analysis-section {
+            padding: 15px; /* 섹션 내부 패딩 */
+            margin-bottom: 15px; /* 각 분석 섹션 사이의 하단 여백 */
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+
+        /* 챗봇 섹션의 최소 높이 조정 (필요시 - 예시) */
+        .chat-history {
+            min-height: 150px; /* 200px에서 150px 등으로 줄여보세요 */
+        }
     </style>
 </head>
 
@@ -1032,15 +1058,47 @@
                 <div class="industry-tab" data-industry="IT/과학">IT/과학</div>
                 <div class="industry-tab" data-industry="생활/문화">생활/문화</div>
                 <div class="industry-tab" data-industry="세계">세계</div>
+                <div class="industry-tab" data-industry="my-job">내 직무</div>
             </div>
-            <div class="job-analysis-input-container" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center;">
-                <input type="text" id="job-input" class="chat-input" placeholder="분석할 직무/산업명을 입력하세요 (예: 데이터 과학자)" style="flex: 1; border-radius: 8px;" />
-                <button id="job-send" class="chat-send" style="padding: 10px 20px; border-radius: 8px;">직무 분석</button>
-        </div>
-            <div class="analysis-content" id="analysis-content">
-                <div class="loading">분석할 키워드를 선택해주세요</div>
+
+            <div id="industry-analysis-content-container">
+                <div class="analysis-content" id="analysis-content">
+                    <div class="loading">분석할 키워드를 선택해주세요</div>
+                </div>
             </div>
-        </div>
+
+            <div id="my-job-analysis-content-container" style="display: none;">
+                <div class="job-analysis-input-container" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center;">
+                    <input type="text" id="job-input" class="chat-input" placeholder="분석할 직무/산업명을 입력하세요 (예: 데이터 과학자)" style="flex: 1; border-radius: 8px;" />
+                    <button id="job-send" class="chat-send" style="padding: 10px 20px; border-radius: 8px;">직무 분석</button>
+                </div>
+
+                <div class="analysis-content" id="job-analysis-result-content">
+                    <div class="loading">직무/산업명을 입력하고 '직무 분석' 버튼을 눌러주세요.</div>
+                </div>
+
+                <div class="job-detailed-analysis-section" style="margin-top: 30px;">
+                    <h3 class="section-title" style="border-bottom: 2px solid #5A7DBC; padding-bottom: 10px; margin-bottom: 20px; font-size: 1.2em;">
+                        <span style="color: #5A7DBC;">📊</span> 상세 직무 관점 분석
+                    </h3>
+                    <div id="job-detailed-analysis-content" class="analysis-grid">
+                        <div class="analysis-section">
+                            <div class="analysis-title">
+                                <span style="color: #667eea;">👍</span>
+                                긍정적/일반 분석
+                            </div>
+                            <div class="loading">분석 중...</div>
+                        </div>
+                        <div class="counter-analysis-section">
+                            <div class="counter-title">
+                                <span style="color: #e74c3c;">🤔</span>
+                                비판적/회의적 분석
+                            </div>
+                            <div class="loading">분석 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         <!-- 챗봇 섹션 -->
         <div class="chatbot-section">
@@ -1094,7 +1152,7 @@
     <script>
         // 🚀 고성능 최적화된 전역 변수
         let currentKeywords = [];
-        let selectedKeyword = null;
+        let selectedKeyword = new URLSearchParams(window.location.search).get('keyword') || '인공지능';
         let dataCache = {}; // 일반 객체로 변경 (Map 대신)
         let performanceMetrics = {
             startTime: Date.now(),
@@ -1701,64 +1759,112 @@
         function setupIndustryTabs() {
             document.querySelectorAll('.industry-tab').forEach(tab => {
                 tab.addEventListener('click', function () {
-                    // 탭 활성화
                     document.querySelectorAll('.industry-tab').forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
 
-                    // 선택된 키워드가 있으면 분석 실행
-                    if (selectedKeyword) {
-                        loadIndustryAnalysis(this.dataset.industry, selectedKeyword);
+                    const selectedIndustry = this.dataset.industry;
+                    const industryAnalysisContainer = document.getElementById('industry-analysis-content-container');
+                    const myJobAnalysisContainer = document.getElementById('my-job-analysis-content-container');
+                    const jobDetailedAnalysisContent = document.getElementById('job-detailed-analysis-content');
+
+                    if (selectedIndustry === 'my-job') {
+                        industryAnalysisContainer.style.display = 'none';
+                        myJobAnalysisContainer.style.display = 'block';
+                        document.getElementById('job-analysis-result-content').innerHTML = `
+                            <div class="loading">직무/산업명을 입력하고 '직무 분석' 버튼을 눌러주세요.</div>
+                        `;
+                        jobDetailedAnalysisContent.style.display = 'none';
+                        jobDetailedAnalysisContent.innerHTML = '';
+
+                    } else {
+                        industryAnalysisContainer.style.display = 'block';
+                        myJobAnalysisContainer.style.display = 'none';
+
+                        document.getElementById('analysis-content').innerHTML = `
+                            <div class="loading">🤔 다양한 관점에서 분석 중...</div>
+                        `;
+                        loadIndustryAnalysis(selectedIndustry, selectedKeyword); // selectedKeyword의 현재 값 사용
                     }
                 });
             });
+
+            // 페이지 로드 시 초기 탭 설정
+            const initialActiveTab = document.querySelector('.industry-tab.active');
+            if (initialActiveTab) {
+                const selectedIndustry = initialActiveTab.dataset.industry;
+                if (selectedIndustry === 'my-job') {
+                    document.getElementById('industry-analysis-content-container').style.display = 'none';
+                    document.getElementById('my-job-analysis-content-container').style.display = 'block';
+                    document.getElementById('job-analysis-result-content').innerHTML = `
+                        <div class="loading">직무/산업명을 입력하고 '직무 분석' 버튼을 눌러주세요.</div>
+                    `;
+                    jobDetailedAnalysisContent.style.display = 'none';
+                    jobDetailedAnalysisContent.innerHTML = '';
+                } else {
+                    document.getElementById('industry-analysis-content-container').style.display = 'block';
+                    document.getElementById('my-job-analysis-content-container').style.display = 'none';
+                    document.getElementById('analysis-content').innerHTML = `
+                        <div class="loading">🤔 다양한 관점에서 분석 중...</div>
+                    `;
+                    loadIndustryAnalysis(selectedIndustry, selectedKeyword); // selectedKeyword의 현재 값 사용
+                }
+            }
         }
 
         // 개선된 산업별 분석 함수 (정반대 의견 포함)
         async function loadIndustryAnalysis(industry, keyword) {
-            const content = document.getElementById('analysis-content');
-            content.innerHTML = '<div class="loading">🤔 다양한 관점에서 분석 중...</div>';
+        const content = document.getElementById('analysis-content');
+        content.innerHTML = '<div class="loading">🤔 다양한 관점에서 분석 중...</div>'; // 로딩 중 메시지
 
-            try {
-                const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        industry: industry,
-                        keyword: keyword
-                    })
-                });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60초 타임아웃
 
-                const data = await response.json();
-                content.innerHTML = `
-                    <div class="analysis-grid">
-                        <div class="analysis-section">
-                            <div class="analysis-title">
-                                <span style="color: #667eea;">👍</span>
-                                긍정적/일반 분석
-                            </div>
-                            <div style="line-height: 1.7;">${data.analysis}</div>
+        try {
+            const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    industry_perspective: industry, // <-- 이 부분을 'industry' 파라미터로 수정
+                    target_keyword: keyword        // <-- 이 부분을 'keyword' 파라미터로 수정
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+            // ... (나머지 코드, marked.parse 사용 부분은 그대로 유지) ...
+            content.innerHTML = `
+                <div class="analysis-grid">
+                    <div class="analysis-section">
+                        <div class="analysis-title">
+                            <span style="color: #667eea;">👍</span>
+                            긍정적/일반 분석
                         </div>
-                        
-                        <div class="counter-analysis-section">
-                            <div class="counter-title">
-                                <span style="color: #e74c3c;">🤔</span>
-                                비판적/회의적 분석
-                            </div>
-                            <div style="line-height: 1.7;">${data.counter_analysis || '반대 의견을 생성할 수 없습니다.'}</div>
+                        <div style="line-height: 1.7;">${marked.parse(data.analysis || '긍정적 분석을 생성할 수 없습니다.')}</div>
+                    </div>
+
+                    <div class="counter-analysis-section">
+                        <div class="counter-title">
+                            <span style="color: #e74c3c;">🤔</span>
+                            비판적/회의적 분석
                         </div>
+                        <div style="line-height: 1.7;">${marked.parse(data.counter_analysis || '비판적 분석을 생성할 수 없습니다.')}</div>
                     </div>
-                `;
-            } catch (error) {
-                content.innerHTML = `
-                    <div style="color: #666; text-align: center; padding: 20px;">
-                        ❌ 분석을 불러오는 중 오류가 발생했습니다.<br>
-                        잠시 후 다시 시도해주세요.
-                    </div>
-                `;
-            }
+                </div>
+            `;
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            console.error('❌ 분석을 불러오는 중 오류:', error);
+            content.innerHTML = `
+                <div style="color: #666; text-align: center; padding: 20px;">
+                    ❌ 분석을 불러오는 중 오류가 발생했습니다.<br>
+                    잠시 후 다시 시도해주세요.<br>
+                    ${error.name === 'AbortError' ? '⏰ 응답 시간 초과' : '🔄 네트워크 또는 서버 오류'}
+                </div>
+            `;
         }
+    }
 
         // 기사 모달 함수 (최적화 버전)
         async function openArticleModal(keyword, dateRange = null, region = 'domestic') {
@@ -2358,71 +2464,124 @@
         async function performJobAnalysis() {
             const jobInput = document.getElementById('job-input');
             const query = jobInput.value.trim();
-            const analysisContentDiv = document.getElementById('analysis-content');
+            const jobSummaryResultDiv = document.getElementById('job-analysis-result-content');
+            const jobDetailedAnalysisDiv = document.getElementById('job-detailed-analysis-content');
             const jobSendBtn = document.getElementById('job-send');
 
             if (!query) {
-                analysisContentDiv.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">분석할 직무/산업명을 입력해주세요.</div>';
+                jobSummaryResultDiv.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">분석할 직무/산업명을 입력해주세요.</div>';
+                jobDetailedAnalysisDiv.style.display = 'none';
+                jobDetailedAnalysisDiv.innerHTML = '';
                 return;
             }
 
-            analysisContentDiv.innerHTML = '<div class="loading">📊 직무/산업 정보 분석 중...</div>';
-            jobSendBtn.disabled = true; // 버튼 비활성화
+            jobSummaryResultDiv.innerHTML = '<div class="loading">📊 직무/산업 정보 분석 중...</div>';
+            jobDetailedAnalysisDiv.style.display = 'block';
+            jobDetailedAnalysisDiv.innerHTML = `
+                <div class="analysis-section">
+                    <div class="analysis-title">
+                        <span style="color: #667eea;">👍</span>
+                        긍정적/일반 분석
+                    </div>
+                    <div class="loading">분석 중...</div>
+                </div>
+                <div class="counter-analysis-section">
+                    <div class="counter-title">
+                        <span style="color: #e74c3c;">🤔</span>
+                        비판적/회의적 분석
+                    </div>
+                    <div class="loading">분석 중...</div>
+                </div>
+            `;
+
+            jobSendBtn.disabled = true;
             jobSendBtn.textContent = '분석 중...';
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60초 타임아웃 (RAG는 시간이 더 걸릴 수 있습니다)
+            const controller1 = new AbortController();
+            const timeoutId1 = setTimeout(() => controller1.abort(), 60000);
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/job-analysis', {
+                const response1 = await fetch('http://127.0.0.1:8000/api/job-analysis', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query: query }),
-                    signal: controller.signal // fetch에 signal 전달
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        query: query, 
+                        selected_keyword: selectedKeyword // 백엔드로 selectedKeyword를 보냅니다.
+                    }),
+                    signal: controller1.signal
                 });
+                clearTimeout(timeoutId1);
 
-                clearTimeout(timeoutId); // 성공적으로 응답을 받으면 타임아웃 해제
+                const data1 = await response1.json();
+                console.log('📚 직무 요약 응답 (백엔드 전체 응답):', data1);
 
-                const data = await response.json();
-                console.log('📚 직무 분석 응답:', data);
-
-                if (response.ok && data.summary) {
-                    analysisContentDiv.innerHTML = `
+                if (response1.ok && data1.summary) {
+                    jobSummaryResultDiv.innerHTML = `
                         <div class="analysis-section" style="border-left-color: #00D9C0;">
                             <div class="analysis-title" style="color: #00D9C0;">
                                 <span>✨</span> "${query}" 직무/산업 분석 결과
                             </div>
-                            <div style="line-height: 1.7;">${marked.parse(data.summary)}</div>
-                            </div>
-                    `;
-                } else {
-                    const errorMessage = data.error || '직무/산업 분석에 실패했습니다. 다시 시도해주세요.';
-                    analysisContentDiv.innerHTML = `
-                        <div style="color: #e74c3c; text-align: center; padding: 20px;">
-                            ❌ ${errorMessage}<br>
-                            ${error.name === 'AbortError' ? '⏰ 응답 시간 초과' : ''}
+                            <div style="line-height: 1.7;">${marked.parse(data1.summary || '')}</div>
                         </div>
                     `;
+
+                    if (data1.insight_analysis || data1.counter_insight_analysis) {
+                        jobDetailedAnalysisDiv.innerHTML = `
+                            <div class="analysis-grid">
+                                <div class="analysis-section">
+                                    <div class="analysis-title">
+                                        <span style="color: #667eea;">👍</span>
+                                        긍정적/일반 분석
+                                    </div>
+                                    <div style="line-height: 1.7;">${marked.parse(data1.insight_analysis || '긍정적 분석을 생성할 수 없습니다.')}</div>
+                                </div>
+
+                                <div class="counter-analysis-section">
+                                    <div class="counter-title">
+                                        <span style="color: #e74c3c;">🤔</span>
+                                        비판적/회의적 분석
+                                    </div>
+                                    <div style="line-height: 1.7;">${marked.parse(data1.counter_insight_analysis || '비판적 분석을 생성할 수 없습니다.')}</div>
+                                </div>
+                            </div>
+                        `;
+                        jobDetailedAnalysisDiv.style.display = 'block';
+                    } else {
+                        jobDetailedAnalysisDiv.innerHTML = `
+                            <div class="loading">핫 키워드에 대한 직무 관점 인사이트를 준비 중입니다.</div>
+                        `;
+                        jobDetailedAnalysisDiv.style.display = 'block';
+                    }
+
+                } else {
+                    const errorMessage = data1.error || '직무/산업 요약 분석에 실패했습니다.';
+                    jobSummaryResultDiv.innerHTML = `
+                        <div class="error-message">
+                            ❌ ${errorMessage}<br>
+                            ${error1.name === 'AbortError' ? '⏰ 응답 시간 초과' : ''}
+                        </div>
+                    `;
+                    jobDetailedAnalysisDiv.style.display = 'none';
+                    jobDetailedAnalysisDiv.innerHTML = '';
                 }
-            } catch (error) {
-                clearTimeout(timeoutId); // 오류 발생 시에도 타임아웃 해제
-                console.error('❌ 직무/산업 분석 오류:', error);
-                const errorMessage = error.name === 'AbortError'
-                    ? '⏰ 직무/산업 분석 시간 초과. 잠시 후 다시 시도해주세요.'
-                    : '🔄 직무/산업 분석 중 네트워크 오류가 발생했습니다.';
-                analysisContentDiv.innerHTML = `
-                    <div style="color: #e74c3c; text-align: center; padding: 20px;">
-                        ❌ ${errorMessage}
+
+            } catch (error1) {
+                clearTimeout(timeoutId1);
+                console.error('❌ 직무 요약 및 상세 분석 전체 오류:', error1);
+                jobSummaryResultDiv.innerHTML = `
+                    <div class="error-message">
+                        ❌ 직무/산업 분석 중 오류가 발생했습니다.<br>
+                        ${error1.name === 'AbortError' ? '⏰ 응답 시간 초과' : '🔄 네트워크 또는 서버 오류'}
                     </div>
                 `;
+                jobDetailedAnalysisDiv.style.display = 'none';
+                jobDetailedAnalysisDiv.innerHTML = '';
             } finally {
-                jobSendBtn.disabled = false; // 버튼 활성화
+                jobSendBtn.disabled = false;
                 jobSendBtn.textContent = '직무 분석';
             }
         }
-
+        
         // 타이핑 인디케이터 추가 (최적화)
         function addTypingIndicator() {
             const chatHistory = document.getElementById('chat-history');

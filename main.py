@@ -71,6 +71,13 @@ class EmailInsightRequest(BaseModel):
 # RAG 분석 요청 모델
 class JobAnalysisRequest(BaseModel):
     query: str
+    selected_keyword: Optional[str] = None
+
+# 👇 여기에 새로운 Pydantic 모델을 추가합니다.
+class IndustryKeywordAnalysisRequest(BaseModel):
+    industry_perspective: str # 분석 관점 (예: "데이터 과학자")
+    target_keyword: str       # 분석 대상 키워드 (예: "인공지능")
+    # 기존 IndustryAnalysisRequest에서 industry와 keyword를 대체
 
 # Azure OpenAI 클라이언트 초기화
 openai_client = AzureOpenAI(
@@ -456,26 +463,62 @@ async def get_global_keyword_articles(
 
 @app.post("/api/job-analysis")
 async def analyze_job_industry(request: JobAnalysisRequest):
-    """사용자 입력 기반 NCS 직무/산업 정보를 RAG로 요약하여 반환"""
-    try:
-        logger.info(f"🔍 직무/산업 분석 요청 수신: {request.query}")
+    user_job_role = request.query             # 사용자 입력 직무/산업 (분석 관점)
+    analysis_keyword = request.selected_keyword # 분석 대상 키워드
 
-        # get_job_industry_summary 함수를 호출하여 요약된 정보를 가져옵니다.
-        summary = await get_job_industry_summary(request.query)
+    if not analysis_keyword:
+        analysis_keyword = "인공지능" # 기본 분석 키워드를 '인공지능'으로 설정
+        logger.warning(f"⚠️ analysis_keyword가 제공되지 않아 '{analysis_keyword}'를 기본값으로 사용합니다.")
+
+
+    if not user_job_role:
+        raise HTTPException(status_code=400, detail="분석할 직무/산업을 입력해야 합니다.")
+
+    logger.info(f"📊 직무/산업 분석 요청: 관점='{user_job_role}', 대상 키워드='{analysis_keyword}'")
+
+    try:
+        # 1단계: 직무 요약 (NCS RAG) - 기존 로직
+        summary = await get_job_industry_summary(user_job_role) # user_job_role을 쿼리로 전달
+
+        # 2단계: 긍정적/비판적 분석 생성 (user_job_role 관점에서 analysis_keyword 분석)
+        insight_analysis_result = await generate_industry_based_answer(
+            question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 긍정적 분석",
+            keyword=analysis_keyword,
+            industry=user_job_role, # <--- 이 파라미터에 사용자 직무 관점을 전달
+            current_keywords=[analysis_keyword]
+        )
+
+        counter_analysis_result = await generate_comparison_answer(
+            question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 비판적 분석",
+            keywords=[analysis_keyword], # <--- 이 파라미터에 분석 대상 키워드를 전달
+            perspective_role=user_job_role # <--- generate_comparison_answer 함수에 추가된 perspective_role 파라미터
+        )
+
+        # generate_comparison_answer 함수를 '직무 관점'에서 특정 키워드를 분석하도록 활용
+        counter_analysis_result = await generate_comparison_answer(
+            question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 비판적 분석",
+            keywords=[analysis_keyword], # 비교 키워드로 대상 키워드 전달
+            perspective_role=user_job_role # 'perspective_role'에 직무 관점 전달
+        )
 
         if not summary:
-            # 만약 요약 결과가 비어있다면 오류 메시지를 반환합니다.
-            logger.warning(f"⚠️ 직무/산업 요약 결과 없음 또는 오류 발생 for query: {request.query}")
+            logger.warning(f"⚠️ 직무/산업 요약 결과 없음 또는 오류 발생 for query: {user_job_role}")
             return JSONResponse(status_code=500, content={"error": "직무/산업 정보를 분석할 수 없습니다. 더 구체적인 질문을 해주세요."})
 
         logger.info(f"✅ 직무/산업 분석 완료. 요약 길이: {len(summary)}")
-        return {"query": request.query, "summary": summary, "status": "success"}
+        return {
+            "query": user_job_role,
+            "summary": summary,
+            "insight_analysis": insight_analysis_result,
+            "counter_insight_analysis": counter_analysis_result,
+            "status": "success"
+        }
 
     except Exception as e:
         logger.error(f"❌ 직무/산업 분석 엔드포인트 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"직무/산업 분석 중 서버 오류 발생: {str(e)}")
-
-
+    
+    
 # =============================================================================
 # 새로운 워크플로우 핵심 함수들
 # =============================================================================
@@ -1585,10 +1628,10 @@ def get_current_weekly_keywords():
         print(f"키워드 추출 오류: {e}")
         return ["인공지능", "반도체", "기업"]
 
-def generate_industry_based_answer(question, keyword, industry, current_keywords):
-    """산업별 키워드 분석 기반 답변 생성"""
+async def generate_industry_based_answer(question, keyword, industry, current_keywords):
+    """산업별/직무별 관점 분석 기반 답변 생성"""
     try:
-        # 산업별 관점 정의
+        # industry_context 맵은 기존과 동일 (주요 산업 분야만 포함)
         industry_context = {
             "사회": "사회적 영향, 정책적 측면, 시민 생활 변화",
             "경제": "경제적 파급효과, 시장 동향, 투자 관점",
@@ -1596,41 +1639,45 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
             "생활/문화": "일상생활 변화, 문화적 수용성, 소비자 행동",
             "세계": "글로벌 트렌드, 국제 경쟁, 해외 동향"
         }
-        
-        context_desc = industry_context.get(industry, "전반적인 관점")
-        
+        # 'industry' 파라미터가 '데이터 과학자' 같은 직무명일 수도 있으므로, 이를 관점으로 사용
+        context_desc = industry_context.get(industry, f"'{industry}' 관점") # 리스트에 없는 관점일 경우 일반화
+
+        # 프롬프트 조정: 'industry'를 '분석 관점'으로 명확히 지시
         prompt = f"""
-질문: {question}
-키워드: {keyword}
-관점: {industry} ({context_desc})
-현재 주간 핵심 키워드: {', '.join(current_keywords)}
+        다음은 사용자의 질문과 분석 대상 키워드, 그리고 분석 관점 직무/산업에 대한 정보입니다.
+        이 정보를 바탕으로 '{industry}' 관점에서 '{keyword}'에 대해 구체적이고 전문적인 분석을 제공해주세요.
+        특히 '{industry}' 직무/산업과 '{keyword}' 키워드의 연관성을 중점적으로 다루고, 현재 주간 핵심 키워드({', '.join(current_keywords)})도 고려하여 답변을 구성해주세요.
 
-{industry} 관점에서 '{keyword}'에 대해 답변해주세요.
+        질문: {question}
+        분석 대상 키워드: {keyword}
+        분석 관점 직무/산업: {industry} ({context_desc})
 
-답변 형식:
-· {industry} 관점에서 본 '{keyword}'의 현재 상황
-· 주요 동향과 변화
-· 전망과 시사점
+        답변 형식:
+        · '{industry}' 관점에서 본 '{keyword}'의 현재 상황
+        · 주요 동향과 변화
+        · 전망과 시사점
 
-마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
-구체적이고 전문적으로 답변해주세요.
-"""
-        
+        마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
+        """
+
         completion = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
+                # system 프롬프트도 'industry'를 '분석 관점'으로 명확히 지시
+                {"role": "system", "content": f"당신은 '{industry}' 관점에서 뉴스 데이터를 분석하고 키워드에 대해 전문적으로 답변하는 AI입니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=16384
+            max_tokens=16384,
+            temperature=0.3 # 일관성을 위해 0.3으로 조정 (원래 0.2였음)
         )
-        
-        return completion.choices[0].message.content
-        
-    except Exception as e:
-        return f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다: {str(e)}"
 
-def generate_keyword_trend_answer(question, keyword):
+        return completion.choices[0].message.content
+
+    except Exception as e:
+        logger.error(f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다: {e}", exc_info=True)
+        return f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다."
+
+async def generate_keyword_trend_answer(question, keyword):
     """키워드 트렌드 분석 답변 생성"""
     try:
         prompt = f"""
@@ -1662,40 +1709,47 @@ def generate_keyword_trend_answer(question, keyword):
     except Exception as e:
         return f"죄송합니다. '{keyword}' 트렌드 분석 중 오류가 발생했습니다: {str(e)}"
 
-def generate_comparison_answer(question, keywords):
-    """비교 분석 답변 생성"""
+async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None):
+    """키워드들을 비교 분석 답변 생성 (직무/산업 관점 포함)"""
     try:
+        # 프롬프트에 직무/산업 관점 추가
+        role_context = ""
+        if perspective_role:
+            role_context = f"'{perspective_role}'의 관점에서 "
+
         prompt = f"""
-질문: {question}
-비교 대상: {', '.join(keywords)}
+        질문: {question}
+        비교 대상: {', '.join(keywords)}
+        분석 관점: {role_context}
 
-키워드들을 비교 분석해주세요.
+        {role_context}'{', '.join(keywords)}' 키워드들을 비교 분석해주세요.
 
-비교 분석 내용:
-· 각 키워드의 현재 상황과 특징
-· 공통점과 차이점
-· 상호 관계와 영향
-· 각각의 전망과 중요성
+        비교 분석 내용:
+        · 각 키워드의 현재 상황과 특징
+        · 공통점과 차이점
+        · 상호 관계와 영향
+        · 각각의 전망과 중요성
 
-마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
-객관적이고 균형잡힌 시각으로 비교해주세요.
-"""
-        
+        마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
+        객관적이고 균형잡힌 시각으로 비교해주세요.
+        """
+
         completion = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 객관적으로 비교 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
+                {"role": "system", "content": f"당신은 {perspective_role or '기술'} 분야의 전문가로서 다양한 키워드를 비교 분석합니다. 객관적이고 균형잡힌 시각으로 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=16384
         )
-        
+
         return completion.choices[0].message.content
-        
+
     except Exception as e:
+        logger.error(f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}")
         return f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}"
 
-def generate_contextual_answer(question, current_keywords):
+async def generate_contextual_answer(question, current_keywords):
     """현재 키워드 컨텍스트 기반 일반 답변 생성"""
     try:
         # 현재 주간 키워드 컨텍스트 추가
@@ -1900,65 +1954,44 @@ def get_sample_global_keywords_by_date(start_date: str, end_date: str):
     else:
         return ["Tech", "Innovation", "AI"]
 
+
 @app.post("/industry-analysis")
-def get_industry_analysis(request: dict):
-    """산업별 키워드 분석 (기존 + 정반대 관점)"""
-    industry = request.get("industry", "")
-    keyword = request.get("keyword", "")
-    
-    if not industry or not keyword:
-        raise HTTPException(status_code=400, detail="산업과 키워드를 모두 제공해야 합니다.")
-    
-    # 기존 분석 프롬프트
-    industry_prompts = {
-        "사회": f"'{keyword}'에 대한 사회적 관점에서의 분석을 제공해주세요. 사회 구조, 시민 생활, 사회 문제 해결 등의 측면에서 3-4문장으로 설명해주세요.",
-        "경제": f"'{keyword}'에 대한 경제적 관점에서의 분석을 제공해주세요. 시장 영향, 투자 전망, 산업 파급효과 등의 측면에서 3-4문장으로 설명해주세요.",
-        "IT/과학": f"'{keyword}'에 대한 IT/과학 기술적 관점에서의 분석을 제공해주세요. 기술 발전, 혁신 동향, 기술적 과제 등의 측면에서 3-4문장으로 설명해주세요.",
-        "생활/문화": f"'{keyword}'에 대한 생활/문화적 관점에서의 분석을 제공해주세요. 일상 생활 변화, 문화적 영향, 라이프스타일 등의 측면에서 3-4문장으로 설명해주세요.",
-        "세계": f"'{keyword}'에 대한 글로벌/국제적 관점에서의 분석을 제공해주세요. 국제 동향, 글로벌 경쟁, 외교적 영향 등의 측면에서 3-4문장으로 설명해주세요."
-    }
-    
-    # 정반대 관점 프롬프트
-    counter_prompts = {
-        "사회": f"'{keyword}'에 대한 비판적/회의적 사회 관점을 제시해주세요. 사회적 우려, 부작용, 격차 심화 등의 측면에서 3-4문장으로 설명해주세요.",
-        "경제": f"'{keyword}'에 대한 경제적 리스크와 부정적 영향을 분석해주세요. 시장 불안정성, 투자 위험, 경제적 부작용 등의 측면에서 3-4문장으로 설명해주세요.",
-        "IT/과학": f"'{keyword}'에 대한 기술적 한계와 문제점을 분석해주세요. 기술적 위험, 윤리적 문제, 발전 장애물 등의 측면에서 3-4문장으로 설명해주세요.",
-        "생활/문화": f"'{keyword}'에 대한 문화적 저항과 생활상의 문제를 분석해주세요. 전통 문화 충돌, 생활 불편, 문화적 부작용 등의 측면에서 3-4문장으로 설명해주세요.",
-        "세계": f"'{keyword}'에 대한 국제적 갈등과 부정적 영향을 분석해주세요. 국가간 분쟁, 글로벌 불평등, 국제적 우려 등의 측면에서 3-4문장으로 설명해주세요."
-    }
-    
-    main_prompt = industry_prompts.get(industry, f"'{keyword}'에 대한 {industry} 관점에서의 분석을 제공해주세요.")
-    counter_prompt = counter_prompts.get(industry, f"'{keyword}'에 대한 {industry} 관점에서의 반대 의견을 제공해주세요.")
-    
+async def get_industry_analysis(request: IndustryKeywordAnalysisRequest): # 파라미터 변경
+    """산업별 키워드 분석 (이제 직무 관점도 포함)"""
+    industry_perspective = request.industry_perspective # '데이터 과학자' 같은 직무/산업 관점
+    target_keyword = request.target_keyword           # '인공지능' 같은 실제 분석 대상 키워드
+
+    if not industry_perspective or not target_keyword:
+        raise HTTPException(status_code=400, detail="분석 관점과 키워드를 모두 제공해야 합니다.")
+
+    logger.info(f"📊 산업별/직무 관점 분석 요청: 관점='{industry_perspective}', 키워드='{target_keyword}'")
+
     try:
-        # 기존 분석
-        main_completion = openai_client.chat.completions.create(
-            model=AZURE_OPENAI_DEPLOYMENT,
-            messages=[
-                {"role": "system", "content": f"{industry} 분야 전문가로서 키워드에 대한 긍정적 분석을 제공합니다."},
-                {"role": "user", "content": main_prompt}
-            ]
+        # 긍정적/일반 분석 생성
+        main_completion_content = await generate_industry_based_answer( # 함수는 기존 그대로 사용
+            question=f"'{target_keyword}'에 대한 '{industry_perspective}' 직무/산업 관점에서의 긍정적 분석",
+            keyword=target_keyword,
+            industry=industry_perspective, # industry_context를 위해 perspective를 industry로 전달
+            current_keywords=[target_keyword] # 컨텍스트에 대상 키워드 전달
         )
-        
-        # 정반대 관점 분석
-        counter_completion = openai_client.chat.completions.create(
-            model=AZURE_OPENAI_DEPLOYMENT,
-            messages=[
-                {"role": "system", "content": f"{industry} 분야의 비판적 시각을 가진 전문가로서 반대 의견을 제시합니다."},
-                {"role": "user", "content": counter_prompt}
-            ]
+
+        # 비판적/회의적 분석 생성
+        counter_completion_content = await generate_comparison_answer( # 함수는 기존 그대로 사용
+            question=f"'{target_keyword}'에 대한 '{industry_perspective}' 직무/산업 관점에서의 비판적 분석",
+            keywords=[target_keyword], # 비교 키워드로 대상 키워드 전달
         )
-        
+
         return {
-            "analysis": main_completion.choices[0].message.content,
-            "counter_analysis": counter_completion.choices[0].message.content
+            "analysis": main_completion_content,
+            "counter_analysis": counter_completion_content
         }
     except Exception as e:
+        logger.error(f"❌ 산업별/직무 관점 분석 엔드포인트 오류: {e}", exc_info=True)
         return {
             "analysis": f"분석을 생성하는 중 오류가 발생했습니다: {str(e)}",
             "counter_analysis": "반대 의견을 생성할 수 없습니다."
         }
-
+        
 @app.post("/chat")
 async def chat(request: Request):
     """개선된 챗봇 - 주간요약 키워드 클릭 오류 해결"""
