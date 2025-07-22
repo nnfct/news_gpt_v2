@@ -246,6 +246,8 @@ async def get_global_weekly_keywords(start_date: str = Query(..., description="�
         # 3단계: 추출된 키워드들을 메모리에 저장
         store_keywords_in_memory(extracted_keywords, start_date, end_date)
         
+        logger.info(f"🌍 해외 키워드 추출 결과: {extracted_keywords}")
+        
         return {
             "keywords": extracted_keywords,
             "date_range": f"{start_date} ~ {end_date}",
@@ -553,11 +555,12 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용."},
+                {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용. 동일한 기사들에 대해서는 항상 일관된 키워드를 추출하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=80,  # 5개 키워드에 맞게 증가
-            temperature=0  # 일관성 최대화
+            temperature=0,  # 일관성 최대화
+            seed=54321  # 고정된 시드값으로 일관성 보장
         )
         
         
@@ -624,11 +627,12 @@ Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers."},
+                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers. Always provide consistent keywords for the same set of articles."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=50,  # 더 짧게
-            temperature=0  # 일관성 최대화
+            temperature=0,  # 일관성 최대화
+            seed=67890  # 고정된 시드값으로 일관성 보장
         )
         
         keywords_text = response.choices[0].message.content or ""
@@ -641,11 +645,13 @@ Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
             keyword = re.sub(r'[^a-zA-Z\s]', '', keyword).strip()  # 영어만 허용
             
             if keyword and 2 <= len(keyword) <= 15 and keyword.replace(' ', '').isalpha():
-                keywords.append({
+                keyword_obj = {
                     "keyword": keyword,
-                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로
+                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로 (국내와 동일한 로직)
                     "rank": i
-                })
+                }
+                keywords.append(keyword_obj)
+                logger.info(f"🌍 해외 키워드 생성: {keyword_obj}")
         
         # 기본 영어 키워드 (빈 결과 시)
         if not keywords:
@@ -656,6 +662,7 @@ Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
                 {"keyword": "Machine Learning", "count": 10, "rank": 4},
                 {"keyword": "Cloud Computing", "count": 5, "rank": 5}
             ]
+            logger.info("🌍 해외 기본 키워드 사용")
         
         return keywords[:5]  # Top 5 반환
         
@@ -1086,9 +1093,9 @@ async def get_articles(start_date: str = "2025-07-14", end_date: str = "2025-07-
         return JSONResponse(status_code=500, content={"error": str(e), "articles": [], "total": 0})
 
 
-# /api/keywords 엔드포인트(최신/정리본)
-@app.get("/api/keywords")
-async def get_weekly_keywords(start_date: str = "2025-07-14", end_date: str = "2025-07-18"):
+# /api/keywords-legacy 엔드포인트(최신/정리본) - 중복 방지를 위해 이름 변경
+@app.get("/api/keywords-legacy")
+async def get_weekly_keywords_legacy(start_date: str = "2025-07-14", end_date: str = "2025-07-18"):
     """DeepSearch → Azure AI Search → GPT-4o → Top 5 키워드 반환"""
     try:
         logger.info(f"🚀 News GPT v2 분석 시작 - 기간: {start_date} ~ {end_date}")
@@ -1660,19 +1667,19 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
         global_tech_articles = await fetch_global_tech_articles(start_date, end_date)
         if not global_tech_articles:
             logger.warning(f"❌ 해외 Tech 기사 없음: {start_date} ~ {end_date}")
-            # 해외 샘플 키워드 반환
-            keywords = get_global_sample_keywords_by_date(start_date, end_date)
+            # 해외 샘플 키워드 반환 (카운트와 랭크 포함)
+            keywords = get_global_sample_keywords_with_count_by_date(start_date, end_date)
         else:
-            # 해외 전용 GPT로 영어 키워드 추출
+            # 해외 전용 GPT로 영어 키워드 추출 (카운트와 랭크 포함)
             extracted_keywords = await extract_global_keywords_with_gpt(global_tech_articles)
             if extracted_keywords:
-                keywords = [kw["keyword"] for kw in extracted_keywords[:5]]  # Top 5로 증가
+                keywords = extracted_keywords[:5]  # 이미 카운트와 랭크가 포함된 객체 배열
             else:
-                keywords = get_global_sample_keywords_by_date(start_date, end_date)
+                keywords = get_global_sample_keywords_with_count_by_date(start_date, end_date)
         
-        # 응답 형식을 프론트 요구사항에 맞게 조정 (키워드 배열로 반환)
+        # 응답 형식을 국내와 동일하게 조정 (카운트와 랭크 포함)
         response_data = {
-            "keywords": keywords,  # 단순 문자열 배열로 반환
+            "keywords": keywords,  # 카운트와 랭크가 포함된 객체 배열로 반환
             "date_range": f"{start_date} ~ {end_date}",
             "total_count": len(keywords),
             "global_tech_articles_count": len(global_tech_articles) if global_tech_articles else 0,
@@ -1690,12 +1697,30 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
             "status": "error"
         })
 
-def get_global_sample_keywords_by_date(start_date: str, end_date: str):
-    """해외 주간별 샘플 키워드 반환"""
+def get_global_sample_keywords_with_count_by_date(start_date: str, end_date: str):
+    """해외 주간별 샘플 키워드 반환 (카운트와 랭크 포함)"""
     global_keywords_map = {
-        "2025-07-01": ["AI Revolution", "Quantum Computing", "Green Tech"],
-        "2025-07-06": ["ChatGPT-5", "Tesla Robotics", "Web3"],
-        "2025-07-14": ["Neural Chips", "Space Tech", "Bio Computing"]
+        "2025-07-01": [
+            {"keyword": "AI Revolution", "count": 250, "rank": 1},
+            {"keyword": "Quantum Computing", "count": 230, "rank": 2},
+            {"keyword": "Green Tech", "count": 210, "rank": 3},
+            {"keyword": "Blockchain", "count": 190, "rank": 4},
+            {"keyword": "Metaverse", "count": 170, "rank": 5}
+        ],
+        "2025-07-06": [
+            {"keyword": "ChatGPT-5", "count": 280, "rank": 1},
+            {"keyword": "Tesla Robotics", "count": 260, "rank": 2},
+            {"keyword": "Web3", "count": 240, "rank": 3},
+            {"keyword": "Neural Networks", "count": 220, "rank": 4},
+            {"keyword": "Edge Computing", "count": 200, "rank": 5}
+        ],
+        "2025-07-14": [
+            {"keyword": "Neural Chips", "count": 300, "rank": 1},
+            {"keyword": "Space Tech", "count": 280, "rank": 2},
+            {"keyword": "Bio Computing", "count": 260, "rank": 3},
+            {"keyword": "Autonomous AI", "count": 240, "rank": 4},
+            {"keyword": "Cyber Security", "count": 220, "rank": 5}
+        ]
     }
     
     # 날짜에 해당하는 키워드 찾기
@@ -1703,8 +1728,14 @@ def get_global_sample_keywords_by_date(start_date: str, end_date: str):
         if start_date >= date_key:
             return keywords
     
-    # 기본 해외 키워드
-    return ["AI Technology", "Innovation", "Future Tech"]
+    # 기본 해외 키워드 (카운트와 랭크 포함)
+    return [
+        {"keyword": "AI Technology", "count": 25, "rank": 1},
+        {"keyword": "Innovation", "count": 20, "rank": 2},
+        {"keyword": "Future Tech", "count": 15, "rank": 3},
+        {"keyword": "Digital", "count": 10, "rank": 4},
+        {"keyword": "Computing", "count": 5, "rank": 5}
+    ]
 
 @app.get("/weekly-keywords")
 def get_weekly_keywords():
@@ -2091,9 +2122,21 @@ async def get_weekly_keywords_data():
             "period": f"{start_date} ~ {end_date}"
         }
 
+# 인사이트 캐시 (날짜별로 저장)
+insight_cache = {}
+
 async def generate_weekly_insight(keywords_data):
-    """주간 인사이트 생성 (개선된 구조)"""
+    """주간 인사이트 생성 (개선된 구조 + 캐싱)"""
     try:
+        # 캐시 키 생성 (기간 + 키워드 기반으로 더 정확하게)
+        domestic_keywords_str = "_".join([k["keyword"] for k in keywords_data["domestic_keywords"][:3]])
+        global_keywords_str = "_".join([k["keyword"] for k in keywords_data["global_keywords"][:3]])
+        cache_key = f"insight_{keywords_data['period']}_{domestic_keywords_str}_{global_keywords_str}"
+        
+        # 캐시된 인사이트가 있으면 반환
+        if cache_key in insight_cache:
+            logger.info(f"📋 캐시된 인사이트 반환: {cache_key[:50]}...")
+            return insight_cache[cache_key]
         domestic_keywords = [k["keyword"] for k in keywords_data["domestic_keywords"]]
         global_keywords = [k["keyword"] for k in keywords_data["global_keywords"]]
         
@@ -2138,14 +2181,22 @@ AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전�
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다. 마크다운 헤더(#) 절대 사용 금지. 대신 이모지와 중간점(·)만 사용하여 구분하세요."},
+                {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다. 마크다운 헤더(#) 절대 사용 금지. 대신 이모지와 중간점(·)만 사용하여 구분하세요. 동일한 키워드에 대해서는 항상 일관된 분석을 제공하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=1000,
-            temperature=0.3
+            temperature=0.1,  # 완전히 0보다는 약간의 변동성 허용하되 일관성 유지
+            seed=12345,  # 고정된 시드값으로 일관성 보장
+            top_p=0.8  # 더 일관된 결과를 위해 추가
         )
         
-        return response.choices[0].message.content
+        insight_content = response.choices[0].message.content
+        
+        # 캐시에 저장
+        insight_cache[cache_key] = insight_content
+        logger.info(f"💾 인사이트 캐시 저장: {cache_key}")
+        
+        return insight_content
         
     except Exception as e:
         logger.error(f"인사이트 생성 오류: {e}")

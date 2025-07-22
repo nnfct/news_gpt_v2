@@ -1370,10 +1370,10 @@
                     loadingElement.style.color = '#00D9C0';
                 }
 
-                // 해외는 global-weekly-keywords-by-date, 국내는 weekly-keywords-by-date 사용
+                // 해외는 api/global-keywords, 국내는 api/keywords 사용
                 const apiEndpoint = region === 'global'
-                    ? `http://127.0.0.1:8000/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
-                    : `http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
+                    ? `http://127.0.0.1:8000/api/global-keywords?start_date=${startDate}&end_date=${endDate}`
+                    : `http://127.0.0.1:8000/api/keywords?start_date=${startDate}&end_date=${endDate}`;
 
                 console.log(`🌐 API 호출: ${apiEndpoint}`);
 
@@ -1399,7 +1399,8 @@
                 }
 
                 const data = await response.json();
-                console.log(`✅ API 응답 받음:`, data);
+                console.log(`✅ ${region} API 응답 받음:`, data);
+                console.log(`🔍 ${region} 키워드 상세:`, data.keywords);
 
                 // 키워드 배열 확인
                 if (!data.keywords || !Array.isArray(data.keywords)) {
@@ -1496,6 +1497,8 @@
             const top5Keywords = keywords.slice(0, 5);
 
             top5Keywords.forEach((keywordData, index) => {
+                console.log(`🔍 ${region} 키워드 ${index + 1}:`, keywordData);
+
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag';
 
@@ -1505,18 +1508,20 @@
                     // 객체인 경우 keyword 속성 사용
                     keywordText = keywordData.keyword || keywordData.name || keywordData.text || String(keywordData);
                     keywordCount = keywordData.count || keywordData.frequency || '';
+                    console.log(`📊 ${region} 키워드 파싱: "${keywordText}" (${keywordCount})`);
                 } else {
                     // 문자열인 경우 그대로 사용
                     keywordText = String(keywordData);
                     keywordCount = '';
+                    console.log(`📝 ${region} 문자열 키워드: "${keywordText}"`);
                 }
 
-                // 키워드 텍스트 설정
-                keywordElement.textContent = keywordText;
-
-                // 카운트가 있으면 툴팁으로 표시
+                // 키워드 텍스트 설정 (카운트 포함)
                 if (keywordCount) {
+                    keywordElement.textContent = `${keywordText} (${keywordCount})`;
                     keywordElement.title = `언급 횟수: ${keywordCount}회`;
+                } else {
+                    keywordElement.textContent = `${keywordText} (카운트 없음)`;
                 }
 
                 console.log(`🏷️ 키워드 생성: "${keywordText}" (${keywordCount || '카운트 없음'})`);
