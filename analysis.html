@@ -109,6 +109,78 @@
             box-shadow: 0 6px 20px rgba(0, 217, 192, 0.4);
         }
 
+        .success-message,
+        .error-message {
+            display: none !important;
+        }
+
+
+        #subscribeModal .email-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        #subscribeModal .email-input {
+            flex: 1 1 220px;
+            min-width: 0;
+            padding: 14px 18px;
+            font-size: 1em;
+            border: 1.5px solid #dedede;
+            border-radius: 22px;
+            outline: none;
+            background: #f9f9fa;
+        }
+        #subscribeModal .email-input:focus {
+            border-color: #00D9C0;
+            background: #fff;
+        }
+        #subscribeModal .submit-btn {
+            padding: 14px 30px;
+            border-radius: 22px;
+            font-size: 1em;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00D9C0, #00B8A9);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 10px rgba(0, 217, 192, 0.08);
+        }
+        #subscribeModal .submit-btn:hover {
+            background: linear-gradient(135deg, #00B8A9, #00D9C0);
+            box-shadow: 0 4px 14px rgba(0, 217, 192, 0.18);
+        }
+        @media (max-width: 540px) {
+            #subscribeModal .email-form {
+                flex-direction: column;
+                gap: 8px;
+            }
+            #subscribeModal .email-input,
+            #subscribeModal .submit-btn {
+                width: 100%;
+                border-radius: 18px;
+                font-size: 1em;
+            }
+        }
+
+        #subscribeModal .close {
+            position: absolute;
+            top: 20px;
+            right: 28px;
+            font-size: 2em;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+        #subscribeModal .close:hover {
+            color: #fff;
+        }
+        #subscribeModal .modal-content {
+            position: relative;
+        }
+
         .main-container {
             max-width: 1400px;
             /* 1200px에서 1400px로 확대 */
@@ -371,10 +443,12 @@
             max-width: 800px;
             width: 90%;
             max-height: 80vh;
-            overflow-y: auto;
+            overflow: visible;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             z-index: 1001;
             border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-header {
@@ -384,6 +458,16 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #333;
             padding-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: #1a1a1a;
+            z-index: 2;
+        }
+
+        #modal-articles, .modal-articles-scroll {
+            overflow-y: auto;
+            max-height: 55vh;
+            padding-right: 24px;
         }
 
         .close-btn {
@@ -1136,7 +1220,7 @@
                 <h3 id="modal-title">관련 기사</h3>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            <div id="modal-articles">
+            <div id="modal-articles" class="modal-articles-scroll">
                 <!-- 관련 기사들이 여기에 표시됩니다 -->
             </div>
         </div>
@@ -2335,9 +2419,15 @@
 
         // 모달 외부 클릭시 닫기
         window.onclick = function (event) {
-            const modal = document.getElementById('article-modal');
-            if (event.target === modal) {
+            // 기사 모달 배경 클릭
+            const articleModal = document.getElementById('article-modal');
+            if (articleModal && event.target === articleModal) {
                 closeModal();
+            }
+            // 구독 모달 배경 클릭
+            const subscribeModal = document.getElementById('subscribeModal');
+            if (subscribeModal && event.target === subscribeModal) {
+                closeSubscribeModal();
             }
         }
 
@@ -2759,9 +2849,22 @@
             <h2>📧 주간 인사이트 구독</h2>
             <p>AI가 분석한 주간 키워드 트렌드와 인사이트를 매주 이메일로 받아보세요!</p>
 
-            <form class="email-form" onsubmit="subscribeEmail(event)">
-                <input type="email" class="email-input" placeholder="이메일 주소를 입력하세요" required id="emailInput">
-                <button type="submit" class="submit-btn" id="submitBtn">구독하기</button>
+            <form class="email-form" onsubmit="subscribeEmail(event)" style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                <input 
+                    type="email" 
+                    class="email-input" 
+                    placeholder="이메일 주소를 입력하세요"
+                    required 
+                    id="emailInput"
+                    style="flex: 1 1 220px; min-width: 0; padding: 14px 18px; font-size: 1em; border: 1.5px solid #dedede; border-radius: 22px; outline: none;"
+                >
+                <button 
+                    type="submit" 
+                    class="submit-btn" 
+                    id="submitBtn"
+                    style="padding: 14px 30px; border-radius: 22px; font-size: 1em; font-weight: 600; background: linear-gradient(135deg, #00D9C0, #00B8A9); border: none; color: #fff; cursor: pointer; transition: 0.2s;">
+                    구독하기
+                </button>
             </form>
 
             <div class="success-message" id="successMessage">
@@ -2897,14 +3000,6 @@
                 // 버튼 복원
                 testBtn.disabled = false;
                 testBtn.textContent = '💡 인사이트 테스트 발송';
-            }
-        }
-
-        // 모달 외부 클릭 시 닫기
-        window.onclick = function (event) {
-            const modal = document.getElementById('subscribeModal');
-            if (event.target === modal) {
-                closeSubscribeModal();
             }
         }
 
