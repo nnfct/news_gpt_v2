@@ -23,32 +23,41 @@
         }
 
         .header {
-            text-align: center;
-            padding: 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
             color: white;
             background: #212121;
             position: relative;
             border-bottom: 1px solid #333;
         }
 
+        .header-content {
+            text-align: center;
+            flex: 1;
+        }
+
         .back-btn {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
+            background: #303030;
             color: white;
-            border: none;
-            padding: 10px 15px;
+            border: 1px solid #333;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-50%) scale(1.05);
+            background: #404040;
+            border-color: #00D9C0;
+            transform: translateX(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 192, 0.2);
         }
 
         .header h1 {
@@ -854,8 +863,18 @@
         }
 
         @media (max-width: 768px) {
-            .header h1 {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px 20px;
+            }
+
+            .header-content h1 {
                 font-size: 2em;
+            }
+
+            .back-btn {
+                align-self: flex-start;
             }
 
             .main-container {
@@ -909,8 +928,13 @@
 
 <body>
     <div class="header">
-        <h1>🔍 AI 뉴스 키워드 분석</h1>
-        <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        <button class="back-btn" onclick="goBackToIndex()">
+            ← 뉴스 홈
+        </button>
+        <div class="header-content">
+            <h1>🔍 AI 뉴스 키워드 분석</h1>
+            <p class="subtitle">주간 트렌드와 산업별 분석을 한눈에</p>
+        </div>
         <button class="subscribe-btn" onclick="openSubscribeModal()">
             📧 주간 인사이트 구독하기
         </button>
@@ -1468,13 +1492,38 @@
                 3: { start: '2025-07-14', end: '2025-07-18' }
             };
 
-            keywords.forEach((keyword, index) => {
+            // Top 5 키워드만 표시
+            const top5Keywords = keywords.slice(0, 5);
+
+            top5Keywords.forEach((keywordData, index) => {
                 const keywordElement = document.createElement('div');
-                keywordElement.className = 'keyword-tag'; // GPU 가속 클래스 제거
-                keywordElement.textContent = keyword;
+                keywordElement.className = 'keyword-tag';
+
+                // 키워드 데이터가 객체인지 문자열인지 확인
+                let keywordText, keywordCount;
+                if (typeof keywordData === 'object' && keywordData !== null) {
+                    // 객체인 경우 keyword 속성 사용
+                    keywordText = keywordData.keyword || keywordData.name || keywordData.text || String(keywordData);
+                    keywordCount = keywordData.count || keywordData.frequency || '';
+                } else {
+                    // 문자열인 경우 그대로 사용
+                    keywordText = String(keywordData);
+                    keywordCount = '';
+                }
+
+                // 키워드 텍스트 설정
+                keywordElement.textContent = keywordText;
+
+                // 카운트가 있으면 툴팁으로 표시
+                if (keywordCount) {
+                    keywordElement.title = `언급 횟수: ${keywordCount}회`;
+                }
+
+                console.log(`🏷️ 키워드 생성: "${keywordText}" (${keywordCount || '카운트 없음'})`);
 
                 // 지역별 구분을 위한 데이터 속성 추가
                 keywordElement.setAttribute('data-region', region);
+                keywordElement.setAttribute('data-keyword', keywordText);
 
                 // 즉시 피드백 효과 적용
                 applyInstantFeedback(keywordElement);
@@ -1487,18 +1536,18 @@
                         this.style.transform = '';
                     }, 150);
 
-                    selectedKeyword = keyword;
-                    currentKeywords = [keyword];
+                    selectedKeyword = keywordText;
+                    currentKeywords = [keywordText];
                     const dateRange = weekDateRanges[weekNumber];
 
                     // 즉시 로딩 상태 표시
-                    showPreloadIndicator(`"${keyword}" 관련 기사 검색 중...`);
+                    showPreloadIndicator(`"${keywordText}" 관련 기사 검색 중...`);
 
                     // 키워드 분석 수행
-                    performKeywordAnalysis(keyword);
+                    performKeywordAnalysis(keywordText);
 
                     // 해당 주차 날짜로 관련 기사 표시 (지역 정보 전달)
-                    openArticleModal(keyword, dateRange, region);
+                    openArticleModal(keywordText, dateRange, region);
                 });
 
                 // 애니메이션 지연으로 순차적 등장 효과
@@ -2609,6 +2658,11 @@
             if (event.target === modal) {
                 closeSubscribeModal();
             }
+        }
+
+        // 뒤로가기 함수
+        function goBackToIndex() {
+            window.location.href = 'index.html';
         }
     </script>
 </body>
