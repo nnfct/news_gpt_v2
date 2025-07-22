@@ -2297,7 +2297,7 @@
             try {
                 // 빠른 타임아웃 설정 (5초)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
                 const response = await fetch('http://127.0.0.1:8000/chat', {
                     method: 'POST',
