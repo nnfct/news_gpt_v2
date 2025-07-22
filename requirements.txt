@@ -1,4 +1,4 @@
-# News GPT v2 - AI News Keyword Analysis Platform (2025.07.20 Optimized)
+# News GPT v2 - AI News Keyword Analysis Platform (2025.07.22 Updated)
 # Python 3.10+ recommended, 3.11+ optimized
 
 # Web Framework
@@ -8,27 +8,43 @@ uvicorn==0.35.0
 # AI and Analysis
 openai==1.97.0
 
-# Data Processing
-pandas==2.3.1
-numpy==2.3.1
-
-# Azure Services (Optional - Currently Unused)
-azure-search-documents==11.5.3
-azure-core==1.35.0
-azure-common==1.1.28
+# Data Processing & Validation
+pydantic==2.10.3
 
 # HTTP Communication
 requests==2.32.3
-httpx==0.28.1
 
 # Environment Configuration
 python-dotenv==1.1.1
 
-# Utilities
-tqdm==4.67.1
-python-dateutil==2.9.0.post0
-pytz==2025.2
-colorama==0.4.6
+# Email Support
+smtplib  # Built-in Python module
+
+# Async Support
+asyncio  # Built-in Python module
+
+# System & Utilities
+hashlib  # Built-in Python module
+logging  # Built-in Python module
+functools  # Built-in Python module
+datetime  # Built-in Python module
+json  # Built-in Python module
+os  # Built-in Python module
+re  # Built-in Python module
+time  # Built-in Python module
+typing  # Built-in Python module
+
+# Optional Dependencies (Currently Unused)
+# pandas==2.3.1
+# numpy==2.3.1
+# azure-search-documents==11.5.3
+# azure-core==1.35.0
+# azure-common==1.1.28
+# httpx==0.28.1
+# tqdm==4.67.1
+# python-dateutil==2.9.0.post0
+# pytz==2025.2
+# colorama==0.4.6
 
 # Development Tools (Optional)
 # pytest==8.2.2
