@@ -2295,7 +2295,7 @@
             const typingIndicator = addTypingIndicator();
 
             try {
-                // 빠른 타임아웃 설정 (5초)
+                // 빠른 타임아웃 설정 (5초->30초로 증가)
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 30000);
 
