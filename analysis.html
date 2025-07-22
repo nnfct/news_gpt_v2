@@ -1032,6 +1032,10 @@
                 <div class="industry-tab" data-industry="생활/문화">생활/문화</div>
                 <div class="industry-tab" data-industry="세계">세계</div>
             </div>
+            <div class="job-analysis-input-container" style="display: flex; gap: 10px; margin-bottom: 25px; align-items: center;">
+                <input type="text" id="job-input" class="chat-input" placeholder="분석할 직무/산업명을 입력하세요 (예: 데이터 과학자)" style="flex: 1; border-radius: 8px;" />
+                <button id="job-send" class="chat-send" style="padding: 10px 20px; border-radius: 8px;">직무 분석</button>
+        </div>
             <div class="analysis-content" id="analysis-content">
                 <div class="loading">분석할 키워드를 선택해주세요</div>
             </div>
@@ -1254,6 +1258,21 @@
                 chatInput.addEventListener('keypress', function (e) {
                     if (e.key === 'Enter') {
                         sendChat();
+                    }
+                });
+            }
+                // ⚡ 직무 분석 이벤트 리스너 설정 (여기에 다음 코드를 붙여넣습니다)
+            const jobSendBtn = document.getElementById('job-send');
+            const jobInput = document.getElementById('job-input');
+
+            if (jobSendBtn) {
+                jobSendBtn.addEventListener('click', performJobAnalysis);
+            }
+
+            if (jobInput) {
+                jobInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        performJobAnalysis();
                     }
                 });
             }
@@ -2331,6 +2350,75 @@
                 sendBtn.disabled = false;
                 sendBtn.textContent = '전송';
                 sendBtn.style.background = '#5A7DBC';
+            }
+        }
+
+        // ⚡ 직무/산업 분석 함수 (여기에 전체 함수 코드를 붙여넣습니다)
+        async function performJobAnalysis() {
+            const jobInput = document.getElementById('job-input');
+            const query = jobInput.value.trim();
+            const analysisContentDiv = document.getElementById('analysis-content');
+            const jobSendBtn = document.getElementById('job-send');
+
+            if (!query) {
+                analysisContentDiv.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">분석할 직무/산업명을 입력해주세요.</div>';
+                return;
+            }
+
+            analysisContentDiv.innerHTML = '<div class="loading">📊 직무/산업 정보 분석 중...</div>';
+            jobSendBtn.disabled = true; // 버튼 비활성화
+            jobSendBtn.textContent = '분석 중...';
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60초 타임아웃 (RAG는 시간이 더 걸릴 수 있습니다)
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/job-analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                    signal: controller.signal // fetch에 signal 전달
+                });
+
+                clearTimeout(timeoutId); // 성공적으로 응답을 받으면 타임아웃 해제
+
+                const data = await response.json();
+                console.log('📚 직무 분석 응답:', data);
+
+                if (response.ok && data.summary) {
+                    analysisContentDiv.innerHTML = `
+                        <div class="analysis-section" style="border-left-color: #00D9C0;">
+                            <div class="analysis-title" style="color: #00D9C0;">
+                                <span>✨</span> "${query}" 직무/산업 분석 결과
+                            </div>
+                            <div style="line-height: 1.7;">${data.summary.replace(/\n/g, '<br>')}</div>
+                        </div>
+                    `;
+                } else {
+                    const errorMessage = data.error || '직무/산업 분석에 실패했습니다. 다시 시도해주세요.';
+                    analysisContentDiv.innerHTML = `
+                        <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                            ❌ ${errorMessage}<br>
+                            ${error.name === 'AbortError' ? '⏰ 응답 시간 초과' : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                clearTimeout(timeoutId); // 오류 발생 시에도 타임아웃 해제
+                console.error('❌ 직무/산업 분석 오류:', error);
+                const errorMessage = error.name === 'AbortError'
+                    ? '⏰ 직무/산업 분석 시간 초과. 잠시 후 다시 시도해주세요.'
+                    : '🔄 직무/산업 분석 중 네트워크 오류가 발생했습니다.';
+                analysisContentDiv.innerHTML = `
+                    <div style="color: #e74c3c; text-align: center; padding: 20px;">
+                        ❌ ${errorMessage}
+                    </div>
+                `;
+            } finally {
+                jobSendBtn.disabled = false; // 버튼 활성화
+                jobSendBtn.textContent = '직무 분석';
             }
         }
 

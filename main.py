@@ -20,6 +20,9 @@ import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+
 
 # 로깅 설정 (최적화)
 logging.basicConfig(
@@ -65,12 +68,135 @@ class SubscriptionRequest(BaseModel):
 class EmailInsightRequest(BaseModel):
     email: str
 
+# RAG 분석 요청 모델
+class JobAnalysisRequest(BaseModel):
+    query: str
+
 # Azure OpenAI 클라이언트 초기화
 openai_client = AzureOpenAI(
     api_key=str(AZURE_OPENAI_API_KEY),
     api_version=str(AZURE_OPENAI_API_VERSION),
     azure_endpoint=str(AZURE_OPENAI_ENDPOINT)
 )
+
+# 환경 변수 로드 (이 변수들은 .env 파일에 설정되어 있어야 합니다)
+AZURE_SEARCH_ENDPOINT_NCS = os.getenv("AZURE_SEARCH_ENDPOINT")
+AZURE_SEARCH_KEY_NCS = os.getenv("AZURE_SEARCH_KEY")
+AZURE_SEARCH_INDEX_NCS = os.getenv("AZURE_SEARCH_INDEX")
+AZURE_OPENAI_DEPLOYMENT_NCS = os.getenv("AZURE_OPENAI_DEPLOYMENT") # .env에 설정한 배포 이름 (e.g., donghwi_JD_gpt-4o)
+
+# Azure AI Search 클라이언트 초기화
+ncs_search_client: Optional[SearchClient] = None
+if AZURE_SEARCH_ENDPOINT_NCS and AZURE_SEARCH_KEY_NCS and AZURE_SEARCH_INDEX_NCS:
+    try:
+        ncs_search_client = SearchClient(
+            endpoint=AZURE_SEARCH_ENDPOINT_NCS,
+            index_name=AZURE_SEARCH_INDEX_NCS,
+            credential=AzureKeyCredential(AZURE_SEARCH_KEY_NCS)
+        )
+        logger.info(f"✅ Azure AI Search (NCS) 클라이언트 초기화 성공: {AZURE_SEARCH_INDEX_NCS}")
+    except Exception as e:
+        logger.error(f"❌ Azure AI Search (NCS) 클라이언트 초기화 실패: {e}", exc_info=True)
+        ncs_search_client = None
+else:
+    logger.warning("⚠️ Azure AI Search (NCS) 환경 변수가 설정되지 않아 NCS 검색 기능을 사용할 수 없습니다. .env 파일을 확인하세요.")
+
+# NCS 문서 검색 함수
+async def search_ncs_documents(query, top_k=3):
+    """Azure AI Search에서 NCS 직무 데이터를 검색하고 관련 문서 반환"""
+    if not ncs_search_client:
+        logger.warning("NCS Search Client가 초기화되지 않았습니다. 샘플 NCS 데이터를 반환합니다.")
+        return [
+            {"title": "샘플 NCS 직무: 인공지능 개발자", "content": "인공지능 개발자는 머신러닝 모델 설계, 데이터 분석, AI 시스템 구축 등을 수행합니다. 요구 역량으로는 파이썬, 딥러닝 프레임워크 이해, 데이터 과학 지식 등이 있습니다.", "source": "NCS 샘플"},
+            {"title": "샘플 NCS 직무: 빅데이터 분석가", "content": "빅데이터 분석가는 대량의 데이터를 수집, 저장, 처리, 분석하여 비즈니스 의사결정에 필요한 인사이트를 도출합니다. 통계학, 프로그래밍, 데이터베이스 지식이 중요합니다.", "source": "NCS 샘플"}
+        ]
+
+    try:
+        logger.info(f"🔍 Azure AI Search에서 NCS 데이터 검색 중: '{query}'")
+        search_results = await asyncio.to_thread( # requests는 동기 함수이므로 asyncio.to_thread 사용
+            ncs_search_client.search,
+            search_text=query,
+            query_type="semantic",
+            semantic_configuration_name="default", # .env의 AZURE_OPENAI_DEPLOYMENT_NCS와 연동
+            search_fields=["content"],
+            top=top_k
+        )
+
+        docs = []
+        for result in search_results:
+            docs.append(result.get("content", result.get("text", result.get("description", "내용 없음"))))
+
+        return "\n\n---\n\n".join(docs)
+    except Exception as e:
+        logger.error(f"❌ Azure AI Search NCS 검색 오류: {e}", exc_info=True)
+        return ""
+
+# 직무/산업 요약 함수 (RAG 핵심)
+async def get_job_industry_summary(query: str) -> str:
+    """사용자 질문에 기반하여 NCS 직무/산업 정보 요약 (AI 활용)"""
+    logger.info(f"🧠 get_job_industry_summary 호출 - 쿼리: {query}")
+    context_text = await search_ncs_documents(query) # NCS 문서 검색
+
+    if not context_text:
+        logger.warning("❗ 관련된 직무/산업 정보를 찾을 수 없어 일반 GPT 답변을 시도합니다.")
+        system_msg = "너는 직무/산업 관련 전문가 AI야."
+        user_prompt = f"'{query}'에 대해 간략하게 요약해줘."
+        try:
+            response = openai_client.chat.completions.create(
+                model=AZURE_OPENAI_DEPLOYMENT_NCS, # .env의 AZURE_OPENAI_DEPLOYMENT 사용
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.4,
+                max_tokens=1500
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error(f"❌ 샘플 답변 생성 오류: {e}")
+            return "관련된 직무/산업 정보를 찾을 수 없고, 요약 생성 중 오류가 발생했습니다."
+
+
+    system_msg = "너는 직무/산업 관련 문서를 요약하는 AI 직무 분석가야. NCS 문서 기반으로 답변해."
+
+    user_prompt = f"""
+    너는 사용자가 입력한 직무/산업 키워드를 기반으로,
+    Azure Search에 저장된 NCS 문서에서 관련 정보를 검색하여 요약하는 역할을 수행한다.
+
+    - 아래 결과는 Azure Search를 통해 검색된 문서이다. 반드시 이 내용을 기반으로 정리할 것.
+    - 결과가 없으면 “없다”고 하지 말고, 가능한 유사 문서를 참조하여 유추하라.
+
+    [사용자 입력]
+    {query}
+
+    [Azure Search 검색 결과]
+    {context_text}
+
+    [요약 형식]
+    ---
+    🔧 직무 개요  
+    📚 요구 지식  
+    🛠 요구 기술  
+    🤝 요구 태도
+    """
+
+    try:
+        response = openai_client.chat.completions.create(
+            model=AZURE_OPENAI_DEPLOYMENT_NCS, # .env의 AZURE_OPENAI_DEPLOYMENT 사용
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.4,
+            max_tokens=1500
+        )
+        summary = response.choices[0].message.content.strip()
+        logger.info(f"✅ NCS 요약 성공. 길이: {len(summary)}")
+        return summary
+    except Exception as e:
+        logger.error(f"❌ NCS 직무 요약 오류: {e}", exc_info=True)
+        return "NCS 직무 요약 생성 중 오류가 발생했습니다. API 연결 또는 모델 응답을 확인하세요."
+
 
 # DeepSearch API URLs (국내 + 해외)
 DEEPSEARCH_TECH_URL = "https://api-v2.deepsearch.com/v1/articles/tech"
@@ -325,6 +451,32 @@ async def get_global_keyword_articles(
         })
 
 # =============================================================================
+# 직무/산업 분석 API 엔드포인트
+# =============================================================================
+
+@app.post("/api/job-analysis")
+async def analyze_job_industry(request: JobAnalysisRequest):
+    """사용자 입력 기반 NCS 직무/산업 정보를 RAG로 요약하여 반환"""
+    try:
+        logger.info(f"🔍 직무/산업 분석 요청 수신: {request.query}")
+
+        # get_job_industry_summary 함수를 호출하여 요약된 정보를 가져옵니다.
+        summary = await get_job_industry_summary(request.query)
+
+        if not summary:
+            # 만약 요약 결과가 비어있다면 오류 메시지를 반환합니다.
+            logger.warning(f"⚠️ 직무/산업 요약 결과 없음 또는 오류 발생 for query: {request.query}")
+            return JSONResponse(status_code=500, content={"error": "직무/산업 정보를 분석할 수 없습니다. 더 구체적인 질문을 해주세요."})
+
+        logger.info(f"✅ 직무/산업 분석 완료. 요약 길이: {len(summary)}")
+        return {"query": request.query, "summary": summary, "status": "success"}
+
+    except Exception as e:
+        logger.error(f"❌ 직무/산업 분석 엔드포인트 오류: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"직무/산업 분석 중 서버 오류 발생: {str(e)}")
+
+
+# =============================================================================
 # 새로운 워크플로우 핵심 함수들
 # =============================================================================
 
@@ -559,7 +711,7 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
                 {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=80,  # 5개 키워드에 맞게 증가
+            max_tokens=1500,  # 5개 키워드에 맞게 증가
             temperature=0  # 일관성 최대화
         )
         
@@ -630,7 +782,7 @@ Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
                 {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=50,  # 더 짧게
+            max_tokens=1500,  # 더 짧게
             temperature=0  # 일관성 최대화
         )
         
@@ -1293,7 +1445,7 @@ async def extract_keywords_with_gpt4o(articles):
                 {"role": "system", "content": "뉴스 키워드 분석 전문가입니다. 기사에서 중요한 키워드를 추출합니다."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=800,
+            max_tokens=1500,
             temperature=0.2
         )
         
@@ -1873,7 +2025,7 @@ def analyze_keyword_dynamically(request: dict):
                 {"role": "system", "content": "당신은 다양한 관점에서 키워드를 분석하는 전문가입니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500
+            max_tokens=1500
         )
         
         return {
@@ -2144,7 +2296,7 @@ AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전�
                 {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다. 마크다운 헤더(#) 절대 사용 금지. 대신 이모지와 중간점(·)만 사용하여 구분하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
+            max_tokens=1500,
             temperature=0.3
         )
         
