@@ -1470,7 +1470,7 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
                 {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500
+            max_tokens=16384
         )
         
         return completion.choices[0].message.content
@@ -1502,7 +1502,7 @@ def generate_keyword_trend_answer(question, keyword):
                 {"role": "system", "content": f"당신은 '{keyword}' 분야의 트렌드 분석 전문가입니다. 최신 동향과 변화를 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500
+            max_tokens=16384
         )
         
         return completion.choices[0].message.content
@@ -1535,7 +1535,7 @@ def generate_comparison_answer(question, keywords):
                 {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 객관적으로 비교 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=600
+            max_tokens=16384
         )
         
         return completion.choices[0].message.content
@@ -1571,7 +1571,7 @@ def generate_contextual_answer(question, current_keywords):
                 {"role": "system", "content": f"당신은 뉴스 분석 전문가입니다. 현재 주간 핵심 키워드({', '.join(current_keywords)})를 고려하여 질문에 답변합니다."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=400
+            max_tokens=16384
         )
         
         return completion.choices[0].message.content
@@ -1825,7 +1825,7 @@ async def chat(request: Request):
                     {"role": "system", "content": "당신은 IT/기술 뉴스 분석 전문가입니다. 사용자의 질문에 간결하고 정확하게 답변해주세요."},
                     {"role": "user", "content": question}
                 ],
-                max_tokens=200,
+                max_tokens=16384,
                 temperature=0.3
             )
             
