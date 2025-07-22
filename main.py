@@ -47,6 +47,9 @@ app.add_middleware(
 # 환경변수 로드
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
+
 DEEPSEARCH_API_KEY = os.getenv("DEEPSEARCH_API_KEY")
 
 # 이메일 설정 (Gmail SMTP 사용)
@@ -65,7 +68,7 @@ class EmailInsightRequest(BaseModel):
 # Azure OpenAI 클라이언트 초기화
 openai_client = AzureOpenAI(
     api_key=str(AZURE_OPENAI_API_KEY),
-    api_version="2024-02-15-preview",
+    api_version=str(AZURE_OPENAI_API_VERSION),
     azure_endpoint=str(AZURE_OPENAI_ENDPOINT)
 )
 
@@ -551,7 +554,7 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
 형식: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5"""
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용."},
                 {"role": "user", "content": prompt}
@@ -622,7 +625,7 @@ Requirements:
 Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers."},
                 {"role": "user", "content": prompt}
@@ -1285,7 +1288,7 @@ async def extract_keywords_with_gpt4o(articles):
 """
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "뉴스 키워드 분석 전문가입니다. 기사에서 중요한 키워드를 추출합니다."},
                 {"role": "user", "content": prompt}
@@ -1462,7 +1465,7 @@ def generate_industry_based_answer(question, keyword, industry, current_keywords
 """
         
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"당신은 {industry} 분야의 전문가입니다. 뉴스 데이터를 바탕으로 {industry} 관점에서 키워드에 대해 분석하고 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
@@ -1494,7 +1497,7 @@ def generate_keyword_trend_answer(question, keyword):
 """
         
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"당신은 '{keyword}' 분야의 트렌드 분석 전문가입니다. 최신 동향과 변화를 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
@@ -1527,7 +1530,7 @@ def generate_comparison_answer(question, keywords):
 """
         
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"당신은 다양한 키워드를 비교 분석하는 전문가입니다. 객관적으로 비교 분석합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
@@ -1563,7 +1566,7 @@ def generate_contextual_answer(question, current_keywords):
 """
         
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"당신은 뉴스 분석 전문가입니다. 현재 주간 핵심 키워드({', '.join(current_keywords)})를 고려하여 질문에 답변합니다."},
                 {"role": "user", "content": prompt}
@@ -1778,7 +1781,7 @@ def get_industry_analysis(request: dict):
     try:
         # 기존 분석
         main_completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"{industry} 분야 전문가로서 키워드에 대한 긍정적 분석을 제공합니다."},
                 {"role": "user", "content": main_prompt}
@@ -1787,7 +1790,7 @@ def get_industry_analysis(request: dict):
         
         # 정반대 관점 분석
         counter_completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": f"{industry} 분야의 비판적 시각을 가진 전문가로서 반대 의견을 제시합니다."},
                 {"role": "user", "content": counter_prompt}
@@ -1817,7 +1820,7 @@ async def chat(request: Request):
         # 안전한 답변 생성 (오류 방지)
         try:
             completion = openai_client.chat.completions.create(
-                model="gpt-4o",
+                model=AZURE_OPENAI_DEPLOYMENT,
                 messages=[
                     {"role": "system", "content": "당신은 IT/기술 뉴스 분석 전문가입니다. 사용자의 질문에 간결하고 정확하게 답변해주세요."},
                     {"role": "user", "content": question}
@@ -1865,7 +1868,7 @@ def analyze_keyword_dynamically(request: dict):
 """
         
         completion = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "당신은 다양한 관점에서 키워드를 분석하는 전문가입니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요."},
                 {"role": "user", "content": prompt}
@@ -2136,7 +2139,7 @@ AI 뉴스 구독자들을 위한 주간 인사이트를 작성해주세요. 전�
 """
         
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "당신은 AI 뉴스 분석 전문가입니다. 주간 인사이트를 구독자들에게 제공합니다. 마크다운 헤더(#) 절대 사용 금지. 대신 이모지와 중간점(·)만 사용하여 구분하세요."},
                 {"role": "user", "content": prompt}
