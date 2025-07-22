@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -2393,8 +2394,8 @@
                             <div class="analysis-title" style="color: #00D9C0;">
                                 <span>✨</span> "${query}" 직무/산업 분석 결과
                             </div>
-                            <div style="line-height: 1.7;">${data.summary.replace(/\n/g, '<br>')}</div>
-                        </div>
+                            <div style="line-height: 1.7;">${marked.parse(data.summary)}</div>
+                            </div>
                     `;
                 } else {
                     const errorMessage = data.error || '직무/산업 분석에 실패했습니다. 다시 시도해주세요.';
@@ -2508,7 +2509,7 @@
 
             // 봇 메시지의 경우 줄바꿈 처리
             if (sender === 'bot') {
-                messageContent.innerHTML = message.replace(/\n/g, '<br>');
+                messageContent.innerHTML = marked.parse(message).replace(/\n/g, '<br>');
             } else {
                 messageContent.textContent = message;
             }
