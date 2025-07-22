@@ -60,10 +60,10 @@ def setup_venv():
     print("\n🔧 Virtual Environment Setup")
     print("-" * 30)
     
-    if os.path.exists("venv"):
+    if os.path.exists(".venv"):
         print("✅ Virtual environment already exists.")
     else:
-        if run_command("python -m venv venv", "Create virtual environment"):
+        if run_command("python -m venv .venv", "Create virtual environment"):
             print("✅ Virtual environment created successfully")
         else:
             return False
@@ -71,9 +71,9 @@ def setup_venv():
     # Display virtual environment activation command
     system = platform.system()
     if system == "Windows":
-        activate_cmd = "venv\\Scripts\\activate.bat"
+        activate_cmd = ".venv\\Scripts\\activate.bat"
     else:
-        activate_cmd = "source venv/bin/activate"
+        activate_cmd = "source .venv/bin/activate"
     
     print(f"💡 Virtual environment activation command: {activate_cmd}")
     return True
@@ -86,9 +86,9 @@ def install_packages():
     # Upgrade pip
     system = platform.system()
     if system == "Windows":
-        pip_cmd = "venv\\Scripts\\pip"
+        pip_cmd = ".venv\\Scripts\\pip"
     else:
-        pip_cmd = "venv/bin/pip"
+        pip_cmd = ".venv/bin/pip"
     
     if run_command(f"{pip_cmd} install --upgrade pip", "Upgrade pip"):
         print("✅ pip upgrade complete")
@@ -150,9 +150,9 @@ def test_installation():
     
     system = platform.system()
     if system == "Windows":
-        python_cmd = "venv\\Scripts\\python"
+        python_cmd = ".venv\\Scripts\\python"
     else:
-        python_cmd = "venv/bin/python"
+        python_cmd = ".venv/bin/python"
     
     # Core package import tests
     test_imports = [
@@ -226,10 +226,10 @@ def main():
     if system == "Windows":
         print("🚀 How to run the server:")
         print("  Method 1 (automatic): start_server.bat")
-        print("  Method 2 (manual): venv\\Scripts\\activate.bat && python main.py")
+        print("  Method 2 (manual): .venv\\Scripts\\activate.bat && python main.py")
     else:
         print("🚀 How to run the server:")
-        print("  source venv/bin/activate && python main.py")
+        print("  source .venv/bin/activate && python main.py")
     
     print(f"\n🌐 Open http://localhost:8000 in your browser to verify.")
     print("\n📋 Next steps:")

@@ -17,8 +17,8 @@ echo.
 
 REM 가상환경 생성
 echo [2/6] 가상환경 생성 중...
-if not exist venv (
-    python -m venv venv
+if not exist .venv (
+    python -m venv .venv
     echo ✅ 가상환경이 생성되었습니다.
 ) else (
     echo ✅ 가상환경이 이미 존재합니다.
@@ -27,7 +27,7 @@ echo.
 
 REM 가상환경 활성화
 echo [3/6] 가상환경 활성화 중...
-call venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 if %errorlevel% neq 0 (
     echo ERROR: 가상환경 활성화에 실패했습니다.
     pause
@@ -73,7 +73,7 @@ echo    🎉 환경 설정이 완료되었습니다!
 echo ================================================
 echo.
 echo 서버 실행 방법:
-echo   1. venv\Scripts\activate.bat
+echo   1. .venv\Scripts\activate.bat
 echo   2. python main.py
 echo.
 echo 또는 start_server.bat 파일을 실행하세요.

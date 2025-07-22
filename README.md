@@ -40,7 +40,7 @@ python setup.py
 
 **방법 3: 수동 설정**
 ```cmd
-python -m venv venv
+python -m venv .venv
 venv\Scripts\activate.bat          # Windows
 # source venv/bin/activate         # macOS/Linux
 pip install --upgrade pip
