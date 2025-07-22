@@ -1236,7 +1236,7 @@
                 }
             }, 100); // 500ms → 100ms로 단축
 
-            // 1초 후 최종 완료
+            // 10초 후 최종 완료
             setTimeout(() => {
                 hidePreloadIndicator();
                 console.log('🎉 고성능 로딩 완료');
@@ -1377,12 +1377,12 @@
 
                 console.log(`🌐 API 호출: ${apiEndpoint}`);
 
-                // 타임아웃을 5초로 늘리고 에러 처리 개선
+                // 타임아웃을 15초로 늘리고 에러 처리 개선
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => {
                     console.log('⏰ 타임아웃으로 요청 취소');
                     controller.abort();
-                }, 5000); // 5초로 증가
+                }, 15000); // 15초로 증가
 
                 const response = await fetch(apiEndpoint, {
                     signal: controller.signal,
@@ -1794,9 +1794,9 @@
 
                 console.log(`📡 ${regionText} API 호출:`, url);
 
-                // 빠른 타임아웃 설정 (3초)
+                // 타임아웃 설정을 30초로 증가 (GPT 키워드 추출 시간 고려)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
@@ -2022,7 +2022,7 @@
 
                 console.log(`📡 ${regionText} API 호출:`, url);
                 const response = await fetch(url, {
-                    timeout: 5000 // 5초 타임아웃
+                    timeout: 20000 // 20초 타임아웃으로 증가
                 });
                 const data = await response.json();
 
@@ -2295,9 +2295,9 @@
             const typingIndicator = addTypingIndicator();
 
             try {
-                // 빠른 타임아웃 설정 (5초)
+                // 챗봇 타임아웃을 30초로 증가 (GPT 응답 시간 고려)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
 
                 const response = await fetch('http://127.0.0.1:8000/chat', {
                     method: 'POST',

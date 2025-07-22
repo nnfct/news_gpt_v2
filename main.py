@@ -391,7 +391,7 @@ async def fetch_tech_articles(start_date: str, end_date: str) -> List[Dict[str, 
         }
         
         logger.info(f"� Tech 기사 수집 중...")
-        response = requests.get(base_url, params=params, timeout=5)  # 5초로 단축
+        response = requests.get(base_url, params=params, timeout=15)  # 15초로 증가
         logger.info(f"� 응답 상태: {response.status_code}")
         
         if response.status_code != 200:
@@ -471,7 +471,7 @@ async def fetch_global_tech_articles(start_date: str, end_date: str) -> List[Dic
         }
         
         logger.info(f"🌍 해외 Tech 기사 수집 중...")
-        response = requests.get(base_url, params=params, timeout=5)  # 5초 타임아웃
+        response = requests.get(base_url, params=params, timeout=15)  # 15초 타임아웃
         logger.info(f"📊 해외 응답 상태: {response.status_code}")
         
         if response.status_code != 200:
@@ -700,7 +700,7 @@ async def search_global_keyword_articles(keyword: str, start_date: str, end_date
         
         logger.info(f"🌍 해외 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
         logger.info(f"🌍 파라미터: {params}")
-        response = requests.get(base_url, params=params, timeout=5)
+        response = requests.get(base_url, params=params, timeout=15)
         logger.info(f"🌍 응답 상태 코드: {response.status_code}")
         
         if response.status_code != 200:
@@ -789,7 +789,7 @@ async def search_articles_by_keyword(keyword: str, start_date: str, end_date: st
         
         logger.info(f"🔍 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
         logger.info(f"🔍 파라미터: {params}")
-        response = requests.get(base_url, params=params, timeout=3)  # 3초로 단축
+        response = requests.get(base_url, params=params, timeout=15)  # 15초로 증가
         logger.info(f"🔍 응답 상태 코드: {response.status_code}")
         
         if response.status_code != 200:
@@ -918,7 +918,7 @@ async def search_keyword_articles(keyword: str, start_date: str = "2025-07-14", 
                     "date_to": end_date,
                     "q": search_term  # 키워드 검색 추가
                 }
-                response = requests.get(url, params=params, timeout=5)
+                response = requests.get(url, params=params, timeout=15)
                 response.raise_for_status()
                 data = response.json()
                 for item in data.get("data", []):

@@ -661,7 +661,15 @@
             try {
                 showLoadingGrid();
 
-                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+                // 타임아웃 설정 추가 (30초)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21', {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`API 응답 오류: ${response.status} ${response.statusText}`);
@@ -698,7 +706,15 @@
                 document.querySelector('.content-title').textContent = '이번 주 국내 AI 뉴스 분석';
                 document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내 최신 뉴스 트렌드와 키워드를 확인하세요';
 
-                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+                // 타임아웃 설정 추가 (30초)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21', {
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`국내뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
@@ -1151,13 +1167,20 @@
             submitBtn.textContent = '구독 중...';
 
             try {
+                // 타임아웃 설정 추가 (15초)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                 const response = await fetch('/api/subscribe', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email: email })
+                    body: JSON.stringify({ email: email }),
+                    signal: controller.signal
                 });
+
+                clearTimeout(timeoutId);
 
                 const result = await response.json();
 
