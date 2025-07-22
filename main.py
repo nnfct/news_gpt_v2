@@ -1669,7 +1669,7 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
             # 해외 전용 GPT로 영어 키워드 추출
             extracted_keywords = await extract_global_keywords_with_gpt(global_tech_articles)
             if extracted_keywords:
-                keywords = [kw["keyword"] for kw in extracted_keywords[:5]]  # Top 5로 증가
+                keywords = extracted_keywords[:5]  # Top 5로 증가
             else:
                 keywords = get_global_sample_keywords_by_date(start_date, end_date)
         
