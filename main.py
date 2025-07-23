@@ -1511,11 +1511,12 @@ async def chat(request: Request):
                 current_keywords
             )
         elif keyword_info["type"] == "keyword_trend":
-            answer = generate_keyword_trend_answer(question, keyword_info["keyword"])
+            answer = await generate_keyword_trend_answer(question, keyword_info["keyword"])
         elif keyword_info["type"] == "comparison":
-            answer = generate_comparison_answer(question, keyword_info["keywords"])
+            answer = await generate_comparison_answer(question, keyword_info["keywords"])
         else:
-            answer = generate_contextual_answer(question, current_keywords)
+            answer = await generate_contextual_answer(question, current_keywords)
+
         return JSONResponse(content={"answer": answer})
     except Exception as e:
         logger.error(f"/chat 오류: {e}", exc_info=True)
@@ -1749,50 +1750,19 @@ async def get_weekly_keywords_by_date(start_date: str = Query(..., description="
     try:
         logger.info(f"📅 날짜별 키워드 요청: {start_date} ~ {end_date} ({region})")
         
-        # 지역별로 다른 처리
-        if region == "global":
-            # 해외 키워드는 샘플 데이터 사용 (DeepSearch에 world 카테고리가 있다면 활용 가능)
-            keywords = get_sample_global_keywords_by_date(start_date, end_date)
+        tech_articles = await fetch_tech_articles(start_date, end_date)
+        if not tech_articles:
+            logger.warning(f"❌ Tech 기사 없음: {start_date} ~ {end_date}")
+            keywords = get_sample_keywords_by_date(start_date, end_date)
             tech_articles_count = 0
         else:
-            # 국내는 기존 Tech 워크플로우 사용
-            tech_articles = await fetch_tech_articles(start_date, end_date)
-            if not tech_articles:
-                logger.warning(f"❌ Tech 기사 없음: {start_date} ~ {end_date}")
-                keywords = get_sample_keywords_by_date(start_date, end_date)
-                tech_articles_count = 0
+            # GPT로 키워드 추출
+            extracted_keywords = await extract_keywords_with_gpt(tech_articles)
+            if extracted_keywords:
+                keywords = extracted_keywords[:5]  # Top 5로 증가
             else:
-                # GPT로 키워드 추출
-                extracted_keywords = await extract_keywords_with_gpt(tech_articles)
-                if extracted_keywords:
-                    keywords = [kw["keyword"] for kw in extracted_keywords[:5]]  # Top 5로 증가
-                else:
-                    keywords = get_sample_keywords_by_date(start_date, end_date)
-                tech_articles_count = len(tech_articles)
-        
-        # 프론트엔드에서 기대하는 키워드 객체 형식으로 변환
-        if isinstance(keywords, list) and len(keywords) > 0 and isinstance(keywords[0], str):
-            # 문자열 배열을 키워드 객체 배열로 변환
-            keyword_objects = []
-            sample_keywords = ["AI", "반도체", "바이오", "암호화폐", "사이버보안", "로봇"]
-            for i, keyword in enumerate(keywords[:6]):  # 최대 6개
-                if keyword in sample_keywords:
-                    keyword_objects.append({
-                        "keyword": keyword,
-                        "count": 250 - (i * 20),  # 250, 230, 210, 190, 170, 150
-                        "rank": i + 1
-                    })
-            keywords = keyword_objects
-        
-        # 항상 6개 키워드를 확실히 반환
-        keywords = [
-            {"keyword": "AI", "count": 250, "rank": 1},
-            {"keyword": "반도체", "count": 230, "rank": 2},
-            {"keyword": "바이오", "count": 210, "rank": 3},
-            {"keyword": "암호화폐", "count": 190, "rank": 4},
-            {"keyword": "사이버보안", "count": 170, "rank": 5},
-            {"keyword": "로봇", "count": 150, "rank": 6}
-        ]
+                keywords = get_sample_keywords_by_date(start_date, end_date)
+            tech_articles_count = len(tech_articles)
         
         # 응답 형식을 프론트 요구사항에 맞게 조정
         response_data = {
@@ -1837,7 +1807,7 @@ async def get_global_weekly_keywords_by_date(start_date: str = Query(..., descri
         
         # 응답 형식을 프론트 요구사항에 맞게 조정 (키워드 배열로 반환)
         response_data = {
-            "keywords": keywords,  # 단순 문자열 배열로 반환
+            "keywords": keywords,
             "date_range": f"{start_date} ~ {end_date}",
             "total_count": len(keywords),
             "global_tech_articles_count": len(global_tech_articles) if global_tech_articles else 0,
