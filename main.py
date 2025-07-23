@@ -24,6 +24,21 @@ from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 
 
+# keyword explainer
+import urllib.parse
+import feedparser
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from googletrans import Translator
+from dateutil import parser as date_parser
+from concurrent.futures import ThreadPoolExecutor  # ✅ 추가
+
+
 # 로깅 설정 (최적화)
 logging.basicConfig(
     level=logging.INFO, 
@@ -53,6 +68,11 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
 
+AZURE_OPENAI_KEYWORD_EXPLAINER_API_KEY = os.getenv("AZURE_OPENAI_KEYWORD_EXPLAINER_API_KEY")
+AZURE_OPENAI_KEYWORD_EXPLAINER_ENDPOINT = os.getenv("AZURE_OPENAI_KEYWORD_EXPLAINER_ENDPOINT")
+AZURE_OPENAI_KEYWORD_EXPLAINER_DEPLOYMENT = os.getenv("AZURE_OPENAI_KEYWORD_EXPLAINER_DEPLOYMENT")
+AZURE_OPENAI_KEYWORD_EXPLAINER_VERSION = os.getenv("AZURE_OPENAI_KEYWORD_EXPLAINER_VERSION")
+
 DEEPSEARCH_API_KEY = os.getenv("DEEPSEARCH_API_KEY")
 
 # 이메일 설정 (Gmail SMTP 사용)
@@ -79,12 +99,26 @@ class IndustryKeywordAnalysisRequest(BaseModel):
     target_keyword: str       # 분석 대상 키워드 (예: "인공지능")
     # 기존 IndustryAnalysisRequest에서 industry와 keyword를 대체
 
+class TrendRequest(BaseModel):
+    keyword: str
+    country: str
+    headlines: List[str]
+
 # Azure OpenAI 클라이언트 초기화
 openai_client = AzureOpenAI(
     api_key=str(AZURE_OPENAI_API_KEY),
     api_version=str(AZURE_OPENAI_API_VERSION),
     azure_endpoint=str(AZURE_OPENAI_ENDPOINT)
 )
+
+openai_keyword_explainer_client = AzureOpenAI(
+    api_key=str(AZURE_OPENAI_KEYWORD_EXPLAINER_API_KEY),
+    api_version=str(AZURE_OPENAI_KEYWORD_EXPLAINER_VERSION),
+    azure_endpoint=str(AZURE_OPENAI_KEYWORD_EXPLAINER_ENDPOINT)
+)
+
+translator = Translator()
+sentence_transformer_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # 환경 변수 로드 (이 변수들은 .env 파일에 설정되어 있어야 합니다)
 AZURE_SEARCH_ENDPOINT_NCS = os.getenv("AZURE_SEARCH_ENDPOINT")
@@ -275,6 +309,11 @@ async def serve_analysis():
 async def serve_news_detail():
     """뉴스 상세 페이지 제공 (유튜브 스타일)"""
     return FileResponse("news-detail.html")
+
+@app.get("/trending.html")
+async def serve_trending():
+    """트렌딩 페이지 제공"""
+    return FileResponse("trending.html")
 
 @app.get("/admin.html")
 async def serve_admin():
@@ -2414,6 +2453,144 @@ async def send_email(to_email: str, subject: str, content: str):
     except Exception as e:
         logger.error(f"❌ 이메일 발송 실패 ({to_email}): {e}")
         return False
+    
+
+@app.get("/api/trending")
+def get_trending_keywords(country_codes: List[str] = Query(...)):
+    try:
+        def fetch_keywords(geo):
+            options = Options()
+            options.add_argument('--headless')
+            options.add_argument('--no-sandbox')
+            options.add_argument('--disable-dev-shm-usage')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--window-size=1920,1080')
+
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            keywords = []
+            try:
+                url = f"https://trends.google.com/trending?geo={geo}&hl=en&category=3&hours=24&sort=search-volume"
+                driver.get(url)
+                time.sleep(4)
+                elems = driver.find_elements(By.CLASS_NAME, 'mZ3RIc') or driver.find_elements(By.CSS_SELECTOR, '[data-ved]')
+                keywords = [e.text.strip() for e in elems if e.text.strip()][:10]
+            except Exception as e:
+                print(f"Error fetching trends for {geo}: {e}")
+                keywords = [f"Sample keyword {i} for {geo}" for i in range(1, 6)]
+            finally:
+                driver.quit()
+            return [{"country": geo, "keyword": kw} for kw in keywords]
+
+        # ✅ 병렬 실행
+        with ThreadPoolExecutor(max_workers=min(len(country_codes), 5)) as executor:
+            results = list(executor.map(fetch_keywords, country_codes))
+
+        raw_keywords = [item for sublist in results for item in sublist]
+
+        texts_for_embedding = []
+        for item in raw_keywords:
+            kw = item["keyword"]
+            if item["country"] in ["KR", "MX"]:
+                try:
+                    kw_en = translator.translate(kw, dest='en').text
+                except Exception:
+                    kw_en = kw
+            else:
+                kw_en = kw
+            item["keyword_en"] = kw_en
+            texts_for_embedding.append(kw_en)
+
+        embeddings = sentence_transformer_model.encode(texts_for_embedding)
+        shared_indices = set()
+        countries = [item['country'] for item in raw_keywords]
+
+        for i in range(len(embeddings)):
+            for j in range(i + 1, len(embeddings)):
+                if countries[i] != countries[j] and cosine_similarity([embeddings[i]], [embeddings[j]])[0][0] >= 0.65:
+                    shared_indices.add(i)
+                    shared_indices.add(j)
+
+        for i, item in enumerate(raw_keywords):
+            item["shared"] = i in shared_indices
+
+        return {
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            "data": raw_keywords,
+            "status": "success"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+
+@app.get("/api/news")
+def get_news(country: str, keyword: str):
+    try:
+        encoded_kw = urllib.parse.quote(keyword)
+        hl_map = {'US': 'en', 'GB': 'en-GB', 'MX': 'es-419', 'KR': 'ko', 'IN': 'en-IN', 'ZA': 'en-ZA', 'AU': 'en-AU'}
+        hl = hl_map.get(country, 'en')
+        ceid = f"{country}:{hl}"
+        rss_url = f"https://news.google.com/rss/search?q={encoded_kw}&hl={hl}&gl={country}&ceid={ceid}"
+        feed = feedparser.parse(rss_url)
+        articles = []
+
+        for entry in feed.entries:
+            published_str = getattr(entry, 'published', '')
+            try:
+                published_dt = date_parser.parse(published_str)
+            except Exception:
+                published_dt = datetime.min
+            articles.append({
+                "title": entry.title,
+                "link": entry.link,
+                "published": published_str,
+                "published_dt": published_dt
+            })
+
+        sorted_articles = sorted(articles, key=lambda x: x['published_dt'], reverse=True)[:10]
+        for article in sorted_articles:
+            article.pop('published_dt', None)
+
+        return {"news": sorted_articles, "status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"뉴스 가져오기 실패: {str(e)}")
+
+@app.post("/api/gpt-commentary")
+def generate_commentary(req: TrendRequest):
+    try:
+        if not req.headlines:
+            return {"comment": "관련 뉴스가 없어 트렌드 해설을 제공할 수 없습니다.", "status": "no_news"}
+
+        prompt = (
+            f"The following are recent news headlines related to the keyword '{req.keyword}':\n"
+            + "\n".join(f"- {title}" for title in req.headlines)
+            + "\n\nBased on these headlines, explain why people are likely searching for this keyword.\n\n"
+            "🧠 Output format:\n"
+            "1. A one-sentence summary of the main reason for the keyword being searched.\n"
+            "2. A short paragraph elaborating on the reason, based on the headlines.\n\n"
+            "📌 Rules:\n"
+            "- All output must be in Korean.\n"
+            "- Do NOT mention 'Google Trends' anywhere in the answer.\n"
+            "- If the headlines are insufficient to determine a clear reason, you may use general web knowledge to supplement your explanation.\n"
+            "- In that case, please add the following sentence at the end of the paragraph:\n"
+            "  ※ 기사 제목만으로는 유의미한 검색 원인을 찾기 어려워, 추가 정보를 참고했습니다."
+        )
+
+        response = openai_keyword_explainer_client.chat.completions.create(
+            model=AZURE_OPENAI_KEYWORD_EXPLAINER_DEPLOYMENT,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=16384
+        )
+
+        return {"comment": response.choices[0].message.content, "status": "success"}
+
+    except Exception as e:
+        return {
+            "comment": f"GPT 응답 오류: {str(e)}",
+            "status": "error",
+            "error": str(e)
+        }
+
 
 # =============================================================================
 # 서버 실행 설정
@@ -2425,7 +2602,8 @@ if __name__ == "__main__":
     logger.info("   1️⃣ Tech기사수집 (DeepSearch Tech)")
     logger.info("   2️⃣ GPT키워드추출")
     logger.info("   3️⃣ 키워드기사검색 (DeepSearch Keyword)")
-    logger.info("   4️⃣ 기사클릭 → URL리다이렉트")
+    logger.info("   4️⃣ 키워드트렌딩")
+    logger.info("   5️⃣ 기사클릭 → URL리다이렉트")
     logger.info("🌐 서버 주소: http://localhost:8000")
     
     # FastAPI 서버 직접 실행
