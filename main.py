@@ -92,6 +92,7 @@ class EmailInsightRequest(BaseModel):
 class JobAnalysisRequest(BaseModel):
     query: str
     selected_keyword: Optional[str] = None
+    selected_keyword_reason: Optional[str] = None # ✅ 이 줄을 추가합니다.
 
 # 👇 여기에 새로운 Pydantic 모델을 추가합니다.
 class IndustryKeywordAnalysisRequest(BaseModel):
@@ -422,9 +423,12 @@ async def get_global_keyword_articles(
 async def analyze_job_industry(request: JobAnalysisRequest):
     user_job_role = request.query             # 사용자 입력 직무/산업 (분석 관점)
     analysis_keyword = request.selected_keyword # 분석 대상 키워드
+    analysis_keyword_reason = request.selected_keyword_reason # ✅ 키워드 선정 이유
 
+    # analysis_keyword가 제공되지 않았을 때 reason도 기본값으로 설정 (선택 사항)
     if not analysis_keyword:
-        analysis_keyword = "인공지능" # 기본 분석 키워드를 '인공지능'으로 설정
+        analysis_keyword = "인공지능"
+        analysis_keyword_reason = "사용자가 선택하지 않아 기본값으로 설정됨" # 필요에 따라 기본 이유 설정
         logger.warning(f"⚠️ analysis_keyword가 제공되지 않아 '{analysis_keyword}'를 기본값으로 사용합니다.")
 
 
@@ -441,21 +445,17 @@ async def analyze_job_industry(request: JobAnalysisRequest):
         insight_analysis_result = await generate_industry_based_answer(
             question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 긍정적 분석",
             keyword=analysis_keyword,
-            industry=user_job_role, # <--- 이 파라미터에 사용자 직무 관점을 전달
-            current_keywords=[analysis_keyword]
-        )
-
-        counter_analysis_result = await generate_comparison_answer(
-            question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 비판적 분석",
-            keywords=[analysis_keyword], # <--- 이 파라미터에 분석 대상 키워드를 전달
-            perspective_role=user_job_role # <--- generate_comparison_answer 함수에 추가된 perspective_role 파라미터
+            industry=user_job_role,
+            current_keywords=[analysis_keyword],
+            reason=analysis_keyword_reason # ✅ 이유 전달
         )
 
         # generate_comparison_answer 함수를 '직무 관점'에서 특정 키워드를 분석하도록 활용
         counter_analysis_result = await generate_comparison_answer(
             question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 비판적 분석",
-            keywords=[analysis_keyword], # 비교 키워드로 대상 키워드 전달
-            perspective_role=user_job_role # 'perspective_role'에 직무 관점 전달
+            keywords=[analysis_keyword],
+            perspective_role=user_job_role,
+            reason=analysis_keyword_reason # ✅ 이유 전달
         )
 
         if not summary:
@@ -1692,7 +1692,7 @@ def get_current_weekly_keywords():
         print(f"키워드 추출 오류: {e}")
         return ["인공지능", "반도체", "기업"]
 
-async def generate_industry_based_answer(question, keyword, industry, current_keywords):
+async def generate_industry_based_answer(question, keyword, industry, current_keywords, reason: Optional[str] = None): # ✅ reason 파라미터 추가
     """산업별/직무별 관점 분석 기반 답변 생성"""
     try:
         # industry_context 맵은 기존과 동일 (주요 산업 분야만 포함)
@@ -1707,9 +1707,11 @@ async def generate_industry_based_answer(question, keyword, industry, current_ke
         context_desc = industry_context.get(industry, f"'{industry}' 관점") # 리스트에 없는 관점일 경우 일반화
 
         # 프롬프트 조정: 'industry'를 '분석 관점'으로 명확히 지시
+        reason_text = f"이 키워드는 '{reason}'이라는 이유로 주목받고 있습니다." if reason else "" # ✅ 이 줄 추가
         prompt = f"""
         다음은 사용자의 질문과 분석 대상 키워드, 그리고 분석 관점 직무/산업에 대한 정보입니다.
         이 정보를 바탕으로 '{industry}' 관점에서 '{keyword}'에 대해 구체적이고 전문적인 분석을 제공해주세요.
+        {reason_text} # ✅ 이유 정보 포함
         특히 '{industry}' 직무/산업과 '{keyword}' 키워드의 연관성을 중점적으로 다루고, 현재 주간 핵심 키워드({', '.join(current_keywords)})도 고려하여 답변을 구성해주세요.
 
         질문: {question}
@@ -1773,7 +1775,7 @@ async def generate_keyword_trend_answer(question, keyword):
     except Exception as e:
         return f"죄송합니다. '{keyword}' 트렌드 분석 중 오류가 발생했습니다: {str(e)}"
 
-async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None):
+async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None, reason: Optional[str] = None): # ✅ reason 파라미터 추가
     """키워드들을 비교 분석 답변 생성 (직무/산업 관점 포함)"""
     try:
         # 프롬프트에 직무/산업 관점 추가
@@ -1781,10 +1783,12 @@ async def generate_comparison_answer(question, keywords, perspective_role: Optio
         if perspective_role:
             role_context = f"'{perspective_role}'의 관점에서 "
 
+        reason_text = f"주요 키워드 중 하나인 '{keywords[0]}'은(는) '{reason}'이라는 이유로 선정되었습니다." if reason and keywords else "" # ✅ 이 줄 추가
         prompt = f"""
         질문: {question}
         비교 대상: {', '.join(keywords)}
         분석 관점: {role_context}
+        {reason_text} # ✅ 이유 정보 포함
 
         {role_context}'{', '.join(keywords)}' 키워드들을 비교 분석해주세요.
 

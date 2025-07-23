@@ -1236,7 +1236,7 @@
     <script>
         // 🚀 고성능 최적화된 전역 변수
         let currentKeywords = [];
-        let selectedKeyword = new URLSearchParams(window.location.search).get('keyword') || '인공지능';
+        let selectedKeywordData = { keyword: new URLSearchParams(window.location.search).get('keyword') || '인공지능', reason: '초기 기본 키워드' }; // 수정
         let dataCache = {}; // 일반 객체로 변경 (Map 대신)
         let performanceMetrics = {
             startTime: Date.now(),
@@ -1685,8 +1685,10 @@
                 // 클릭 이벤트 - 관련 기사 표시 및 키워드 분석 (지역 정보 포함)
                 keywordElement.addEventListener('click', function (e) {
                 // 클릭 시 selectedKeyword 업데이트
-                selectedKeyword = keywordText; 
-                
+                selectedKeywordData = {
+                    keyword: keywordText, // keywordText는 이미 keywordData.keyword에서 추출됨
+                    reason: keywordReason || '이유 없음' // keywordReason은 이미 keywordData.reason에서 추출됨
+                };
                 // 현재 주차의 날짜 범위 가져오기
                 const currentWeekDateRange = weekDateRanges[weekNumber];
 
@@ -1809,8 +1811,12 @@
         // 키워드 더블클릭시 분석 선택 모드
         document.addEventListener('dblclick', function (e) {
             if (e.target.classList.contains('keyword-tag')) {
-                const keyword = e.target.getAttribute('data-keyword');  // data-keyword 속성에서 키워드 추출
-                selectedKeyword = keyword;
+                const clickedKeywordText = e.target.getAttribute('data-keyword');
+                const reasonFromTooltip = e.target.title.split('선정 이유: ')[1] || '이유 없음'; // 툴팁에서 직접 파싱 (임시 방안)
+                selectedKeywordData = {
+                    keyword: clickedKeywordText,
+                    reason: reasonFromTooltip
+                };
 
                 // 키워드 활성화 표시
                 document.querySelectorAll('.keyword-tag').forEach(tag => {
@@ -2588,7 +2594,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         query: query, 
-                        selected_keyword: selectedKeyword // 백엔드로 selectedKeyword를 보냅니다.
+                        selected_keyword: selectedKeywordData.keyword, // 키워드 이름
+                        selected_keyword_reason: selectedKeywordData.reason // 키워드 이유 추가
                     }),
                     signal: controller1.signal
                 });
