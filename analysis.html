@@ -1430,8 +1430,9 @@
 
             for (const week of weeks) {
                 // 국내 및 해외 키워드 병렬 로딩
-                promises.push(loadWeekKeywordsOptimized(week, 'domestic'));
-                promises.push(loadWeekKeywordsOptimized(week, 'global'));
+                // 여기서 displayWeekKeywords를 직접 호출하도록 합니다.
+                promises.push(loadWeekKeywordsForDisplay(week, 'domestic'));
+                promises.push(loadWeekKeywordsForDisplay(week, 'global'));
             }
 
             try {
@@ -1443,66 +1444,14 @@
             }
         }
 
-        // 🚀 최적화된 키워드 표시 (애니메이션 효과)
-        function displayWeekKeywordsOptimized(container, keywords, weekNumber, region = 'domestic') {
-            if (!container) return;
 
-            container.innerHTML = '';
-            const weekDateRanges = {
-                1: { start: '2025-07-01', end: '2025-07-05' },
-                2: { start: '2025-07-06', end: '2025-07-13' },
-                3: { start: '2025-07-14', end: '2025-07-18' }
-            };
+       
 
-            keywords.forEach((keyword, index) => {
-                setTimeout(() => {
-                    const keywordElement = document.createElement('div');
-                    keywordElement.className = 'keyword-tag instant-feedback quick-hover';
-                    keywordElement.textContent = keyword;
-                    keywordElement.setAttribute('data-region', region);
-
-                    // 캐시된 항목 표시
-                    if (dataCache.has(`${region}-${weekNumber}-${weekDateRanges[weekNumber].start}-${weekDateRanges[weekNumber].end}`)) {
-                        keywordElement.style.borderLeft = '3px solid #10b981';
-                        keywordElement.title = '캐시된 데이터 (빠른 로딩)';
-                    }
-
-                    // 클릭 이벤트
-                    keywordElement.addEventListener('click', function () {
-                        // 즉시 피드백
-                        this.style.transform = 'scale(0.95)';
-                        setTimeout(() => this.style.transform = '', 100);
-
-                        selectedKeyword = keyword;
-                        currentKeywords = [keyword];
-                        const dateRange = weekDateRanges[weekNumber];
-
-                        performKeywordAnalysis(keyword);
-                        openArticleModalOptimized(keyword, dateRange, region);
-                    });
-
-                    // 애니메이션 효과로 등장
-                    keywordElement.style.opacity = '0';
-                    keywordElement.style.transform = 'translateY(20px)';
-                    container.appendChild(keywordElement);
-
-                    // 부드러운 등장 애니메이션
-                    requestAnimationFrame(() => {
-                        keywordElement.style.transition = 'all 0.3s ease';
-                        keywordElement.style.opacity = '1';
-                        keywordElement.style.transform = 'translateY(0)';
-                    });
-
-                }, index * 100); // 순차적 등장 (100ms 간격)
-            });
-        }
-
-        // 🚀 최적화된 주차별 키워드 로딩 (빠른 버전)
-        async function loadWeekKeywordsOptimized(weekNumber, region = 'domestic') {
+        // 🚀 최적화된 주차별 키워드 로딩 (API 호출 및 데이터 캐싱)
+        async function loadWeekKeywordsForDisplay(weekNumber, region = 'domestic') {
             console.log(`🔄 ${weekNumber}주차 ${region} 키워드 로딩 시작`);
 
             try {
-                // 날짜 범위 계산
                 const weekDateRanges = {
                     1: { start: '2025-07-01', end: '2025-07-05' },
                     2: { start: '2025-07-06', end: '2025-07-13' },
@@ -1516,7 +1465,6 @@
 
                 console.log(`📦 컨테이너 확인: ${keywordsContainer ? '✅' : '❌'}, 로딩 요소: ${loadingElement ? '✅' : '❌'}`);
 
-                // 캐시 확인
                 if (dataCache[cacheKey]) {
                     console.log(`💨 캐시에서 로딩: ${cacheKey}`);
                     displayWeekKeywords(keywordsContainer, dataCache[cacheKey], weekNumber, region);
@@ -1526,25 +1474,22 @@
                     return;
                 }
 
-                // 즉시 "분석 중..." 표시
                 if (loadingElement) {
                     loadingElement.textContent = '⚡ 빠른 분석 중...';
                     loadingElement.style.color = '#00D9C0';
                 }
 
-                // 해외는 global-weekly-keywords-by-date, 국내는 weekly-keywords-by-date 사용
                 const apiEndpoint = region === 'global'
                     ? `http://127.0.0.1:8000/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
                     : `http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
 
                 console.log(`🌐 API 호출: ${apiEndpoint}`);
 
-                // 타임아웃을 5초로 늘리고 에러 처리 개선
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => {
                     console.log('⏰ 타임아웃으로 요청 취소');
                     controller.abort();
-                }, 5000); // 5초로 증가
+                }, 45000); // 20초->45로 증가
 
                 const response = await fetch(apiEndpoint, {
                     signal: controller.signal,
@@ -1563,13 +1508,11 @@
                 const data = await response.json();
                 console.log(`✅ API 응답 받음:`, data);
 
-                // 키워드 배열 확인
                 if (!data.keywords || !Array.isArray(data.keywords)) {
                     console.warn('키워드 데이터가 올바르지 않음, 샘플 데이터 사용');
                     throw new Error('키워드 데이터가 올바르지 않습니다');
                 }
 
-                // 캐시에 저장
                 dataCache[cacheKey] = data.keywords;
                 console.log(`💾 캐시 저장 완료: ${cacheKey}`, data.keywords);
 
@@ -1582,7 +1525,6 @@
             } catch (error) {
                 console.error(`❌ ${weekNumber}주차 ${region === 'global' ? '해외' : '국내'} 키워드 로딩 오류:`, error);
 
-                // 날짜 범위 재정의
                 const weekDateRanges = {
                     1: { start: '2025-07-01', end: '2025-07-05' },
                     2: { start: '2025-07-06', end: '2025-07-13' },
@@ -1593,11 +1535,9 @@
                 const elementPrefix = region === 'global' ? 'global-' : '';
                 const loadingElement = document.getElementById(`${elementPrefix}week${weekNumber}-loading`);
 
-                // 빠르게 샘플 데이터로 대체 (즉시 표시)
                 const sampleKeywords = getSampleKeywords(weekNumber, region);
                 const keywordsContainer = document.getElementById(`${elementPrefix}week${weekNumber}-keywords`);
 
-                // 캐시에 샘플 데이터 저장
                 const cacheKey = `${region}-${weekNumber}-${startDate}-${endDate}`;
                 dataCache[cacheKey] = sampleKeywords;
 
@@ -1614,23 +1554,67 @@
 
         // 샘플 키워드 데이터 (Top5)
         function getSampleKeywords(weekNumber, region = 'domestic') {
+            const defaultReason = "API 오류로 인한 샘플 데이터";
+
             const domesticData = {
-                1: ['전기차', '배터리', '충전인프라', '자율주행', '테슬라'],
-                2: ['메타버스', 'VR', '가상현실', 'AR', 'NFT'],
-                3: ['인공지능', 'AI', 'ChatGPT', '머신러닝', '딥러닝']
+                1: [
+                    {"keyword": "전기차", "reason": "샘플: 전기차 시장 성장", "count": 250, "rank": 1},
+                    {"keyword": "배터리", "reason": "샘플: 배터리 기술 경쟁", "count": 230, "rank": 2},
+                    {"keyword": "충전인프라", "reason": "샘플: 충전 인프라 확충", "count": 210, "rank": 3},
+                    {"keyword": "자율주행", "reason": "샘플: 자율주행 기술 상용화", "count": 190, "rank": 4},
+                    {"keyword": "테슬라", "reason": "샘플: 테슬라 모델 출시", "count": 170, "rank": 5}
+                ],
+                2: [
+                    {"keyword": "메타버스", "reason": "샘플: 가상현실 플랫폼 확장", "count": 250, "rank": 1},
+                    {"keyword": "VR", "reason": "샘플: VR 기기 보급 증가", "count": 230, "rank": 2},
+                    {"keyword": "가상현실", "reason": "샘플: 가상현실 콘텐츠 다양화", "count": 210, "rank": 3},
+                    {"keyword": "AR", "reason": "샘플: 증강현실 앱 개발", "count": 190, "rank": 4},
+                    {"keyword": "NFT", "reason": "샘플: 디지털 자산 트렌드", "count": 170, "rank": 5}
+                ],
+                3: [
+                    {"keyword": "인공지능", "reason": "샘플: AI 기술 발전", "count": 250, "rank": 1},
+                    {"keyword": "AI", "reason": "샘플: AI 활용 사례 증가", "count": 230, "rank": 2},
+                    {"keyword": "ChatGPT", "reason": "샘플: 대화형 AI 확산", "count": 210, "rank": 3},
+                    {"keyword": "머신러닝", "reason": "샘플: 머신러닝 알고리즘 개선", "count": 190, "rank": 4},
+                    {"keyword": "딥러닝", "reason": "샘플: 딥러닝 응용 분야 확대", "count": 170, "rank": 5}
+                ]
             };
 
             const globalData = {
-                1: ['Tesla', 'Apple', 'Microsoft', 'Google', 'Amazon'],
-                2: ['ChatGPT', 'OpenAI', 'Meta', 'Twitter', 'TikTok'],
-                3: ['NVIDIA', 'AMD', 'Intel', 'Samsung', 'TSMC']
+                1: [
+                    {"keyword": "Tesla", "reason": "Sample: EV market leader", "count": 250, "rank": 1},
+                    {"keyword": "Apple", "reason": "Sample: New product launches", "count": 230, "rank": 2},
+                    {"keyword": "Microsoft", "reason": "Sample: Cloud business growth", "count": 210, "rank": 3},
+                    {"keyword": "Google", "reason": "Sample: AI research and search", "count": 190, "rank": 4},
+                    {"keyword": "Amazon", "reason": "Sample: E-commerce and cloud", "count": 170, "rank": 5}
+                ],
+                2: [
+                    {"keyword": "ChatGPT", "reason": "Sample: Generative AI adoption", "count": 250, "rank": 1},
+                    {"keyword": "OpenAI", "reason": "Sample: AI model development", "count": 230, "rank": 2},
+                    {"keyword": "Meta", "reason": "Sample: Metaverse initiatives", "count": 210, "rank": 3},
+                    {"keyword": "Twitter", "reason": "Sample: Social media platform changes", "count": 190, "rank": 4},
+                    {"keyword": "TikTok", "reason": "Sample: Short-video platform dominance", "count": 170, "rank": 5}
+                ],
+                3: [
+                    {"keyword": "NVIDIA", "reason": "Sample: AI chip dominance", "count": 250, "rank": 1},
+                    {"keyword": "AMD", "reason": "Sample: CPU market competition", "count": 230, "rank": 2},
+                    {"keyword": "Intel", "reason": "Sample: Semiconductor manufacturing", "count": 210, "rank": 3},
+                    {"keyword": "Samsung", "reason": "Sample: Memory chip technology", "count": 190, "rank": 4},
+                    {"keyword": "TSMC", "reason": "Sample: Leading foundry services", "count": 170, "rank": 5}
+                ]
             };
 
             const dataSource = region === 'global' ? globalData : domesticData;
-            return dataSource[weekNumber] || ['키워드1', '키워드2', '키워드3', '키워드4', '키워드5'];
+            return dataSource[weekNumber] || [
+                {"keyword": "Default Keyword1", "reason": defaultReason, "count": 100, "rank": 1},
+                {"keyword": "Default Keyword2", "reason": defaultReason, "count": 80, "rank": 2},
+                {"keyword": "Default Keyword3", "reason": defaultReason, "count": 60, "rank": 3},
+                {"keyword": "Default Keyword4", "reason": defaultReason, "count": 40, "rank": 4},
+                {"keyword": "Default Keyword5", "reason": defaultReason, "count": 20, "rank": 5}
+            ];
         }
 
-        // 주차별 키워드 표시 (최적화 버전)
+        // 주차별 키워드 표시 (최적화 버전) -> 키워드 추출 이유도 표시
         function displayWeekKeywords(container, keywords, weekNumber, region = 'domestic') {
             console.log(`🎨 키워드 표시 시작: ${weekNumber}주차 ${region}`, { container, keywords });
 
@@ -1661,55 +1645,53 @@
                 const keywordElement = document.createElement('div');
                 keywordElement.className = 'keyword-tag';
 
-                // 키워드 데이터가 객체인지 문자열인지 확인
-                let keywordText, keywordCount;
+                let keywordText, keywordCount, keywordReason;
                 if (typeof keywordData === 'object' && keywordData !== null) {
-                    // 객체인 경우 keyword 속성 사용
-                    keywordText = keywordData.keyword || keywordData.name || keywordData.text || String(keywordData);
+                    // 이 부분이 중요합니다: keywordData.keyword를 명확하게 참조합니다.
+                    keywordText = keywordData.keyword || keywordData.name || keywordData.text || '알 수 없는 키워드'; // '키워드1' 대신 '알 수 없는 키워드' 폴백
                     keywordCount = keywordData.count || keywordData.frequency || '';
+                    keywordReason = keywordData.reason || '';
                 } else {
-                    // 문자열인 경우 그대로 사용
+                    // 혹시 모를 문자열 폴백 (백엔드는 객체를 보내야 함)
                     keywordText = String(keywordData);
                     keywordCount = '';
+                    keywordReason = '';
                 }
 
                 // 키워드 텍스트 설정
-                keywordElement.textContent = keywordText;
+                keywordElement.textContent = keywordText; // 이제 여기에는 "인공지능", "반도체" 등이 들어갑니다.
 
-                // 카운트가 있으면 툴팁으로 표시
+                // 카운트와 이유를 툴팁으로 표시
+                let tooltipText = [];
                 if (keywordCount) {
-                    keywordElement.title = `언급 횟수: ${keywordCount}회`;
+                    tooltipText.push(`언급 횟수: ${keywordCount}회`);
                 }
-
-                console.log(`🏷️ 키워드 생성: "${keywordText}" (${keywordCount || '카운트 없음'})`);
+                if (keywordReason) {
+                    tooltipText.push(`선정 이유: ${keywordReason}`);
+                }
+                if (tooltipText.length > 0) {
+                    keywordElement.title = tooltipText.join('\n');
+                }
+                
+                console.log(`🏷️ 키워드 생성: "${keywordText}" (${keywordCount || '카운트 없음'}) - 이유: "${keywordReason || '없음'}"`);
 
                 // 지역별 구분을 위한 데이터 속성 추가
                 keywordElement.setAttribute('data-region', region);
-                keywordElement.setAttribute('data-keyword', keywordText);
+                keywordElement.setAttribute('data-keyword', keywordText); // 이 줄이 중요합니다. 실제 키워드를 data-keyword에 저장합니다.
 
                 // 즉시 피드백 효과 적용
                 applyInstantFeedback(keywordElement);
 
                 // 클릭 이벤트 - 관련 기사 표시 및 키워드 분석 (지역 정보 포함)
                 keywordElement.addEventListener('click', function (e) {
-                    // 즉시 시각적 피드백
-                    this.style.transform = 'scale(0.95)';
-                    setTimeout(() => {
-                        this.style.transform = '';
-                    }, 150);
+                // 클릭 시 selectedKeyword 업데이트
+                selectedKeyword = keywordText; 
+                
+                // 현재 주차의 날짜 범위 가져오기
+                const currentWeekDateRange = weekDateRanges[weekNumber];
 
-                    selectedKeyword = keywordText;
-                    currentKeywords = [keywordText];
-                    const dateRange = weekDateRanges[weekNumber];
-
-                    // 즉시 로딩 상태 표시
-                    showPreloadIndicator(`"${keywordText}" 관련 기사 검색 중...`);
-
-                    // 키워드 분석 수행
-                    performKeywordAnalysis(keywordText);
-
-                    // 해당 주차 날짜로 관련 기사 표시 (지역 정보 전달)
-                    openArticleModal(keywordText, dateRange, region);
+                // openArticleModal 호출 시 keywordText와 해당 주차의 날짜 범위, 지역을 전달
+                openArticleModal(keywordText, currentWeekDateRange, region);
                 });
 
                 // 애니메이션 지연으로 순차적 등장 효과
@@ -1719,7 +1701,7 @@
                     keywordElement.style.transition = 'all 0.3s ease';
                     keywordElement.style.opacity = '1';
                     keywordElement.style.transform = 'translateY(0)';
-                }, index * 100); // 100ms씩 지연
+                }, index * 100);
 
                 container.appendChild(keywordElement);
             });
@@ -1727,18 +1709,21 @@
 
         // 키워드 선택 (클릭시 기사 보기, 더블클릭시 분석) - 지역 정보 포함
         function selectKeyword(keyword, weekNumber, dateRange, region = 'domestic') {
-            selectedKeyword = keyword;
+            selectedKeyword = keyword; // 전역 selectedKeyword 업데이트
+
 
             // 키워드 태그 활성화 표시
             document.querySelectorAll('.keyword-tag').forEach(tag => {
-                if (tag.textContent === keyword) {
+                // *** 이 부분을 수정합니다. tag.textContent 대신 data-keyword를 사용합니다. ***
+                if (tag.getAttribute('data-keyword') === keyword) { 
                     tag.classList.add('selected');
                     tag.style.background = '#5A7DBC';
                     tag.style.color = '#FFFFFF';
                 } else {
                     tag.classList.remove('selected');
-                    tag.style.background = '#F0F2F5';
-                    tag.style.color = '#555555';
+                    // 비활성화 색상을 CSS와 일치시킵니다.
+                    tag.style.background = '#303030'; 
+                    tag.style.color = '#ccc'; 
                 }
             });
 
@@ -1746,8 +1731,14 @@
             updateChatSuggestions(keyword);
 
             // 싱글 클릭: 해당 주차 날짜로 관련 기사 표시 (지역 정보 전달)
-            openArticleModal(keyword, dateRange, region);
+            // dateRange가 함수 호출 시 명확히 전달되도록 합니다.
+            // displayWeekKeywords 내부에서 클릭 이벤트가 발생하므로, 거기서 정확한 dateRange를 계산하여 전달해야 합니다.
+            // 이 selectKeyword 함수는 현재 사용되지 않거나, 다른 이벤트에서 호출될 수 있으니
+            // 실제 클릭 이벤트 리스너가 있는 displayWeekKeywords 함수 내부의 로직을 우선적으로 확인해야 합니다.
+            // (위의 displayWeekKeywords 함수 내 클릭 이벤트 리스너 수정 코드를 참조)
+            openArticleModal(keyword, dateRange, region); // keyword는 이미 정확한 값으로 넘어옴.
         }
+
 
         // 동적 키워드 분석 함수
         async function performKeywordAnalysis(keyword) {
@@ -1818,14 +1809,15 @@
         // 키워드 더블클릭시 분석 선택 모드
         document.addEventListener('dblclick', function (e) {
             if (e.target.classList.contains('keyword-tag')) {
-                const keyword = e.target.textContent;
+                const keyword = e.target.getAttribute('data-keyword');  // data-keyword 속성에서 키워드 추출
                 selectedKeyword = keyword;
 
                 // 키워드 활성화 표시
                 document.querySelectorAll('.keyword-tag').forEach(tag => {
-                    tag.style.background = tag.textContent === keyword
-                        ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'
-                        : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    tag.style.background = tag.getAttribute('data-keyword') === keyword // 선택된 키워드와 일치하는지 확인
+                        ? '#5A7DBC' // 활성화 색상
+                        : '#303030'; // 비활성화 색상
+                    tag.style.color = tag.getAttribute('data-keyword') === keyword ? '#FFFFFF' : '#ccc';
                 });
 
                 // 동적으로 챗봇 제안 질문 업데이트
@@ -1901,7 +1893,7 @@
         content.innerHTML = '<div class="loading">🤔 다양한 관점에서 분석 중...</div>'; // 로딩 중 메시지
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60초 타임아웃
+        const timeoutId = setTimeout(() => controller.abort(), 90000); // 60초->90 타임아웃
 
         try {
             const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
@@ -2006,7 +1998,7 @@
 
                 // 빠른 타임아웃 설정 (3초)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15초로 증가
 
                 const response = await fetch(url, { signal: controller.signal });
                 clearTimeout(timeoutId);
@@ -2511,9 +2503,9 @@
             const typingIndicator = addTypingIndicator();
 
             try {
-                // 빠른 타임아웃 설정 (5초->30초로 증가)
+                // 빠른 타임아웃 설정 (5초->45초로 증가)
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), 45000);
 
                 const response = await fetch('http://127.0.0.1:8000/chat', {
                     method: 'POST',

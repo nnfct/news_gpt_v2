@@ -128,6 +128,7 @@ AZURE_OPENAI_DEPLOYMENT_NCS = os.getenv("AZURE_OPENAI_DEPLOYMENT") # .env에 설
 
 # Azure AI Search 클라이언트 초기화
 ncs_search_client: Optional[SearchClient] = None
+ncs_search_client: Optional[SearchClient] = None
 if AZURE_SEARCH_ENDPOINT_NCS and AZURE_SEARCH_KEY_NCS and AZURE_SEARCH_INDEX_NCS:
     try:
         ncs_search_client = SearchClient(
@@ -140,7 +141,7 @@ if AZURE_SEARCH_ENDPOINT_NCS and AZURE_SEARCH_KEY_NCS and AZURE_SEARCH_INDEX_NCS
         logger.error(f"❌ Azure AI Search (NCS) 클라이언트 초기화 실패: {e}", exc_info=True)
         ncs_search_client = None
 else:
-    logger.warning("⚠️ Azure AI Search (NCS) 환경 변수가 설정되지 않아 NCS 검색 기능을 사용할 수 없습니다. .env 파일을 확인하세요.")
+    logger.warning("⚠️ Azure AI Search (NCS) 환경 변수 (AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_KEY, AZURE_SEARCH_INDEX) 중 일부 또는 전부가 설정되지 않아 NCS 검색 기능을 사용할 수 없습니다. .env 파일을 확인하세요.")
 
 # NCS 문서 검색 함수
 async def search_ncs_documents(query, top_k=3):
@@ -545,7 +546,7 @@ async def fetch_tech_articles(start_date: str, end_date: str) -> List[Dict[str, 
         }
         
         logger.info(f"� Tech 기사 수집 중...")
-        response = requests.get(base_url, params=params, timeout=5)  # 5초로 단축
+        response = requests.get(base_url, params=params, timeout=15)  # 15초로 수정
         logger.info(f"� 응답 상태: {response.status_code}")
         
         if response.status_code != 200:
@@ -625,7 +626,7 @@ async def fetch_global_tech_articles(start_date: str, end_date: str) -> List[Dic
         }
         
         logger.info(f"🌍 해외 Tech 기사 수집 중...")
-        response = requests.get(base_url, params=params, timeout=5)  # 5초 타임아웃
+        response = requests.get(base_url, params=params, timeout=15)  # 5초->15 타임아웃
         logger.info(f"📊 해외 응답 상태: {response.status_code}")
         
         if response.status_code != 200:
@@ -686,85 +687,152 @@ async def fetch_global_tech_articles(start_date: str, end_date: str) -> List[Dic
         return []
 
 # 2단계: GPT로 키워드 추출
+# GPT가 키워드를 추출한 이유도 함께 반환하도록 수정
 async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """GPT를 사용해 기사들에서 키워드를 추출합니다 (최적화됨)"""
+    """GPT를 사용해 기사들에서 키워드를 추출하고, 각 키워드 선정 이유를 함께 반환합니다."""
     if not articles:
         logger.warning("❌ 분석할 기사가 없습니다")
         return []
-    
+
     try:
-        # 최적화: 상위 10개 기사만 분석하고 제목만 사용
         top_articles = articles[:10]
-        titles_text = " ".join([article['title'][:50] for article in top_articles])
-        
-        # 간단한 프롬프트로 속도 향상
-        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하세요:
+        titles_text = "\n".join([f"- {article['title']}" for article in top_articles])
+
+        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하고, 각 키워드를 선정한 간략한 이유를 함께 제공하세요.
+
+뉴스 제목:
 {titles_text}
 
-중요: 마크다운 헤더(#) 사용 금지. 단순 텍스트로만 답변.
-형식: 키워드1, 키워드2, 키워드3, 키워드4, 키워드5"""
-        
+중요: 마크다운 헤더(#) 사용 금지.
+형식:
+키워드1: 선정 이유1
+키워드2: 선정 이유2
+키워드3: 선정 이유3
+키워드4: 선정 이유4
+키워드5: 선정 이유5
+"""
         response = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": "IT기술 키워드 추출 전문가. 마크다운 헤더 사용 금지. 단순 텍스트만 사용."},
+                {"role": "system", "content": "IT기술 키워드 추출 전문가. 각 키워드를 선정한 핵심 이유를 간결하게 설명합니다. 마크다운 헤더 사용 금지."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1500,  # 5개 키워드에 맞게 증가
-            temperature=0  # 일관성 최대화
+            max_tokens=1500,
+            temperature=0.2
         )
-        
-        
-        keywords_text = response.choices[0].message.content or ""
-        logger.info(f"🚀 GPT 키워드 추출 완료: {keywords_text}")
-        
-        # 빠른 키워드 파싱
+
+        keywords_with_reasons_text = response.choices[0].message.content or ""
+        logger.info(f"🚀 GPT 키워드 및 이유 추출 완료: \n{keywords_with_reasons_text}")
+
         keywords = []
-        for i, item in enumerate(keywords_text.split(',')[:5], 1):  # Top 5로 증가
-            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '')
-            keyword = re.sub(r'[^\w가-힣]', '', keyword)  # 특수문자 제거
-            
-            if keyword and 2 <= len(keyword) <= 10:
-                keywords.append({
-                    "keyword": keyword,
-                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로
-                    "rank": i
-                })
         
-        # 기본 키워드 (빈 결과 시)
-        if not keywords:
+        # --- 핵심 수정 부분 시작 ---
+        # 1단계: GPT 응답의 다중 줄 패턴을 단일 줄로 통합
+        # "키워드N: [키워드]\n선정 이유N: [이유]" 패턴을 "키워드N: [키워드] 선정 이유N: [이유]"로 변경
+        # 이렇게 하면 각 키워드-이유 쌍이 하나의 'line'으로 인식될 가능성이 높아집니다.
+        # \s*:\s* 는 ': ' 앞뒤의 공백을 처리, (.+?)\n\s*선정 이유(\d+):\s* 는 다중 줄 패턴을 찾음
+        processed_text = re.sub(
+            r'(키워드(\d+):\s*(.+?))\n\s*(선정 이유\2:\s*(.+?))',
+            r'\1 \4', # 키워드: [키워드] 선정 이유N: [이유] 형태로 통합
+            keywords_with_reasons_text,
+            flags=re.IGNORECASE | re.DOTALL # re.DOTALL은 .이 \n도 포함하도록 함
+        )
+
+        # 처리된 텍스트를 다시 줄 단위로 분리
+        lines = processed_text.strip().split('\n')
+        # --- 핵심 수정 부분 끝 ---
+
+        # 🚨 빈 라인을 제거하는 필터링을 먼저 적용합니다.
+        filtered_lines = [line.strip() for line in lines if line.strip()]
+
+        for i, line in enumerate(filtered_lines):
+            keyword_raw = ""
+            reason = "이유 없음"
+
+            # 1. 콜론으로 키워드와 이유 분리 시도
+            # 이제 line은 "키워드N: [키워드] 선정 이유N: [이유]" 또는 "키워드: [이유]" 형태일 가능성이 높음
+            if ':' in line:
+                # 첫 번째 콜론을 기준으로 분리 (키워드 부분과 나머지)
+                first_colon_idx = line.find(':')
+                keyword_part = line[:first_colon_idx].strip()
+                rest_of_line = line[first_colon_idx+1:].strip()
+
+                # '선정 이유N:' 패턴을 포함하는지 확인하고 이유를 추출
+                reason_match = re.search(r'선정 이유\d+:\s*(.+)', rest_of_line, re.IGNORECASE)
+                if reason_match:
+                    reason = reason_match.group(1).strip()
+                    # 키워드 부분에서 '선정 이유N:' 부분을 제거
+                    keyword_raw = re.sub(r'선정 이유\d+:\s*.+', '', rest_of_line, re.IGNORECASE).strip()
+                else:
+                    # '선정 이유N:' 패턴이 없으면, rest_of_line 전체를 이유로 간주
+                    reason = rest_of_line
+                    keyword_raw = keyword_part
+            else:
+                keyword_raw = line.strip()
+                reason = "GPT가 선정 이유를 제공하지 않았습니다." # 이유가 없는 경우 기본 메시지
+
+            # 2. '키워드N: ', 'KeywordN: ', 'N. ' 등의 패턴을 더 강력하게 제거
+            keyword_final = re.sub(r'^(키워드\d+|Keyword\d+|\d+\.)\s*', '', keyword_raw, flags=re.IGNORECASE).strip()
+
+            # 3. 문장 시작의 특수문자 제거 (예: `- 유튜브:`)
+            keyword_final = re.sub(r'^[^\w\s]*', '', keyword_final).strip()
+
+            # 4. 허용된 문자(한글, 영어, 숫자, 공백, 하이픈, 슬래시) 외 모두 제거
+            keyword_final = re.sub(r'[^\w\s\-/가-힣]', '', keyword_final).strip()
+
+            # 5. 마지막에 남을 수 있는 콜론/점 제거
+            keyword_final = re.sub(r'[:.]$', '', keyword_final).strip()
+
+            # 최종적으로 빈 문자열이 되거나 유효하지 않은 키워드는 추가하지 않습니다.
+            if keyword_final and 2 <= len(keyword_final) <= 30:
+                keywords.append({
+                    "keyword": keyword_final,
+                    "reason": reason,
+                    "count": 30 - (len(keywords) * 5),
+                    "rank": len(keywords) + 1
+                })
+                if len(keywords) >= 5:
+                    break
+            else:
+                logger.warning(f"⚠️ 유효하지 않은 키워드 파싱됨: 원본:'{line}', 후보:'{keyword_raw}', 최종:'{keyword_final}' (길이/조건 불충족)")
+
+        # 유효한 키워드가 부족할 때만 샘플 키워드를 사용합니다.
+        if len(keywords) < 3:
+            logger.warning("⚠️ 키워드 추출 실패 또는 부족, 기본 키워드 사용")
             keywords = [
-                {"keyword": "인공지능", "count": 25, "rank": 1},
-                {"keyword": "반도체", "count": 20, "rank": 2},
-                {"keyword": "클라우드", "count": 15, "rank": 3},
-                {"keyword": "빅데이터", "count": 10, "rank": 4},
-                {"keyword": "로봇", "count": 5, "rank": 5}
+                {"keyword": "인공지능", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 25, "rank": 1},
+                {"keyword": "반도체", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 20, "rank": 2},
+                {"keyword": "클라우드", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 15, "rank": 3},
+                {"keyword": "빅데이터", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 10, "rank": 4},
+                {"keyword": "로봇", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 5, "rank": 5}
             ]
         
-        return keywords[:5]  # Top 5 반환
-        
+        return keywords[:5]
+
     except Exception as e:
-        logger.error(f"❌ 키워드 추출 오류: {e}")
+        logger.error(f"❌ 키워드 추출 오류: {e}", exc_info=True)
         return [
-            {"keyword": "인공지능", "count": 25, "rank": 1},
-            {"keyword": "반도체", "count": 20, "rank": 2},
-            {"keyword": "클라우드", "count": 15, "rank": 3}
+            {"keyword": "인공지능", "reason": "시스템 오류로 인한 샘플 데이터", "count": 25, "rank": 1},
+            {"keyword": "반도체", "reason": "시스템 오류로 인한 샘플 데이터", "count": 20, "rank": 2},
+            {"keyword": "클라우드", "reason": "시스템 오류로 인한 샘플 데이터", "count": 15, "rank": 3}
         ]
+    
 
 # 2단계-해외: 해외 기사에서 영어 키워드 추출 
 async def extract_global_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """GPT를 사용해 해외 기사들에서 영어 키워드를 추출합니다 (최적화됨)"""
+    """GPT를 사용해 해외 기사들에서 영어 키워드를 추출하고, 각 키워드 선정 이유를 함께 반환합니다."""
     if not articles:
         logger.warning("❌ 분석할 해외 기사가 없습니다")
         return []
     
     try:
-        # 최적화: 상위 10개 기사만 분석하고 제목만 사용
         top_articles = articles[:10]
-        titles_text = " ".join([article['title'][:50] for article in top_articles])
-        
-        # 영어 키워드 추출을 위한 프롬프트
+        titles_text = "\n".join([f"- {article['title']}" for article in top_articles])
+
+        # GPT 프롬프트는 그대로 유지
         prompt = f"""Extract 5 key English tech keywords from these global news titles:
+
+News Titles:
 {titles_text}
 
 Requirements:
@@ -773,53 +841,92 @@ Requirements:
 - No Korean words
 - No markdown headers (#)
 - Plain text only
-Format: keyword1, keyword2, keyword3, keyword4, keyword5"""
-        
+Format:
+Keyword1: Reason1
+Keyword2: Reason2
+Keyword3: Reason3
+Keyword4: Reason4
+Keyword5: Reason5
+"""
         response = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Use plain text only, no markdown headers."},
+                {"role": "system", "content": "You are an expert at extracting English tech keywords from global news. Provide concise reasons for each keyword. Use plain text only, no markdown headers."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1500,  # 더 짧게
-            temperature=0  # 일관성 최대화
+            max_tokens=1500,
+            temperature=0.2
         )
         
-        keywords_text = response.choices[0].message.content or ""
-        logger.info(f"🌍 해외 GPT 키워드 추출 완료: {keywords_text}")
+        keywords_with_reasons_text = response.choices[0].message.content or ""
+        logger.info(f"🌍 해외 GPT 키워드 및 이유 추출 완료: \n{keywords_with_reasons_text}")
         
-        # 영어 키워드 파싱
         keywords = []
-        for i, item in enumerate(keywords_text.split(',')[:5], 1):  # Top 5로 증가
-            keyword = item.strip().replace('.', '').replace('1', '').replace('2', '').replace('3', '').replace('4', '').replace('5', '')
-            keyword = re.sub(r'[^a-zA-Z\s]', '', keyword).strip()  # 영어만 허용
+        lines = keywords_with_reasons_text.strip().split('\n')
+        
+        # 🚨 빈 라인을 제거하는 필터링을 먼저 적용합니다.
+        filtered_lines = [line.strip() for line in lines if line.strip()]
+
+        for i, line in enumerate(filtered_lines):
+            keyword_raw = ""
+            reason = "Reason not provided by AI."
             
-            if keyword and 2 <= len(keyword) <= 15 and keyword.replace(' ', '').isalpha():
+            # 1. 콜론으로 키워드와 이유 분리 시도
+            if ':' in line:
+                parts = line.split(':', 1)
+                keyword_raw = parts[0].strip()
+                reason = parts[1].strip()
+            else:
+                keyword_raw = line.strip()
+                reason = "Reason not provided by AI." # 이유가 없는 경우 기본 메시지
+
+            # 2. 'KeywordN: ', 'N. ' 등의 패턴을 더 강력하게 제거
+            keyword_final = re.sub(r'^(Keyword\d+|\d+\.)\s*:\s*', '', keyword_raw, flags=re.IGNORECASE).strip()
+
+            # 3. 문장 시작의 특수문자 제거
+            keyword_final = re.sub(r'^[^\w\s]*', '', keyword_final).strip()
+
+            # 4. 허용된 문자(영어, 숫자, 공백, 하이픈, 슬래시) 외 모두 제거
+            keyword_final = re.sub(r'[^a-zA-Z0-9\s\-/]', '', keyword_final).strip()
+
+            # 5. 마지막에 남을 수 있는 콜론/점 제거
+            keyword_final = re.sub(r'[:.]$', '', keyword_final).strip()
+
+            if not keyword_final:
+                logger.warning(f"⚠️ Global keyword parsing resulted in empty string: Original:'{line}', Candidate:'{keyword_raw}', Final:'{keyword_final}'")
+                continue 
+
+            if keyword_final and 2 <= len(keyword_final) <= 30: # 키워드 길이 제한 추가
                 keywords.append({
-                    "keyword": keyword,
-                    "count": 30 - (i * 5),  # 25, 20, 15, 10, 5 순으로
-                    "rank": i
+                    "keyword": keyword_final,
+                    "reason": reason,
+                    "count": 30 - (len(keywords) * 5),
+                    "rank": len(keywords) + 1
                 })
+                if len(keywords) >= 5: # 유효한 키워드가 5개 모이면 루프 종료
+                    break
+            else:
+                logger.warning(f"⚠️ Invalid global keyword parsed: Original:'{line}', Candidate:'{keyword_raw}', Final:'{keyword_final}' (Length/Condition failed)")
         
-        # 기본 영어 키워드 (빈 결과 시)
-        if not keywords:
+        # 유효한 키워드가 부족할 때만 샘플 키워드를 사용합니다.
+        if len(keywords) < 3:
+            logger.warning("⚠️ Global keyword extraction failed or insufficient, using default keywords.")
             keywords = [
-                {"keyword": "AI Technology", "count": 25, "rank": 1},
-                {"keyword": "Innovation", "count": 20, "rank": 2},
-                {"keyword": "Digital Transformation", "count": 15, "rank": 3},
-                {"keyword": "Machine Learning", "count": 10, "rank": 4},
-                {"keyword": "Cloud Computing", "count": 5, "rank": 5}
+                {"keyword": "AI Technology", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 25, "rank": 1},
+                {"keyword": "Innovation", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 20, "rank": 2},
+                {"keyword": "Digital Transformation", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 15, "rank": 3},
+                {"keyword": "Machine Learning", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 10, "rank": 4},
+                {"keyword": "Cloud Computing", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 5, "rank": 5}
             ]
-        
-        return keywords[:5]  # Top 5 반환
-        
+
     except Exception as e:
-        logger.error(f"❌ 해외 키워드 추출 오류: {e}")
+        logger.error(f"❌ 해외 키워드 추출 오류: {e}", exc_info=True)
         return [
-            {"keyword": "Technology", "count": 25, "rank": 1},
-            {"keyword": "Innovation", "count": 20, "rank": 2},
-            {"keyword": "Digital", "count": 15, "rank": 3}
+            {"keyword": "AI Tech", "reason": "시스템 오류로 인한 샘플 데이터", "count": 25, "rank": 1},
+            {"keyword": "Global Innovation", "reason": "시스템 오류로 인한 샘플 데이터", "count": 20, "rank": 2},
+            {"keyword": "Digital Future", "reason": "시스템 오류로 인한 샘플 데이터", "count": 15, "rank": 3}
         ]
+    
 
 # 3단계: 키워드를 메모리에 저장
 def store_keywords_in_memory(keywords: List[Dict[str, Any]], start_date: str, end_date: str):
@@ -854,7 +961,7 @@ async def search_global_keyword_articles(keyword: str, start_date: str, end_date
         
         logger.info(f"🌍 해외 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
         logger.info(f"🌍 파라미터: {params}")
-        response = requests.get(base_url, params=params, timeout=5)
+        response = requests.get(base_url, params=params, timeout=15) # 5초 -> 15초로 수정
         logger.info(f"🌍 응답 상태 코드: {response.status_code}")
         
         if response.status_code != 200:
@@ -943,7 +1050,7 @@ async def search_articles_by_keyword(keyword: str, start_date: str, end_date: st
         
         logger.info(f"🔍 키워드 '{keyword}' 기사 검색 중... URL: {base_url}")
         logger.info(f"🔍 파라미터: {params}")
-        response = requests.get(base_url, params=params, timeout=3)  # 3초로 단축
+        response = requests.get(base_url, params=params, timeout=15)  # 3초->15초 수정
         logger.info(f"🔍 응답 상태 코드: {response.status_code}")
         
         if response.status_code != 200:
@@ -1138,7 +1245,7 @@ async def search_global_keyword_articles(keyword: str, start_date: str = "2025-0
         }
         
         logger.info(f"🔍 해외 키워드 '{keyword}' 검색...")
-        response = requests.get(base_url, params=params, timeout=5)  # 5초 타임아웃
+        response = requests.get(base_url, params=params, timeout=15)  # 5->15초 타임아웃
         
         if response.status_code != 200:
             logger.error(f"❌ 해외 키워드 검색 API 호출 실패: {response.status_code}")
@@ -1313,7 +1420,7 @@ async def get_weekly_keywords(start_date: str = "2025-07-14", end_date: str = "2
 def deepsearch_api_request(url, params):
     """DeepSearch API 요청 (재시도/로깅 일관성)"""
     logger.info(f"DeepSearch API 요청: {url} | params: {params}")
-    response = requests.get(url, params=params, timeout=5)
+    response = requests.get(url, params=params, timeout=15) #5 -> 15초로 수정
     logger.info(f"DeepSearch 응답 코드: {response.status_code}")
     response.raise_for_status()
     return response.json()
@@ -1338,7 +1445,7 @@ async def collect_it_news_from_deepsearch(start_date: str, end_date: str):
                     "date_from": start_date,
                     "date_to": end_date
                 }
-                response = requests.get(base_url, params=params, timeout=5)
+                response = requests.get(base_url, params=params, timeout=15) # 5초 -> 15초로 수정
                 
                 if response.status_code != 200:
                     logger.warning(f"    ❌ '{keyword}' 검색 실패: {response.status_code}")
@@ -1743,10 +1850,9 @@ async def generate_contextual_answer(question, current_keywords):
         return f"죄송합니다. 답변 생성 중 오류가 발생했습니다: {str(e)}"
 
 @app.get("/weekly-keywords-by-date")
-async def get_weekly_keywords_by_date(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
+async def get_weekly_keywords_by_date(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"),
                                end_date: str = Query(..., description="종료일 (YYYY-MM-DD)"),
                                region: str = Query("domestic", description="지역 (domestic/global)")):
-    """날짜별 주간 키워드 반환 (프론트에서 요청하는 엔드포인트) - 실제 API 호출"""
     try:
         logger.info(f"📅 날짜별 키워드 요청: {start_date} ~ {end_date} ({region})")
         
@@ -1766,7 +1872,7 @@ async def get_weekly_keywords_by_date(start_date: str = Query(..., description="
         
         # 응답 형식을 프론트 요구사항에 맞게 조정
         response_data = {
-            "keywords": keywords,  # 키워드 객체 배열로 반환
+            "keywords": keywords,  # 이제 GPT 또는 샘플 키워드가 올바른 형식으로 반환됩니다.
             "date_range": f"{start_date} ~ {end_date}",
             "total_count": len(keywords),
             "tech_articles_count": tech_articles_count,
@@ -1778,7 +1884,7 @@ async def get_weekly_keywords_by_date(start_date: str = Query(..., description="
         logger.error(f"날짜별 키워드 요청 오류: {e}")
         return JSONResponse(status_code=500, content={
             "error": str(e),
-            "keywords": [],
+            "keywords": [], # 오류 시 빈 리스트
             "date_range": f"{start_date} ~ {end_date}",
             "region": region,
             "status": "error"
@@ -1859,26 +1965,79 @@ def get_weekly_keywords():
         return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
 
 def get_sample_keywords_by_date(start_date: str, end_date: str):
-    """날짜에 따른 샘플 키워드 반환"""
-    if "07-01" in start_date:  # 7월 1주차
-        return ["전기차", "배터리", "충전인프라"]
-    elif "07-06" in start_date:  # 7월 2주차  
-        return ["메타버스", "VR", "가상현실"]
-    elif "07-14" in start_date:  # 7월 3주차
-        return ["정보통신산업진흥원", "AI Youth Festa 2025", "인공지능"]
-    else:
-        return ["기술", "혁신", "디지털"]
+    """날짜에 따른 샘플 키워드 반환 (reason 포함)"""
+    # 각 키워드에 임시 reason과 count를 부여합니다.
+    default_reason = "API 호출 실패로 인한 샘플 데이터"
 
-def get_sample_global_keywords_by_date(start_date: str, end_date: str):
-    """날짜에 따른 해외 샘플 키워드 반환"""
     if "07-01" in start_date:  # 7월 1주차
-        return ["Tesla", "Apple", "Microsoft"]
+        return [
+            {"keyword": "전기차", "count": 250, "rank": 1, "reason": "최근 전기차 판매 증가 및 정책 지원"},
+            {"keyword": "배터리", "count": 230, "rank": 2, "reason": "차세대 배터리 기술 개발 경쟁 심화"},
+            {"keyword": "충전인프라", "count": 210, "rank": 3, "reason": "전기차 충전 인프라 확충 요구 증대"},
+            {"keyword": "자율주행", "count": 190, "rank": 4, "reason": "자율주행 기술 상용화 논의 활발"},
+            {"keyword": "테슬라", "count": 170, "rank": 5, "reason": "테슬라 신모델 출시 및 시장 영향력"},
+        ]
     elif "07-06" in start_date:  # 7월 2주차  
-        return ["ChatGPT", "OpenAI", "Meta"]
+        return [
+            {"keyword": "메타버스", "count": 250, "rank": 1, "reason": "가상현실 기술의 발전과 엔터테인먼트 산업 적용"},
+            {"keyword": "VR", "count": 230, "rank": 2, "reason": "VR 기기 보급 확대 및 콘텐츠 다양화"},
+            {"keyword": "가상현실", "count": 210, "rank": 3, "reason": "가상현실 기술의 산업 활용 분야 확대"},
+            {"keyword": "AR", "count": 190, "rank": 4, "reason": "증강현실 기술의 일상생활 적용"},
+            {"keyword": "NFT", "count": 170, "rank": 5, "reason": "디지털 자산 시장의 새로운 트렌드"},
+        ]
     elif "07-14" in start_date:  # 7월 3주차
-        return ["Google", "NVIDIA", "Amazon"]
+        return [
+            {"keyword": "인공지능", "count": 250, "rank": 1, "reason": "AI 기술의 범용화 및 다양한 산업 적용"},
+            {"keyword": "AI", "count": 230, "rank": 2, "reason": "AI 모델 고도화 및 학습 데이터 중요성"},
+            {"keyword": "ChatGPT", "count": 210, "rank": 3, "reason": "대화형 AI의 발전과 서비스 확산"},
+            {"keyword": "머신러닝", "count": 190, "rank": 4, "reason": "데이터 기반의 예측 및 분석 능력 향상"},
+            {"keyword": "딥러닝", "count": 170, "rank": 5, "reason": "복잡한 문제 해결을 위한 딥러닝 알고리즘 활용"},
+        ]
     else:
-        return ["Tech", "Innovation", "AI"]
+        return [
+            {"keyword": "기술", "count": 250, "rank": 1, "reason": default_reason},
+            {"keyword": "혁신", "count": 230, "rank": 2, "reason": default_reason},
+            {"keyword": "디지털", "count": 210, "rank": 3, "reason": default_reason},
+            {"keyword": "정보", "count": 190, "rank": 4, "reason": default_reason},
+            {"keyword": "시스템", "count": 170, "rank": 5, "reason": default_reason}
+        ]
+
+def get_global_sample_keywords_by_date(start_date: str, end_date: str):
+    """해외 날짜에 따른 샘플 키워드 반환 (reason 포함)"""
+    default_reason = "API 호출 실패로 인한 샘플 데이터"
+
+    if "07-01" in start_date:  # 7월 1주차
+        return [
+            {"keyword": "Tesla", "count": 250, "rank": 1, "reason": "EV market leadership and battery innovation"},
+            {"keyword": "Apple", "count": 230, "rank": 2, "reason": "New product launches and service expansion"},
+            {"keyword": "Microsoft", "count": 210, "rank": 3, "reason": "Cloud computing growth and AI integration"},
+            {"keyword": "Google", "count": 190, "rank": 4, "reason": "AI research and search engine dominance"},
+            {"keyword": "Amazon", "count": 170, "rank": 5, "reason": "E-commerce expansion and cloud infrastructure"},
+        ]
+    elif "07-06" in start_date:  # 7월 2주차  
+        return [
+            {"keyword": "ChatGPT", "count": 250, "rank": 1, "reason": "Generative AI advancements and widespread adoption"},
+            {"keyword": "OpenAI", "count": 230, "rank": 2, "reason": "AI model development and research breakthroughs"},
+            {"keyword": "Meta", "count": 210, "rank": 3, "reason": "Metaverse vision and VR/AR hardware initiatives"},
+            {"keyword": "Twitter", "count": 190, "rank": 4, "reason": "Platform changes and social media trends"},
+            {"keyword": "TikTok", "count": 170, "rank": 5, "reason": "Short-form video dominance and global influence"},
+        ]
+    elif "07-14" in start_date:  # 7월 3주차
+        return [
+            {"keyword": "NVIDIA", "count": 250, "rank": 1, "reason": "AI chip leadership and strong demand for GPUs"},
+            {"keyword": "AMD", "count": 230, "rank": 2, "reason": "Server CPU market growth and competitive innovation"},
+            {"keyword": "Intel", "count": 210, "rank": 3, "reason": "Foundry expansion and new processor architectures"},
+            {"keyword": "Samsung", "count": 190, "rank": 4, "reason": "Memory chip technology and smartphone market"},
+            {"keyword": "TSMC", "count": 170, "rank": 5, "reason": "Advanced semiconductor manufacturing and global supply chain"},
+        ]
+    else:
+        return [
+            {"keyword": "Tech", "count": 250, "rank": 1, "reason": default_reason},
+            {"keyword": "Innovation", "count": 230, "rank": 2, "reason": default_reason},
+            {"keyword": "AI", "count": 210, "rank": 3, "reason": default_reason},
+            {"keyword": "Global Market", "count": 190, "rank": 4, "reason": default_reason},
+            {"keyword": "Semiconductor", "count": 170, "rank": 5, "reason": default_reason}
+        ]
 
 
 @app.post("/industry-analysis")
