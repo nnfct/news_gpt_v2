@@ -587,6 +587,10 @@
                     <span>🔍</span>
                     <span>상세 분석</span>
                 </div>
+                <div class="sidebar-item" onclick="openTrending()">
+                    <span>🔍</span>
+                    <span>키워드 트렌딩</span>
+                </div>
                 <div class="sidebar-item" onclick="showInsights()">
                     <span>💡</span>
                     <span>AI 인사이트</span>
@@ -1108,6 +1112,10 @@
         // AI 인사이트 보기
         function showInsights() {
             window.location.href = '/analysis.html';
+        }
+
+        function openTrending() {
+            window.location.href = '/trending.html';
         }
 
         // 검색 기능

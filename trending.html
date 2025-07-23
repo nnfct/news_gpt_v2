@@ -1,0 +1,567 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>실시간 키워드 트렌드</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .collection-time {
+      text-align: center;
+      color: #888;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    select {
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      background: white;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    
+    select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .legend {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    .shared-dot { background-color: #007bff; }
+    .unique-dot { background-color: #dc3545; }
+
+    .keywords-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    button {
+      margin: 6px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 25px;
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .shared {
+      background: linear-gradient(45deg, #007bff, #0056b3);
+    }
+    
+    .unique {
+      background: linear-gradient(45deg, #dc3545, #c82333);
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #output {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 15px;
+      border: 1px solid #eee;
+    }
+    
+    .result-title {
+      font-size: 1.5rem;
+      color: #333;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .summary {
+      font-weight: bold;
+      font-size: 1.1rem;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .detail {
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .gpt-note {
+      font-size: 0.85rem;
+      color: #888;
+      font-style: italic;
+      margin-bottom: 1.5rem;
+      text-align: right;
+    }
+    
+    .news-section {
+      margin-top: 2rem;
+    }
+    
+    .news-title {
+      font-size: 1.3rem;
+      color: #333;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .headline {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+    }
+    
+    .headline:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .headline a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    
+    .headline a:hover {
+      color: #667eea;
+    }
+    
+    .headline .published {
+      color: #888;
+      font-size: 0.9rem;
+    }
+    
+    .error {
+      color: #dc3545;
+      background: rgba(220, 53, 69, 0.1);
+      padding: 1rem;
+      border-radius: 10px;
+      border-left: 4px solid #dc3545;
+    }
+    
+    .status-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .status-success {
+      background: #28a745;
+      color: white;
+    }
+    
+    .status-error {
+      background: #dc3545;
+      color: white;
+    }
+    
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .legend {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      button {
+        margin: 4px;
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+    }
+  </style>
+<script type="text/javascript" nonce="48f404653a384b58a621ca4dd2c" src="//local.adguard.org?ts=1753228726556&amp;type=content-script&amp;dmn=elixirrkc-my.sharepoint.com&amp;url=https%3A%2F%2Felixirrkc-my.sharepoint.com%2Fpersonal%2F7ai034_aischool_msai_kr%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3D632dadc1-7d48-4403-9091-119a62e6e083%26Translate%3Dfalse%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=0&amp;stealth=1&amp;st-dnt"></script>
+<script type="text/javascript" nonce="48f404653a384b58a621ca4dd2c" src="//local.adguard.org?ts=1753228726556&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
+
+<body>
+  <div class="container">
+    <h1>지금 세계는 <b>이걸 검색 중!</b></h1>
+    <p class="subtitle">우리 뉴스에는 없던 이야기, 다른 나라 사람들은 이미 보고 있었어요.</p>
+    <div class="collection-time" id="collection-time">📅 키워드 수집 시간: -</div>
+
+    <div class="controls">
+      <label for="country-select">국가 선택: </label>
+      <select id="country-select">
+        <option value="">로딩 중...</option>
+      </select>
+      <button onclick="refreshData()" style="background: #28a745; margin-left: auto;">🔄 새로고침</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot shared-dot"></div>
+        <span><strong>공통 키워드</strong> - 여러 나라에서 동시에 등장한 키워드</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot unique-dot"></div>
+        <span><strong>고유 키워드</strong> - 해당 국가에서만 등장한 키워드</span>
+      </div>
+    </div>
+
+    <div class="keywords-title">🔍 TOP 10 키워드</div>
+    <div id="keyword-buttons"></div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    const countries = ['KR', 'US', 'MX', 'GB', 'IN', 'ZA', 'AU'];
+    const countryNames = {
+      'KR': '한국',
+      'US': '미국', 
+      'MX': '멕시코',
+      'GB': '영국',
+      'IN': '인도',
+      'ZA': '남아공',
+      'AU': '호주'
+    };
+    
+    let groupedKeywords = {};
+    let isLoading = false;
+
+    // API URL 설정 - 환경에 따라 자동 감지
+    const API_BASE = window.location.origin;
+    
+    function showStatus(message, isError = false) {
+      const existing = document.querySelector('.status-indicator');
+      if (existing) existing.remove();
+      
+      const status = document.createElement('div');
+      status.className = `status-indicator ${isError ? 'status-error' : 'status-success'}`;
+      status.textContent = message;
+      document.body.appendChild(status);
+      
+      setTimeout(() => {
+        if (status.parentNode) {
+          status.remove();
+        }
+      }, 3000);
+    }
+
+    function updateCollectionTime() {
+      const now = new Date();
+      const timeString = now.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      document.getElementById('collection-time').textContent = `📅 키워드 수집 시간: ${timeString}`;
+    }
+
+    async function fetchKeywords() {
+      const container = document.getElementById('keyword-buttons');
+      const select = document.getElementById('country-select');
+      
+      container.innerHTML = '<div class="loading"><div class="spinner"></div>키워드 로딩 중...</div>';
+      select.innerHTML = '<option value="">로딩 중...</option>';
+      
+      try {
+        const queryParams = countries.map(c => `country_codes=${c}`).join("&");
+        console.log(`API 호출: ${API_BASE}/api/trending?${queryParams}`);
+        const res = await fetch(`${API_BASE}/api/trending?${queryParams}`);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const json = await res.json();
+        
+        if (json.status !== 'success' || !json.data) {
+          throw new Error('Invalid response format');
+        }
+        
+        groupedKeywords = {};
+        json.data.forEach(item => {
+          if (!groupedKeywords[item.country]) {
+            groupedKeywords[item.country] = [];
+          }
+          groupedKeywords[item.country].push({ 
+            keyword: item.keyword, 
+            shared: item.shared 
+          });
+        });
+        
+        populateCountrySelect();
+        renderKeywords('KR');
+        updateCollectionTime();
+        showStatus('키워드 로딩 완료!');
+        
+      } catch (error) {
+        console.error("키워드 가져오기 실패:", error);
+        container.innerHTML = `<div class="error">❌ 키워드를 불러오는데 실패했습니다: ${error.message}</div>`;
+        showStatus('키워드 로딩 실패', true);
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    function populateCountrySelect() {
+      const select = document.getElementById('country-select');
+      select.innerHTML = '';
+      
+      countries.forEach(country => {
+        if (groupedKeywords[country] && groupedKeywords[country].length > 0) {
+          const option = document.createElement('option');
+          option.value = country;
+          option.textContent = countryNames[country] || country;
+          select.appendChild(option);
+        }
+      });
+      
+      select.value = 'KR';
+      select.addEventListener('change', () => {
+        renderKeywords(select.value);
+        document.getElementById('output').innerHTML = '';
+      });
+    }
+
+    function renderKeywords(country) {
+      const container = document.getElementById('keyword-buttons');
+      const group = groupedKeywords[country] || [];
+      
+      if (group.length === 0) {
+        container.innerHTML = '<div class="error">해당 국가의 키워드가 없습니다.</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      group.forEach(({ keyword, shared }) => {
+        const btn = document.createElement('button');
+        btn.innerText = keyword;
+        btn.className = shared ? 'shared' : 'unique';
+        btn.onclick = () => handleKeywordClick(country, keyword);
+        container.appendChild(btn);
+      });
+    }
+
+    async function handleKeywordClick(country, keyword) {
+      const outputDiv = document.getElementById("output");
+      outputDiv.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          뉴스 및 GPT 해설 로딩 중... (키워드: ${keyword})
+        </div>
+      `;
+
+      try {
+        // 뉴스 가져오기
+        const newsRes = await fetch(`${API_BASE}/api/news?country=${country}&keyword=${encodeURIComponent(keyword)}`);
+        if (!newsRes.ok) {
+          throw new Error(`News API error: ${newsRes.status}`);
+        }
+        
+        const newsJson = await newsRes.json();
+        const headlines = newsJson.news.map(n => n.title);
+
+        // GPT 해설 요청
+        const gptRes = await fetch(`${API_BASE}/api/gpt-commentary`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({ 
+            country: country, 
+            keyword: keyword, 
+            headlines: headlines 
+          })
+        });
+        
+        if (!gptRes.ok) {
+          throw new Error(`GPT API error: ${gptRes.status}`);
+        }
+        
+        const gptJson = await gptRes.json();
+
+        // 응답 파싱
+        const parts = gptJson.comment.split("\n\n");
+        const summary = parts[0] || "";
+        const detail = parts.slice(1).join("\n\n") || "";
+
+        // 결과 표시
+        outputDiv.innerHTML = `
+          <div class="result-title">🧠 사람들은 왜 이것을 검색했을까? (${keyword})</div>
+          <div class="summary">${summary}</div>
+          <div class="detail">${detail}</div>
+          <div class="gpt-note">※ 이 해설은 GPT-4o를 통해 자동 생성되었습니다.</div>
+          <div class="news-section">
+            <div class="news-title">📰 관련 뉴스 (최신 ${newsJson.news.length}개)</div>
+            <div id="news-container"></div>
+          </div>
+        `;
+
+        const newsContainer = document.getElementById('news-container');
+        
+        if (newsJson.news.length === 0) {
+          newsContainer.innerHTML = '<div class="error">관련 뉴스를 찾을 수 없습니다.</div>';
+        } else {
+          newsJson.news.forEach(article => {
+            const div = document.createElement('div');
+            div.className = "headline";
+            div.innerHTML = `
+              <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+              <div class="published">${article.published}</div>
+            `;
+            newsContainer.appendChild(div);
+          });
+        }
+        
+        showStatus('분석 완료!');
+
+      } catch (error) {
+        console.error("에러:", error);
+        outputDiv.innerHTML = `<div class="error">❌ 데이터를 불러오는 중 오류가 발생했습니다: ${error.message}</div>`;
+        showStatus('분석 실패', true);
+      }
+    }
+
+    function refreshData() {
+      document.getElementById('output').innerHTML = '';
+      fetchKeywords();
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("페이지 로드 완료, 키워드 가져오기 시작...");
+      fetchKeywords();
+    });
+
+    // 에러 핸들링
+    window.addEventListener('error', (event) => {
+      console.error('JavaScript 에러:', event.error);
+      showStatus('JavaScript 오류 발생', true);
+    });
+
+    // 네트워크 상태 체크
+    window.addEventListener('online', () => showStatus('네트워크 연결됨'));
+    window.addEventListener('offline', () => showStatus('네트워크 연결 끊김', true));
+  </script>
+</body>
+</html>
