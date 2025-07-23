@@ -320,38 +320,6 @@ async def serve_admin():
     """관리자 페이지 제공"""
     return FileResponse("admin.html")
 
-# 1단계: Tech 기사에서 키워드 추출 (프론트와 연동)
-@app.get("/api/keywords")
-async def get_weekly_keywords(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
-                            end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
-    """새로운 워크플로우: Tech 기사 → GPT 키워드 추출 → 키워드별 기사 검색 (Azure AI Search 제거)"""
-    try:
-        logger.info(f"🚀 새로운 워크플로우 시작 - 기간: {start_date} ~ {end_date}")
-        
-        # 1단계: DeepSearch Tech에서 기사 수집 (날짜 포함)
-        tech_articles = await fetch_tech_articles(start_date, end_date)
-        if not tech_articles:
-            return {"error": "Tech 기사를 찾을 수 없습니다", "keywords": [], "articles_count": 0}
-        
-        # 2단계: GPT로 키워드 추출 (Azure AI Search 건너뛰기)
-        extracted_keywords = await extract_keywords_with_gpt(tech_articles)
-        if not extracted_keywords:
-            return {"error": "키워드 추출 실패", "keywords": [], "articles_count": len(tech_articles)}
-        
-        # 3단계: 추출된 키워드들을 메모리에 저장 (관련 기사 검색용)
-        store_keywords_in_memory(extracted_keywords, start_date, end_date)
-        
-        return {
-            "keywords": extracted_keywords,
-            "date_range": f"{start_date} ~ {end_date}",
-            "tech_articles_count": len(tech_articles),
-            "workflow": "Tech기사 → GPT키워드추출 (Azure AI Search 제거)",
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"워크플로우 오류: {e}", exc_info=True)
-        return {"error": str(e), "keywords": [], "articles_count": 0}
 
 # 4단계: 키워드 클릭시 관련 기사 노출
 @app.get("/api/keyword-articles/{keyword}")
@@ -382,57 +350,6 @@ async def get_keyword_articles(keyword: str,
         logger.error(f"키워드 '{keyword}' 기사 검색 오류: {e}", exc_info=True)
         return {"error": str(e), "keyword": keyword, "articles": [], "total_count": 0}
 
-# 5단계: 기사 클릭시 원본 URL로 리다이렉트
-@app.get("/api/redirect/{article_id}")
-async def redirect_to_original(article_id: str):
-    """기사 클릭시 원본 URL로 리다이렉트"""
-    try:
-        # 메모리나 캐시에서 article_id로 원본 URL 찾기
-        original_url = get_original_url_by_id(article_id)
-        
-        if original_url:
-            logger.info(f"🔗 기사 리다이렉트: {article_id} → {original_url}")
-            return RedirectResponse(url=original_url, status_code=302)
-        else:
-            raise HTTPException(status_code=404, detail=f"기사 ID '{article_id}'를 찾을 수 없습니다")
-            
-    except Exception as e:
-        logger.error(f"리다이렉트 오류: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-# 해외뉴스용 키워드 추출 엔드포인트
-@app.get("/api/global-keywords")
-async def get_global_weekly_keywords(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
-                                   end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
-    """해외뉴스 워크플로우: Global Tech 기사 → GPT 키워드 추출"""
-    try:
-        logger.info(f"🌍 해외뉴스 워크플로우 시작 - 기간: {start_date} ~ {end_date}")
-        
-        # 1단계: DeepSearch Global Tech에서 기사 수집
-        global_articles = await fetch_global_tech_articles(start_date, end_date)
-        if not global_articles:
-            return {"error": "해외 Tech 기사를 찾을 수 없습니다", "keywords": [], "articles_count": 0}
-        
-        # 2단계: GPT로 영어 키워드 추출
-        extracted_keywords = await extract_global_keywords_with_gpt(global_articles)
-        if not extracted_keywords:
-            return {"error": "해외 키워드 추출 실패", "keywords": [], "articles_count": len(global_articles)}
-        
-        # 3단계: 추출된 키워드들을 메모리에 저장
-        store_keywords_in_memory(extracted_keywords, start_date, end_date)
-        
-        return {
-            "keywords": extracted_keywords,
-            "date_range": f"{start_date} ~ {end_date}",
-            "tech_articles_count": len(global_articles),
-            "workflow": "Global Tech기사 → GPT 영어키워드추출",
-            "region": "global",
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"해외뉴스 워크플로우 오류: {e}", exc_info=True)
-        return {"error": str(e), "keywords": [], "articles_count": 0}
 
 # 기존 호환성을 위한 엔드포인트 (deprecated)
 @app.get("/keyword-articles")
