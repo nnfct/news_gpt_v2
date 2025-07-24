@@ -760,7 +760,7 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
         top_articles = articles[:10]
         titles_text = "\n".join([f"- {article['title']}" for article in top_articles])
 
-        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하고, 각 키워드를 선정한 간략한 이유를 함께 제공하세요.
+        prompt = f"""다음 IT기술 뉴스 제목에서 핵심 키워드 5개를 추출하고, 각 키워드가 **현재 뉴스에서 주목받는 구체적인 배경이나 동향을 포함하여 선정 이유를 상세히 설명**하세요.
 
 뉴스 제목:
 {titles_text}
@@ -893,6 +893,7 @@ async def extract_global_keywords_with_gpt(articles: List[Dict[str, Any]]) -> Li
 
         # GPT 프롬프트는 그대로 유지
         prompt = f"""Extract 5 key English tech keywords from these global news titles:
+For each keyword, provide a **detailed reason explaining its current prominence or relevant trend in the news.**
 
 News Titles:
 {titles_text}
@@ -1693,15 +1694,15 @@ async def chat(request: Request):
         logger.error(f"/chat 오류: {e}", exc_info=True)
         return JSONResponse(content={"answer": f"답변 생성 중 오류가 발생했습니다: {str(e)}"}, status_code=500)
 
-def extract_keyword_and_industry(question):
-    """질문에서 키워드와 산업 분류 추출"""
+def extract_keyword_and_industry(question: str) -> Dict[str, Any]:
+    """질문에서 키워드와 산업 분류, 그리고 간단한 키워드 선정 이유를 추출"""
     
     # 산업 관련 키워드 매핑
     industry_keywords = {
         "사회": ["사회", "교육", "일자리", "복지", "정책", "제도", "시민", "공공"],
         "경제": ["경제", "시장", "투자", "금융", "주가", "비용", "수익", "매출", "기업"],
-        "IT/과학": ["기술", "개발", "혁신", "연구", "과학", "IT", "소프트웨어", "하드웨어", "플랫폼"],
-        "생활/문화": ["생활", "문화", "라이프스타일", "소비", "트렌드", "일상", "여가", "엔터테인먼트"],
+        "IT/과학": ["기술", "개발", "혁신", "연구", "과학", "IT", "소프트웨어", "하드웨어", "플랫폼", "인공지능", "반도체", "클라우드", "메타버스", "블록체인", "AI", "ChatGPT", "머신러닝", "딥러닝", "로봇", "데이터 과학"], # 예시 키워드 추가
+        "생활/문화": ["생활", "문화", "라이프스타일", "소비", "트렌드", "일상", "여가", "엔터테인먼트", "영화", "음악", "게임"],
         "세계": ["글로벌", "국제", "세계", "해외", "수출", "협력", "경쟁", "표준"]
     }
     
@@ -1715,37 +1716,71 @@ def extract_keyword_and_industry(question):
             break
     
     # 키워드 추출 (간단한 방식)
-    # 현재 주간 키워드와 매치되는 것 찾기
     current_keywords = get_current_weekly_keywords()
     detected_keyword = None
-    for keyword in current_keywords:
-        if keyword in question or keyword.lower() in question_lower:
-            detected_keyword = keyword
-            break
     
+    # NOTE: get_current_weekly_keywords()가 현재는 reason을 포함하지 않으므로,
+    # 여기서는 detected_keyword_reason을 질문에서 간단히 추론하거나 기본값으로 설정합니다.
+    detected_keyword_reason = None
+
+    for keyword in current_keywords:
+        # 질문 내에서 키워드를 찾고, 그 주변에서 이유를 추론 시도
+        if keyword in question:
+            detected_keyword = keyword
+            # 간단한 이유 추론 로직 (매우 기본적인 패턴 매칭)
+            # 예: "최근 [키워드] 때문에..."
+            # 예: "[키워드]의 발전에 따라..."
+            match_reason = re.search(f"(최근|새로운|발전|증가|하락|인해|따라|관련하여|대해)\s*(?:{re.escape(keyword)})\s*(.*)", question)
+            if match_reason:
+                # 첫 번째 그룹은 맥락 키워드, 두 번째 그룹은 키워드 뒤의 설명
+                context_word = match_reason.group(1).strip()
+                trailing_text = match_reason.group(2).strip()
+                if trailing_text:
+                    detected_keyword_reason = f"{context_word} {trailing_text}"[:50].strip() # 50자 제한
+                else:
+                    detected_keyword_reason = f"{context_word} 언급"
+            else:
+                detected_keyword_reason = "질문 내 명시된 이유 없음"
+            break
+        elif keyword.lower() in question_lower:
+            detected_keyword = keyword
+            detected_keyword_reason = "질문 내 간접적으로 언급됨"
+            break
+
     # 질문 유형 분류
-    if detected_industry and detected_keyword:
-        question_type = "industry_analysis"
-    elif "vs" in question_lower or "비교" in question_lower or "차이" in question_lower:
+    question_type = "general" # 기본값
+
+    # 'vs', '비교', '차이'가 있다면 comparison으로 설정하고 키워드 추출
+    comparison_keywords = []
+    if "vs" in question_lower or "비교" in question_lower or "차이" in question_lower:
         question_type = "comparison"
-        # 비교 대상 키워드들 추출
+        # 현재 주간 키워드 중 질문에 포함된 모든 키워드를 비교 대상으로 추가
         comparison_keywords = [kw for kw in current_keywords if kw.lower() in question_lower]
-        return {
-            "type": question_type,
-            "keywords": comparison_keywords,
-            "industry": detected_industry,
-            "keyword": detected_keyword
-        }
+        if not comparison_keywords and detected_keyword: # 단일 키워드만 감지됐지만 비교 질문이라면 그 키워드를 포함
+            comparison_keywords = [detected_keyword]
+        
+        # 만약 비교 대상 키워드가 여전히 없다면, 질문에서 직접적인 단어 추출 시도 (예: "A와 B 비교")
+        if not comparison_keywords:
+            match = re.search(r'(.+?)\s*(?:와|와도)\s*(.+?)\s*비교', question_lower)
+            if match:
+                comparison_keywords = [match.group(1).strip(), match.group(2).strip()]
+            else: # 아주 일반적인 비교 요청일 경우 (예: "두 기술 비교")
+                comparison_keywords = current_keywords[:2] # 임시로 주간 키워드 중 2개 사용
+
+    elif detected_industry and detected_keyword:
+        question_type = "industry_analysis"
     elif detected_keyword:
         question_type = "keyword_trend"
-    else:
-        question_type = "general"
-    
+    # else: question_type은 "general"로 유지
+
     return {
         "type": question_type,
         "keyword": detected_keyword,
-        "industry": detected_industry or "사회"  # 기본값
+        "keywords": comparison_keywords, # comparison_keywords 리스트를 반환
+        "industry": detected_industry or "사회",  # 기본값
+        "reason": detected_keyword_reason # 추출 또는 추론된 reason 반환
     }
+
 
 def get_current_weekly_keywords():
     """현재 주간 키워드 가져오기"""
@@ -1771,21 +1806,29 @@ async def generate_industry_based_answer(question, keyword, industry, current_ke
         context_desc = industry_context.get(industry, f"'{industry}' 관점") # 리스트에 없는 관점일 경우 일반화
 
         # 프롬프트 조정: 'industry'를 '분석 관점'으로 명확히 지시
-        reason_text = f"이 키워드는 '{reason}'이라는 이유로 주목받고 있습니다." if reason else "" # ✅ 이 줄 추가
+        reason_text = f"이 키워드는 '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다." if reason else "" # '구체적인' 강조 추가
+
         prompt = f"""
-        다음은 사용자의 질문과 분석 대상 키워드, 그리고 분석 관점 직무/산업에 대한 정보입니다.
-        이 정보를 바탕으로 '{industry}' 관점에서 '{keyword}'에 대해 구체적이고 전문적인 분석을 제공해주세요.
-        {reason_text} # ✅ 이유 정보 포함
-        특히 '{industry}' 직무/산업과 '{keyword}' 키워드의 연관성을 중점적으로 다루고, 현재 주간 핵심 키워드({', '.join(current_keywords)})도 고려하여 답변을 구성해주세요.
+        당신은 전문적인 AI 뉴스 분석가입니다. 사용자의 질문과 키워드, 그리고 특정 직무/산업 관점에서 심층적인 분석을 제공해야 합니다.
+        **특히, 키워드가 선정된 이유를 명확히 이해하고, 이 맥락을 바탕으로 분석의 깊이를 더해주세요.**
+        
+        **분석 대상 정보:**
+        - 질문: {question}
+        - 분석 대상 키워드: {keyword}
+        - 키워드 선정 이유: {reason_text if reason else "제공되지 않음"} # 이유를 명확히 제시
+        - 분석 관점 직무/산업: {industry} ({context_desc})
+        - 현재 주간 핵심 키워드: {', '.join(current_keywords)}
 
-        질문: {question}
-        분석 대상 키워드: {keyword}
-        분석 관점 직무/산업: {industry} ({context_desc})
+        **분석 지침:**
+        1. **'{industry}' 직무/산업과 '{keyword}' 키워드의 긴밀한 연관성**을 중심으로 설명하십시오.
+        2. **'{reason}'을(를) 핵심적인 배경으로 삼아, 현재 상황과 주요 동향을 깊이 있게 분석**하십시오. # 이유를 답변에 통합하도록 명시
+        3. 현재 주간 핵심 키워드를({', '.join(current_keywords)})도 고려하여 답변의 시의성을 높이십시오.
+        4. 간결하지만 전문적인 어조를 사용하고, 독자가 쉽게 이해할 수 있도록 명확하게 서술하십시오.
 
-        답변 형식:
-        · '{industry}' 관점에서 본 '{keyword}'의 현재 상황
-        · 주요 동향과 변화
-        · 전망과 시사점
+        **답변 형식:**
+        · '{industry}' 관점에서 본 '{keyword}'의 현재 상황 (선정 이유 '{reason}'과 연계하여 설명)
+        · 주요 동향과 변화 (선정 이유가 현재 변화에 어떻게 기여하는지 포함)
+        · 전망과 시사점 (향후 '{reason}'이 '{keyword}'에 미칠 영향 예측)
 
         마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
         """
@@ -1847,20 +1890,34 @@ async def generate_comparison_answer(question, keywords, perspective_role: Optio
         if perspective_role:
             role_context = f"'{perspective_role}'의 관점에서 "
 
-        reason_text = f"주요 키워드 중 하나인 '{keywords[0]}'은(는) '{reason}'이라는 이유로 선정되었습니다." if reason and keywords else "" # ✅ 이 줄 추가
+        # reason_text 변수를 더 명확하고 강조된 형태로 변경
+        reason_text = ""
+        if reason and keywords:
+            # 첫 번째 키워드에 대한 이유라고 가정하고 명확히 언급
+            reason_text = f"참고: 비교 대상 키워드 중 '{keywords[0]}'은(는) '{reason}'이라는 구체적인 이유로 선정되었습니다. 이 맥락을 비교 분석에 활용해주세요."
+
         prompt = f"""
-        질문: {question}
-        비교 대상: {', '.join(keywords)}
-        분석 관점: {role_context}
-        {reason_text} # ✅ 이유 정보 포함
+        당신은 전문적인 기술/산업 분석가입니다. 주어진 키워드들을 특정 직무/산업 관점에서 비교 분석해야 합니다.
+        **특히, 키워드가 선정된 이유가 있다면 그 맥락을 깊이 이해하고 비교 분석에 적극적으로 반영하여 답변의 깊이를 더해주세요.**
 
-        {role_context}'{', '.join(keywords)}' 키워드들을 비교 분석해주세요.
+        **분석 대상 정보:**
+        - 질문: {question}
+        - 비교 대상 키워드: {', '.join(keywords)}
+        - 분석 관점 직무/산업: {role_context.strip()}
+        {reason_text} # 이유 정보를 명확히 포함
 
-        비교 분석 내용:
-        · 각 키워드의 현재 상황과 특징
-        · 공통점과 차이점
-        · 상호 관계와 영향
-        · 각각의 전망과 중요성
+        **분석 지침:**
+        1. 각 키워드의 현재 상황과 특징을 설명하되, **제공된 선정 이유(`{reason}`)**가 있다면 해당 키워드의 중요성을 그 이유와 연관 지어 설명하십시오.
+        2. 키워드들의 **공통점과 차이점을 직무/산업 관점(`{perspective_role}` 관점)**에서 심층적으로 분석하십시오.
+        3. 키워드들 간의 **상호 관계 및 서로에게 미치는 영향**을 기술하십시오.
+        4. 각각의 키워드가 가진 **미래 전망과 현재 중요성**을 제시하되, 선정 이유가 미래 전망에 어떤 시사점을 주는지 고려하십시오.
+        5. 객관적이고 균형잡힌 시각으로 분석하고, 전문적이면서도 이해하기 쉬운 언어를 사용하십시오.
+
+        **답변 형식:**
+        · 각 키워드의 현재 상황과 특징 (선정 이유와 연계)
+        · 공통점 및 차이점 (직무/산업 관점)
+        · 상호 관계 및 영향
+        · 미래 전망 및 중요성
 
         마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
         객관적이고 균형잡힌 시각으로 비교해주세요.
@@ -2176,7 +2233,7 @@ async def get_industry_analysis(request: IndustryKeywordAnalysisRequest): # 파�
         
 @app.post("/chat")
 async def chat(request: Request):
-    """개선된 챗봇 - 주간요약 키워드 클릭 오류 해결"""
+    """산업별 키워드 분석 기반 동적 챗봇 (키워드 맥락 이해 강화)"""
     try:
         data = await request.json()
         question = data.get("question") or data.get("message") or ""
@@ -2184,31 +2241,43 @@ async def chat(request: Request):
         if not question:
             return JSONResponse(content={"answer": "질문을 입력해주세요."})
         
-        # 안전한 답변 생성 (오류 방지)
-        try:
-            completion = openai_client.chat.completions.create(
-                model=AZURE_OPENAI_DEPLOYMENT,
-                messages=[
-                    {"role": "system", "content": "당신은 IT/기술 뉴스 분석 전문가입니다. 사용자의 질문에 간결하고 정확하게 답변해주세요."},
-                    {"role": "user", "content": question}
-                ],
-                max_tokens=16384,
-                temperature=0.3
+        # 1. 질문에서 키워드, 산업 분류, 그리고 'reason' 추출
+        # NOTE: extract_keyword_and_industry 함수가 async가 아니므로 await를 붙이지 않습니다.
+        keyword_info = extract_keyword_and_industry(question)
+        
+        # 2. 현재 주간 키워드 가져오기
+        current_weekly_keywords = get_current_weekly_keywords() 
+
+        answer = "답변을 생성할 수 없습니다." # 기본값 설정
+
+        # 3. 질문 유형에 따른 동적 응답 (reason 전달)
+        if keyword_info["type"] == "industry_analysis":
+            answer = await generate_industry_based_answer( 
+                question,
+                keyword_info["keyword"],
+                keyword_info["industry"],
+                current_weekly_keywords, # 주간 키워드 리스트 전달
+                reason=keyword_info["reason"] # 추출된 reason 전달
             )
-            
-            answer = completion.choices[0].message.content or "답변을 생성할 수 없습니다."
-            
-        except Exception as api_error:
-            logger.error(f"OpenAI API 오류: {api_error}")
-            answer = "현재 AI 서비스에 일시적인 문제가 있습니다. 잠시 후 다시 시도해주세요."
-        
+        elif keyword_info["type"] == "keyword_trend":
+            # 트렌드 분석은 아직 reason 파라미터가 없으므로 전달 안 함 (필요시 추가 고려)
+            answer = await generate_keyword_trend_answer(question, keyword_info["keyword"])
+        elif keyword_info["type"] == "comparison":
+            answer = await generate_comparison_answer( 
+                question,
+                keyword_info["keywords"],
+                perspective_role=keyword_info["industry"], # 비교 분석에서도 산업/직무 관점 활용
+                reason=keyword_info["reason"] # 추출된 reason 전달
+            )
+        else: # general 타입
+            answer = await generate_contextual_answer(question, current_weekly_keywords) 
+
         return JSONResponse(content={"answer": answer})
-        
     except Exception as e:
         logger.error(f"/chat 오류: {e}", exc_info=True)
         return JSONResponse(content={
             "answer": "챗봇 서비스에 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
-        }, status_code=200)  # 200으로 반환하여 프론트엔드 오류 방지
+        }, status_code=200) # 200으로 반환하여 프론트엔드 오류 방지
 
 @app.post("/keyword-analysis")
 def analyze_keyword_dynamically(request: dict):
