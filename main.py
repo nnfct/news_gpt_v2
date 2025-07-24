@@ -9,8 +9,9 @@ import hashlib
 import uvicorn
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, Query, Request
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import AzureOpenAI
@@ -22,6 +23,7 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 # keyword explainer
@@ -50,8 +52,68 @@ logger = logging.getLogger("news_gpt_v2")
 # 환경변수 로드
 load_dotenv()
 
+CACHE_GOOGLE_TRENDING_KEYWORDS = None
+def cache_google_tranding(country_codes):
+    global CACHE_GOOGLE_TRENDING_KEYWORDS
+
+    def fetch_keywords(geo):
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920,1080')
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        keywords = []
+        try:
+            url = f"https://trends.google.com/trending?geo={geo}&hl=en&category=3&hours=24&sort=search-volume"
+            driver.get(url)
+            time.sleep(4)
+            elems = driver.find_elements(By.CLASS_NAME, 'mZ3RIc') or driver.find_elements(By.CSS_SELECTOR, '[data-ved]')
+            keywords = [e.text.strip() for e in elems if e.text.strip()][:10]
+        except Exception as e:
+            print(f"Error fetching trends for {geo}: {e}")
+            keywords = [f"Sample keyword {i} for {geo}" for i in range(1, 6)]
+        finally:
+            driver.quit()
+        return [{"country": geo, "keyword": kw} for kw in keywords]
+
+    # ✅ 병렬 실행
+    with ThreadPoolExecutor(max_workers=min(len(country_codes), 5)) as executor:
+        results = list(executor.map(fetch_keywords, country_codes))
+
+    raw_keywords = [item for sublist in results for item in sublist]
+            
+    shared_indices = find_shared_keywords_with_llm(raw_keywords)
+
+    for i, item in enumerate(raw_keywords):
+        item["shared"] = i in shared_indices
+
+    CACHE_GOOGLE_TRENDING_KEYWORDS = {
+        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "data": raw_keywords,
+        "status": "success"
+    }
+
+# FastAPI 시작 시 캐시 백엔드 초기화
+def start():
+    country_codes = ['KR', 'US', 'MX', 'GB', 'IN', 'ZA', 'AU']
+    cache_google_tranding(country_codes)
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(cache_google_tranding, trigger="cron", minute=0, args=[country_codes])
+    scheduler.start()
+    
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # When service starts.
+    start()
+    yield
+    
+    
 # FastAPI 앱 인스턴스 생성
-app = FastAPI(title="News GPT v2", description="AI 뉴스 키워드 분석 플랫폼")
+app = FastAPI(title="News GPT v2", description="AI 뉴스 키워드 분석 플랫폼", lifespan=lifespan)
 
 # CORS 설정
 app.add_middleware(
@@ -2538,36 +2600,83 @@ async def send_email(to_email: str, subject: str, content: str):
 
 @app.get("/api/trending")
 def get_trending_keywords(country_codes: List[str] = Query(...)):
+    global CACHE_GOOGLE_TRENDING_KEYWORDS
+
     try:
-        def fetch_keywords(geo):
-            options = Options()
-            options.add_argument('--headless')
-            options.add_argument('--no-sandbox')
-            options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-gpu')
-            options.add_argument('--window-size=1920,1080')
+        if CACHE_GOOGLE_TRENDING_KEYWORDS is None:
+            cache_google_tranding(country_codes)
 
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-            keywords = []
-            try:
-                url = f"https://trends.google.com/trending?geo={geo}&hl=en&category=3&hours=24&sort=search-volume"
-                driver.get(url)
-                time.sleep(4)
-                elems = driver.find_elements(By.CLASS_NAME, 'mZ3RIc') or driver.find_elements(By.CSS_SELECTOR, '[data-ved]')
-                keywords = [e.text.strip() for e in elems if e.text.strip()][:10]
-            except Exception as e:
-                print(f"Error fetching trends for {geo}: {e}")
-                keywords = [f"Sample keyword {i} for {geo}" for i in range(1, 6)]
-            finally:
-                driver.quit()
-            return [{"country": geo, "keyword": kw} for kw in keywords]
+        return CACHE_GOOGLE_TRENDING_KEYWORDS
 
-        # ✅ 병렬 실행
-        with ThreadPoolExecutor(max_workers=min(len(country_codes), 5)) as executor:
-            results = list(executor.map(fetch_keywords, country_codes))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
 
-        raw_keywords = [item for sublist in results for item in sublist]
+def find_shared_keywords_with_llm(raw_keywords):
+    """LLM을 사용하여 여러 국가 간 동일 의미 키워드 찾기"""
+    try:
+        # 키워드를 LLM이 이해하기 쉬운 형태로 포맷팅
+        formatted_keywords = []
+        for i, item in enumerate(raw_keywords):
+            formatted_keywords.append(f"{i}: '{item['keyword']}' ({item['country']})")
+        
+        keywords_text = "\n".join(formatted_keywords)
+        
+        prompt = f"""다음은 국가별 트렌딩 키워드입니다. 
+**여러 국가에서 동시에 나타나는 동일한 의미의 키워드 그룹**을 찾아주세요.
 
+키워드 목록:
+{keywords_text}
+
+조건:
+- 같은 국가 내의 키워드는 비교하지 마세요
+- 다른 국가 간에 의미적으로 동일한 키워드만 찾아주세요  
+- Tesla/TSLA/테슬라, iPhone/아이폰, Trump/트럼프 같은 경우가 좋은 예시입니다
+- 단순히 비슷한 주제가 아닌, 정확히 같은 대상을 가리키는 키워드만 묶어주세요
+
+응답 형식 (JSON만): {{"shared_groups": [[인덱스1, 인덱스2], [인덱스3, 인덱스4, 인덱스5]]}}
+예시: {{"shared_groups": [[0, 5, 12], [3, 8]]}}"""
+
+        response = openai_client.chat.completions.create(
+            model=AZURE_OPENAI_DEPLOYMENT,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,  # 낮은 temperature로 일관성 확보
+            max_tokens=500
+        )
+        
+        result_text = response.choices[0].message.content.strip()
+        
+        # JSON 파싱 시도
+        json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
+        if json_match:
+            result_json = json.loads(json_match.group())
+            shared_groups = result_json.get('shared_groups', [])
+            
+            # shared_indices 계산
+            shared_indices = set()
+            for group in shared_groups:
+                # 그룹이 실제로 여러 국가를 포함하는지 확인
+                countries_in_group = set()
+                for idx in group:
+                    if 0 <= idx < len(raw_keywords):
+                        countries_in_group.add(raw_keywords[idx]['country'])
+                
+                # 여러 국가에 걸쳐 있는 그룹만 공통 키워드로 처리
+                if len(countries_in_group) > 1:
+                    shared_indices.update(group)
+            
+            return shared_indices
+        else:
+            print("LLM 응답에서 JSON을 찾을 수 없음")
+            return set()
+            
+    except Exception as e:
+        print(f"LLM 키워드 매칭 실패: {e}")
+        # 실패 시 기존 임베딩 방식으로 폴백
+        return find_shared_keywords_with_embedding(raw_keywords)
+
+def find_shared_keywords_with_embedding(raw_keywords):
+    """기존 임베딩 방식 (폴백용)"""
+    try:
         texts_for_embedding = []
         for item in raw_keywords:
             kw = item["keyword"]
@@ -2590,18 +2699,12 @@ def get_trending_keywords(country_codes: List[str] = Query(...)):
                 if countries[i] != countries[j] and cosine_similarity([embeddings[i]], [embeddings[j]])[0][0] >= 0.65:
                     shared_indices.add(i)
                     shared_indices.add(j)
-
-        for i, item in enumerate(raw_keywords):
-            item["shared"] = i in shared_indices
-
-        return {
-            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            "data": raw_keywords,
-            "status": "success"
-        }
-
+        
+        return shared_indices
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"서버 오류: {str(e)}")
+        print(f"임베딩 방식도 실패: {e}")
+        return set()
+
 
 @app.get("/api/news")
 def get_news(country: str, keyword: str):
