@@ -1855,84 +1855,150 @@ async def generate_contextual_answer(question, current_keywords):
 
 @app.get("/weekly-keywords-by-date")
 async def get_weekly_keywords_by_date(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"),
-                               end_date: str = Query(..., description="종료일 (YYYY-MM-DD)"),
-                               region: str = Query("domestic", description="지역 (domestic/global)")):
+                               end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
+    """국내 날짜별 주간 키워드 반환 (프론트에서 요청하는 엔드포인트) - 캐싱 적용"""
+    region = "domestic" # 이 엔드포인트는 국내 전용이므로 'domestic'으로 고정
+
+    # 1. 캐시 키 생성
+    cache_key = f"{region}_{start_date}_{end_date}"
+    
+    # 2. 캐시 조회 시도
+    cached_result = get_cache(cache_key)
+
+    # 3. 캐시된 결과가 유효하면 즉시 반환
+    if cached_result:
+        logger.info(f"✅ 캐시된 국내 키워드 결과 사용: {cache_key}")
+        return JSONResponse(content={
+            "keywords": cached_result,
+            "date_range": f"{start_date} ~ {end_date}",
+            "total_count": len(cached_result),
+            "tech_articles_count": 0, # 캐시된 데이터에서는 원본 기사 수를 알 수 없으므로 0 (또는 별도 캐시 필요)
+            "region": region,
+            "status": "success",
+            "cached": True # 캐시 사용 여부를 클라이언트에 알림
+        }, media_type="application/json; charset=utf-8")
+
+    # 4. 캐시된 결과가 없으면 실제 데이터 수집 및 GPT 호출
     try:
-        logger.info(f"📅 날짜별 키워드 요청: {start_date} ~ {end_date} ({region})")
+        logger.info(f"📅 날짜별 국내 키워드 요청 (DeepSearch & GPT): {start_date} ~ {end_date}")
         
+        # DeepSearch Tech에서 기사 수집
         tech_articles = await fetch_tech_articles(start_date, end_date)
+        tech_articles_count = len(tech_articles)
+
         if not tech_articles:
-            logger.warning(f"❌ Tech 기사 없음: {start_date} ~ {end_date}")
+            logger.warning(f"❌ 국내 Tech 기사 없음: {start_date} ~ {end_date}, 샘플 데이터 사용")
             keywords = get_sample_keywords_by_date(start_date, end_date)
-            tech_articles_count = 0
         else:
             # GPT로 키워드 추출
             extracted_keywords = await extract_keywords_with_gpt(tech_articles)
             if extracted_keywords:
-                keywords = extracted_keywords[:5]  # Top 5로 증가
+                keywords = extracted_keywords[:5]  # Top 5로 제한
             else:
+                logger.warning("❌ 국내 GPT 키워드 추출 실패, 샘플 데이터 사용")
                 keywords = get_sample_keywords_by_date(start_date, end_date)
-            tech_articles_count = len(tech_articles)
         
+        # 5. 추출된 키워드를 캐시에 저장
+        set_cache(cache_key, keywords)
+
         # 응답 형식을 프론트 요구사항에 맞게 조정
         response_data = {
-            "keywords": keywords,  # 이제 GPT 또는 샘플 키워드가 올바른 형식으로 반환됩니다.
+            "keywords": keywords,
             "date_range": f"{start_date} ~ {end_date}",
             "total_count": len(keywords),
             "tech_articles_count": tech_articles_count,
             "region": region,
-            "status": "success"
+            "status": "success",
+            "cached": False # 캐시되지 않은 새 데이터임을 클라이언트에 알림
         }
         return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
     except Exception as e:
-        logger.error(f"날짜별 키워드 요청 오류: {e}")
+        logger.error(f"날짜별 국내 키워드 요청 오류: {e}", exc_info=True)
+        # 오류 발생 시 샘플 키워드 반환 및 오류 메시지 포함
+        keywords_on_error = get_sample_keywords_by_date(start_date, end_date)
         return JSONResponse(status_code=500, content={
             "error": str(e),
-            "keywords": [], # 오류 시 빈 리스트
+            "keywords": keywords_on_error, # 오류 시 샘플 키워드 반환
             "date_range": f"{start_date} ~ {end_date}",
             "region": region,
-            "status": "error"
+            "status": "error",
+            "cached": False,
+            "note": "오류로 인해 샘플 데이터가 반환되었습니다."
         })
+
 
 @app.get("/global-weekly-keywords-by-date")
 async def get_global_weekly_keywords_by_date(start_date: str = Query(..., description="시작일 (YYYY-MM-DD)"), 
                                end_date: str = Query(..., description="종료일 (YYYY-MM-DD)")):
-    """해외 날짜별 주간 키워드 반환 (프론트에서 요청하는 엔드포인트) - 실제 API 호출"""
+    """해외 날짜별 주간 키워드 반환 (프론트에서 요청하는 엔드포인트) - 캐싱 적용"""
+    region = "global" # 이 엔드포인트는 해외 전용이므로 'global'로 고정
+
+    # 1. 캐시 키 생성
+    cache_key = f"{region}_{start_date}_{end_date}"
+    
+    # 2. 캐시 조회 시도
+    cached_result = get_cache(cache_key)
+
+    # 3. 캐시된 결과가 유효하면 즉시 반환
+    if cached_result:
+        logger.info(f"✅ 캐시된 해외 키워드 결과 사용: {cache_key}")
+        return JSONResponse(content={
+            "keywords": cached_result,
+            "date_range": f"{start_date} ~ {end_date}",
+            "total_count": len(cached_result),
+            "global_tech_articles_count": 0, # 캐시된 데이터에서는 원본 기사 수를 알 수 없으므로 0
+            "region": region,
+            "status": "success",
+            "cached": True # 캐시 사용 여부를 클라이언트에 알림
+        }, media_type="application/json; charset=utf-8")
+
+    # 4. 캐시된 결과가 없으면 실제 데이터 수집 및 GPT 호출
     try:
-        logger.info(f"🌍 해외 날짜별 키워드 요청: {start_date} ~ {end_date}")
+        logger.info(f"🌍 해외 날짜별 키워드 요청 (DeepSearch & GPT): {start_date} ~ {end_date}")
         
         # 해외 Tech 기사 → 해외 전용 GPT 키워드 추출 워크플로우 사용
         global_tech_articles = await fetch_global_tech_articles(start_date, end_date)
+        global_tech_articles_count = len(global_tech_articles)
+
         if not global_tech_articles:
-            logger.warning(f"❌ 해외 Tech 기사 없음: {start_date} ~ {end_date}")
+            logger.warning(f"❌ 해외 Tech 기사 없음: {start_date} ~ {end_date}, 샘플 데이터 사용")
             # 해외 샘플 키워드 반환
             keywords = get_global_sample_keywords_by_date(start_date, end_date)
         else:
             # 해외 전용 GPT로 영어 키워드 추출
             extracted_keywords = await extract_global_keywords_with_gpt(global_tech_articles)
             if extracted_keywords:
-                keywords = extracted_keywords[:5]  # Top 5로 증가
+                keywords = extracted_keywords[:5]  # Top 5로 제한
             else:
+                logger.warning("❌ 해외 GPT 키워드 추출 실패, 샘플 데이터 사용")
                 keywords = get_global_sample_keywords_by_date(start_date, end_date)
         
+        # 5. 추출된 키워드를 캐시에 저장
+        set_cache(cache_key, keywords)
+
         # 응답 형식을 프론트 요구사항에 맞게 조정 (키워드 배열로 반환)
         response_data = {
             "keywords": keywords,
             "date_range": f"{start_date} ~ {end_date}",
             "total_count": len(keywords),
-            "global_tech_articles_count": len(global_tech_articles) if global_tech_articles else 0,
-            "region": "global",
-            "status": "success"
+            "global_tech_articles_count": global_tech_articles_count,
+            "region": region,
+            "status": "success",
+            "cached": False # 캐시되지 않은 새 데이터임을 클라이언트에 알림
         }
         return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
     except Exception as e:
-        logger.error(f"해외 날짜별 키워드 요청 오류: {e}")
+        logger.error(f"해외 날짜별 키워드 요청 오류: {e}", exc_info=True)
+        # 오류 발생 시 샘플 키워드 반환 및 오류 메시지 포함
+        keywords_on_error = get_global_sample_keywords_by_date(start_date, end_date)
         return JSONResponse(status_code=500, content={
             "error": str(e),
-            "keywords": [],
+            "keywords": keywords_on_error, # 오류 시 샘플 키워드 반환
             "date_range": f"{start_date} ~ {end_date}",
-            "region": "global",
-            "status": "error"
+            "region": region,
+            "status": "error",
+            "cached": False,
+            "note": "오류로 인해 샘플 데이터가 반환되었습니다."
         })
 
 def get_global_sample_keywords_by_date(start_date: str, end_date: str):
