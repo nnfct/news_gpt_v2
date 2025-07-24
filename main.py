@@ -807,7 +807,7 @@ async def extract_keywords_with_gpt(articles: List[Dict[str, Any]]) -> List[Dict
                 {"keyword": "로봇", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 5, "rank": 5}
             ]
         
-        return keywords[:5]
+        return keywords
 
     except Exception as e:
         logger.error(f"❌ 키워드 추출 오류: {e}", exc_info=True)
@@ -918,6 +918,8 @@ Keyword5: Reason5
                 {"keyword": "Machine Learning", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 10, "rank": 4},
                 {"keyword": "Cloud Computing", "reason": "GPT 응답 파싱 오류 또는 부족으로 인한 기본 키워드", "count": 5, "rank": 5}
             ]
+
+        return keywords
 
     except Exception as e:
         logger.error(f"❌ 해외 키워드 추출 오류: {e}", exc_info=True)
@@ -2070,43 +2072,6 @@ def get_sample_keywords_by_date(start_date: str, end_date: str):
             {"keyword": "디지털", "count": 210, "rank": 3, "reason": default_reason},
             {"keyword": "정보", "count": 190, "rank": 4, "reason": default_reason},
             {"keyword": "시스템", "count": 170, "rank": 5, "reason": default_reason}
-        ]
-
-def get_global_sample_keywords_by_date(start_date: str, end_date: str):
-    """해외 날짜에 따른 샘플 키워드 반환 (reason 포함)"""
-    default_reason = "API 호출 실패로 인한 샘플 데이터"
-
-    if "07-01" in start_date:  # 7월 1주차
-        return [
-            {"keyword": "Tesla", "count": 250, "rank": 1, "reason": "EV market leadership and battery innovation"},
-            {"keyword": "Apple", "count": 230, "rank": 2, "reason": "New product launches and service expansion"},
-            {"keyword": "Microsoft", "count": 210, "rank": 3, "reason": "Cloud computing growth and AI integration"},
-            {"keyword": "Google", "count": 190, "rank": 4, "reason": "AI research and search engine dominance"},
-            {"keyword": "Amazon", "count": 170, "rank": 5, "reason": "E-commerce expansion and cloud infrastructure"},
-        ]
-    elif "07-06" in start_date:  # 7월 2주차  
-        return [
-            {"keyword": "ChatGPT", "count": 250, "rank": 1, "reason": "Generative AI advancements and widespread adoption"},
-            {"keyword": "OpenAI", "count": 230, "rank": 2, "reason": "AI model development and research breakthroughs"},
-            {"keyword": "Meta", "count": 210, "rank": 3, "reason": "Metaverse vision and VR/AR hardware initiatives"},
-            {"keyword": "Twitter", "count": 190, "rank": 4, "reason": "Platform changes and social media trends"},
-            {"keyword": "TikTok", "count": 170, "rank": 5, "reason": "Short-form video dominance and global influence"},
-        ]
-    elif "07-14" in start_date:  # 7월 3주차
-        return [
-            {"keyword": "NVIDIA", "count": 250, "rank": 1, "reason": "AI chip leadership and strong demand for GPUs"},
-            {"keyword": "AMD", "count": 230, "rank": 2, "reason": "Server CPU market growth and competitive innovation"},
-            {"keyword": "Intel", "count": 210, "rank": 3, "reason": "Foundry expansion and new processor architectures"},
-            {"keyword": "Samsung", "count": 190, "rank": 4, "reason": "Memory chip technology and smartphone market"},
-            {"keyword": "TSMC", "count": 170, "rank": 5, "reason": "Advanced semiconductor manufacturing and global supply chain"},
-        ]
-    else:
-        return [
-            {"keyword": "Tech", "count": 250, "rank": 1, "reason": default_reason},
-            {"keyword": "Innovation", "count": 230, "rank": 2, "reason": default_reason},
-            {"keyword": "AI", "count": 210, "rank": 3, "reason": default_reason},
-            {"keyword": "Global Market", "count": 190, "rank": 4, "reason": default_reason},
-            {"keyword": "Semiconductor", "count": 170, "rank": 5, "reason": default_reason}
         ]
 
 
