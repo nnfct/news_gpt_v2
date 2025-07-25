@@ -669,7 +669,7 @@
             try {
                 showLoadingGrid();
 
-                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+                const response = await fetch('/api/v1/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
 
                 if (!response.ok) {
                     throw new Error(`API 응답 오류: ${response.status} ${response.statusText}`);
@@ -706,7 +706,7 @@
                 document.querySelector('.content-title').textContent = '이번 주 국내 AI 뉴스 분석';
                 document.querySelector('.content-subtitle').textContent = 'AI가 분석한 국내 최신 뉴스 트렌드와 키워드를 확인하세요';
 
-                const response = await fetch('/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
+                const response = await fetch('/api/v1/weekly-keywords-by-date?start_date=2025-07-14&end_date=2025-07-21');
 
                 if (!response.ok) {
                     throw new Error(`국내뉴스 API 응답 오류: ${response.status} ${response.statusText}`);
@@ -1163,7 +1163,7 @@
             submitBtn.textContent = '구독 중...';
 
             try {
-                const response = await fetch('/api/subscribe', {
+                const response = await fetch('/api/v1/subscribe', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

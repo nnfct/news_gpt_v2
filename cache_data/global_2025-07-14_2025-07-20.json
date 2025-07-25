@@ -1,0 +1,35 @@
+{
+    "timestamp": 1753429267.0380864,
+    "data": [
+        {
+            "keyword": "Tech earnings",
+            "reason": "Tech earnings are a major focus in the financial world as they provide insight into the performance of leading technology companies, which significantly influence global markets.",
+            "count": 30,
+            "rank": 1
+        },
+        {
+            "keyword": "Brain tech",
+            "reason": "Advancements in brain technology, such as Neuralink, are gaining attention due to their potential to revolutionize healthcare, neuroscience, and human-computer interaction.",
+            "count": 25,
+            "rank": 2
+        },
+        {
+            "keyword": "Facial recognition",
+            "reason": "Facial recognition technology is increasingly being used in security and law enforcement, raising both its utility and ethical concerns globally.",
+            "count": 20,
+            "rank": 3
+        },
+        {
+            "keyword": "AI",
+            "reason": "Artificial intelligence remains a hot topic as countries like China and the US compete for dominance, and its applications expand across industries.",
+            "count": 15,
+            "rank": 4
+        },
+        {
+            "keyword": "Digital tech",
+            "reason": "Digital technology continues to shape the future, with innovations transforming education, communication, and business operations worldwide.",
+            "count": 10,
+            "rank": 5
+        }
+    ]
+}

@@ -1,0 +1,274 @@
+{
+    "timestamp": 1753431491.0560915,
+    "data": {
+        "timestamp": "2025-07-25 17:18:11",
+        "data": [
+            {
+                "country": "KR",
+                "keyword": "우리은행",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "국민은행",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "신한은행",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "기업은행",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "삼성카드",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "현대카드",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "국민연금",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "우리카드",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "하나카드",
+                "shared": false
+            },
+            {
+                "country": "KR",
+                "keyword": "microsoft",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "yahoo",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "intel stock",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "amazon salaries",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "unh stock",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "pinnacle bank and synovus bank merger",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "erie insurance",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "consumers energy",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "asts",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "oklo stock",
+                "shared": false
+            },
+            {
+                "country": "US",
+                "keyword": "lidr stock",
+                "shared": false
+            },
+            {
+                "country": "MX",
+                "keyword": "iberdrola",
+                "shared": false
+            },
+            {
+                "country": "MX",
+                "keyword": "pensión imss ley 73",
+                "shared": false
+            },
+            {
+                "country": "MX",
+                "keyword": "changan",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "cider",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "ikea harlow",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "yesterday",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "william hill",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "elon musk tesla",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "market drayton",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "ecb",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "bt shares",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "martin lewis",
+                "shared": false
+            },
+            {
+                "country": "GB",
+                "keyword": "elizabeth line",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "bajaj finance share",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "anil ambani money laundering ed raids",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "indian energy exchange market coupling",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "bajaj finance share price",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "indiqube spaces ipo gmp",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "ipo gmp",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "laurent ezekiel",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "trident share price",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "gng electronics ipo gmp today",
+                "shared": false
+            },
+            {
+                "country": "IN",
+                "keyword": "intel earnings report",
+                "shared": false
+            },
+            {
+                "country": "ZA",
+                "keyword": "interest rates south africa",
+                "shared": false
+            },
+            {
+                "country": "ZA",
+                "keyword": "delivery",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "btn",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "ticketmaster",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "slides",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "macquarie group cfo exits",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "saab",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "power outage",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "coinbase",
+                "shared": false
+            },
+            {
+                "country": "AU",
+                "keyword": "broccoli",
+                "shared": false
+            }
+        ],
+        "status": "success"
+    }
+}

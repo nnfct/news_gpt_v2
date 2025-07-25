@@ -1480,8 +1480,8 @@
                 }
 
                 const apiEndpoint = region === 'global'
-                    ? `http://127.0.0.1:8000/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
-                    : `http://127.0.0.1:8000/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
+                    ? `http://127.0.0.1:8000/api/v1/global-weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`
+                    : `http://127.0.0.1:8000/api/v1/weekly-keywords-by-date?start_date=${startDate}&end_date=${endDate}`;
 
                 console.log(`🌐 API 호출: ${apiEndpoint}`);
 
@@ -1745,7 +1745,7 @@
         // 동적 키워드 분석 함수
         async function performKeywordAnalysis(keyword) {
             try {
-                const response = await fetch('/keyword-analysis', {
+                const response = await fetch('/api/v1/keyword-analysis', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1902,7 +1902,7 @@
         const timeoutId = setTimeout(() => controller.abort(), 90000); // 60초->90 타임아웃
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/industry-analysis', {
+            const response = await fetch('http://127.0.0.1:8000/api/v1/industry-analysis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -1990,8 +1990,8 @@
             try {
                 // 지역에 따른 API 엔드포인트 선택
                 let baseUrl = region === 'global'
-                    ? `http://127.0.0.1:8000/api/global-keyword-articles/${encodeURIComponent(keyword)}`
-                    : `http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
+                    ? `http://127.0.0.1:8000/api/v1/global-keyword-articles/${encodeURIComponent(keyword)}`
+                    : `http://127.0.0.1:8000/api/v1/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
 
                 // 날짜 범위가 있으면 쿼리 파라미터로 전달
                 let url = baseUrl;
@@ -2219,8 +2219,8 @@
 
                 // API 호출
                 let baseUrl = region === 'global'
-                    ? `http://127.0.0.1:8000/api/global-keyword-articles/${encodeURIComponent(keyword)}`
-                    : `http://127.0.0.1:8000/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
+                    ? `http://127.0.0.1:8000/api/v1/global-keyword-articles/${encodeURIComponent(keyword)}`
+                    : `http://127.0.0.1:8000/api/v1/keyword-articles?keyword=${encodeURIComponent(keyword)}`;
 
                 let url = baseUrl;
                 if (dateRange) {
@@ -2513,7 +2513,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-                const response = await fetch('http://127.0.0.1:8000/chat', {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2589,7 +2589,7 @@
             const timeoutId1 = setTimeout(() => controller1.abort(), 60000);
 
             try {
-                const response1 = await fetch('http://127.0.0.1:8000/api/job-analysis', {
+                const response1 = await fetch('http://127.0.0.1:8000/api/v1/job-analysis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -2796,7 +2796,7 @@
                 }
 
                 // API 호출
-                const response = await fetch('/search', {
+                const response = await fetch('/api/v1/search', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2924,7 +2924,7 @@
             submitBtn.textContent = '구독 중...';
 
             try {
-                const response = await fetch('/api/subscribe', {
+                const response = await fetch('/api/v1/subscribe', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2975,7 +2975,7 @@
             testErrorMsg.style.display = 'none';
 
             try {
-                const response = await fetch('/api/send-insights', {
+                const response = await fetch('/api/v1/send-insights', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

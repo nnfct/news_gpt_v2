@@ -112,7 +112,7 @@
             }
 
             try {
-                const response = await fetch('/api/send-insights', {
+                const response = await fetch('/api/v1/send-insights', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email })
@@ -132,7 +132,7 @@
 
         async function sendToAllSubscribers() {
             try {
-                const response = await fetch('/api/send-to-all-subscribers', {
+                const response = await fetch('/api/v1/send-to-all-subscribers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -151,7 +151,7 @@
 
         async function getSubscribers() {
             try {
-                const response = await fetch('/api/subscribers');
+                const response = await fetch('/api/v1/subscribers');
                 const result = await response.json();
 
                 if (response.ok) {
@@ -180,7 +180,7 @@
             }
 
             try {
-                const response = await fetch('/api/subscribe', {
+                const response = await fetch('/api/v1/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email })

@@ -383,8 +383,8 @@
       
       try {
         const queryParams = countries.map(c => `country_codes=${c}`).join("&");
-        console.log(`API 호출: ${API_BASE}/api/trending?${queryParams}`);
-        const res = await fetch(`${API_BASE}/api/trending?${queryParams}`);
+        console.log(`API 호출: ${API_BASE}/api/v1/trending?${queryParams}`);
+        const res = await fetch(`${API_BASE}/api/v1/trending?${queryParams}`);
         
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -472,7 +472,7 @@
 
       try {
         // 뉴스 가져오기
-        const newsRes = await fetch(`${API_BASE}/api/news?country=${country}&keyword=${encodeURIComponent(keyword)}`);
+        const newsRes = await fetch(`${API_BASE}/api/v1/news?country=${country}&keyword=${encodeURIComponent(keyword)}`);
         if (!newsRes.ok) {
           throw new Error(`News API error: ${newsRes.status}`);
         }
@@ -481,7 +481,7 @@
         const headlines = newsJson.news.map(n => n.title);
 
         // GPT 해설 요청
-        const gptRes = await fetch(`${API_BASE}/api/gpt-commentary`, {
+        const gptRes = await fetch(`${API_BASE}/api/v1/gpt-commentary`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

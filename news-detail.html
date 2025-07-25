@@ -849,9 +849,9 @@
         // 지역에 따라 다른 API 엔드포인트 사용
         let apiUrl;
         if (currentRegion === 'global') {
-          apiUrl = `/api/global-keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
+          apiUrl = `/api/v1/global-keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
         } else {
-          apiUrl = `/api/keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
+          apiUrl = `/api/v1/keyword-articles/${encodeURIComponent(currentKeyword)}?start_date=${startDate}&end_date=${endDate}`;
         }
 
         console.log('API 호출:', apiUrl, '지역:', currentRegion);
