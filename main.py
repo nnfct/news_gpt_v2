@@ -483,16 +483,14 @@ async def get_global_keyword_articles(
 
 @app.post("/api/job-analysis")
 async def analyze_job_industry(request: JobAnalysisRequest):
-    user_job_role = request.query             # 사용자 입력 직무/산업 (분석 관점)
-    analysis_keyword = request.selected_keyword # 분석 대상 키워드
-    analysis_keyword_reason = request.selected_keyword_reason # ✅ 키워드 선정 이유
+    user_job_role = request.query
+    analysis_keyword = request.selected_keyword
+    analysis_keyword_reason = request.selected_keyword_reason
 
-    # analysis_keyword가 제공되지 않았을 때 reason도 기본값으로 설정 (선택 사항)
     if not analysis_keyword:
         analysis_keyword = "인공지능"
-        analysis_keyword_reason = "사용자가 선택하지 않아 기본값으로 설정됨" # 필요에 따라 기본 이유 설정
+        analysis_keyword_reason = "사용자가 선택하지 않아 기본값으로 설정됨"
         logger.warning(f"⚠️ analysis_keyword가 제공되지 않아 '{analysis_keyword}'를 기본값으로 사용합니다.")
-
 
     if not user_job_role:
         raise HTTPException(status_code=400, detail="분석할 직무/산업을 입력해야 합니다.")
@@ -500,24 +498,35 @@ async def analyze_job_industry(request: JobAnalysisRequest):
     logger.info(f"📊 직무/산업 분석 요청: 관점='{user_job_role}', 대상 키워드='{analysis_keyword}'")
 
     try:
-        # 1단계: 직무 요약 (NCS RAG) - 기존 로직
-        summary = await get_job_industry_summary(user_job_role) # user_job_role을 쿼리로 전달
+        summary = await get_job_industry_summary(user_job_role)
 
-        # 2단계: 긍정적/비판적 분석 생성 (user_job_role 관점에서 analysis_keyword 분석)
-        insight_analysis_result = await generate_industry_based_answer(
+        # 2-1. 긍정적 분석 생성 (강화된 프롬프트 적용)
+        positive_analysis_result = await generate_industry_based_answer(
             question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 긍정적 분석",
             keyword=analysis_keyword,
             industry=user_job_role,
             current_keywords=[analysis_keyword],
-            reason=analysis_keyword_reason # ✅ 이유 전달
+            reason=analysis_keyword_reason
         )
 
-        # generate_comparison_answer 함수를 '직무 관점'에서 특정 키워드를 분석하도록 활용
+        # 2-2. 비판적 분석을 위한 프롬프트 구성 (긍정적 분석 결과 포함)
+        critical_analysis_full_prompt = f"""
+        다음은 '{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점의 **긍정적 분석 결과**입니다:
+        ---
+        {positive_analysis_result}
+        ---
+
+        이 긍정적 분석 내용을 **참고**하되, 이와는 **다른 관점에서 비판적 분석**을 제공해주세요.
+        '{user_job_role}' 직무 관점에서 '{analysis_keyword}' 키워드가 가질 수 있는 **잠재적 위험, 한계, 부정적인 측면, 또는 극복해야 할 과제** 등을 중심으로 심층적으로 설명해주세요.
+        긍정적 분석과 **비슷한 분량**으로, 그리고 **유사한 상세 형식**으로 답변을 작성해주세요.
+        """
+
+        # generate_comparison_answer 함수 호출 시 새로 구성한 프롬프트 전달
         counter_analysis_result = await generate_comparison_answer(
-            question=f"'{analysis_keyword}'에 대한 '{user_job_role}' 직무 관점에서의 비판적 분석",
+            question=critical_analysis_full_prompt,
             keywords=[analysis_keyword],
             perspective_role=user_job_role,
-            reason=analysis_keyword_reason # ✅ 이유 전달
+            reason=analysis_keyword_reason
         )
 
         if not summary:
@@ -528,7 +537,7 @@ async def analyze_job_industry(request: JobAnalysisRequest):
         return {
             "query": user_job_role,
             "summary": summary,
-            "insight_analysis": insight_analysis_result,
+            "insight_analysis": positive_analysis_result,
             "counter_insight_analysis": counter_analysis_result,
             "status": "success"
         }
@@ -536,7 +545,6 @@ async def analyze_job_industry(request: JobAnalysisRequest):
     except Exception as e:
         logger.error(f"❌ 직무/산업 분석 엔드포인트 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"직무/산업 분석 중 서버 오류 발생: {str(e)}")
-    
     
 # =============================================================================
 # 새로운 워크플로우 핵심 함수들
@@ -1791,10 +1799,9 @@ def get_current_weekly_keywords():
         print(f"키워드 추출 오류: {e}")
         return ["인공지능", "반도체", "기업"]
 
-async def generate_industry_based_answer(question, keyword, industry, current_keywords, reason: Optional[str] = None): # ✅ reason 파라미터 추가
-    """산업별/직무별 관점 분석 기반 답변 생성"""
+async def generate_industry_based_answer(question, keyword, industry, current_keywords, reason: Optional[str] = None):
+    """산업별/직무별 관점 분석 기반 답변 생성 (긍정적 분석) - 프롬프트 및 답변 형식 강화"""
     try:
-        # industry_context 맵은 기존과 동일 (주요 산업 분야만 포함)
         industry_context = {
             "사회": "사회적 영향, 정책적 측면, 시민 생활 변화",
             "경제": "경제적 파급효과, 시장 동향, 투자 관점",
@@ -1802,33 +1809,36 @@ async def generate_industry_based_answer(question, keyword, industry, current_ke
             "생활/문화": "일상생활 변화, 문화적 수용성, 소비자 행동",
             "세계": "글로벌 트렌드, 국제 경쟁, 해외 동향"
         }
-        # 'industry' 파라미터가 '데이터 과학자' 같은 직무명일 수도 있으므로, 이를 관점으로 사용
-        context_desc = industry_context.get(industry, f"'{industry}' 관점") # 리스트에 없는 관점일 경우 일반화
+        context_desc = industry_context.get(industry, f"'{industry}' 관점")
 
-        # 프롬프트 조정: 'industry'를 '분석 관점'으로 명확히 지시
-        reason_text = f"이 키워드는 '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다." if reason else "" # '구체적인' 강조 추가
+        reason_text = f"이 키워드는 '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다." if reason else "제공된 선정 이유 없음."
 
+        # 프롬프트 구성: 비판적 분석과 유사한 항목으로 구성
         prompt = f"""
-        당신은 전문적인 AI 뉴스 분석가입니다. 사용자의 질문과 키워드, 그리고 특정 직무/산업 관점에서 심층적인 분석을 제공해야 합니다.
+        당신은 전문적인 AI 뉴스 분석가입니다. 사용자의 질문과 키워드, 그리고 특정 직무/산업 관점에서 **오직 긍정적이고 낙관적인 관점**으로 심층적인 분석을 제공해야 합니다.
         **특히, 키워드가 선정된 이유를 명확히 이해하고, 이 맥락을 바탕으로 분석의 깊이를 더해주세요.**
         
         **분석 대상 정보:**
         - 질문: {question}
         - 분석 대상 키워드: {keyword}
-        - 키워드 선정 이유: {reason_text if reason else "제공되지 않음"} # 이유를 명확히 제시
+        - 키워드 선정 이유: {reason_text}
         - 분석 관점 직무/산업: {industry} ({context_desc})
         - 현재 주간 핵심 키워드: {', '.join(current_keywords)}
 
         **분석 지침:**
-        1. **'{industry}' 직무/산업과 '{keyword}' 키워드의 긴밀한 연관성**을 중심으로 설명하십시오.
-        2. **'{reason}'을(를) 핵심적인 배경으로 삼아, 현재 상황과 주요 동향을 깊이 있게 분석**하십시오. # 이유를 답변에 통합하도록 명시
-        3. 현재 주간 핵심 키워드를({', '.join(current_keywords)})도 고려하여 답변의 시의성을 높이십시오.
-        4. 간결하지만 전문적인 어조를 사용하고, 독자가 쉽게 이해할 수 있도록 명확하게 서술하십시오.
+        1. 각 키워드의 현재 상황과 특징을 설명하되, **제공된 선정 이유(`{reason_text}`)**가 있다면 해당 키워드의 중요성을 그 이유와 연관 지어 설명하십시오.
+        2. 키워드와 '{industry}' 직무/산업 간의 **공통점 및 긴밀한 연관성**을 심층적으로 분석하십시오.
+        3. 키워드와 '{industry}' 직무/산업 간의 **상호 관계 및 서로에게 미치는 긍정적인 영향**을 기술하십시오.
+        4. 각각의 키워드가 가진 **미래 긍정적 전망과 현재 중요성**을 제시하되, 선정 이유가 미래 전망에 어떤 시사점을 주는지 고려하십시오.
+        5. 객관적이고 균형잡힌 시각으로 분석하고, 전문적이면서도 이해하기 쉬운 언어를 사용하십시오.
+        6. **오직 긍정적이고 낙관적인 측면만 강조하여 분석하십시오. 비판적, 부정적 내용은 절대 포함하지 마세요.**
+        7. 답변은 **비판적 분석과 비슷한 분량**으로 상세하게 작성해주세요.
 
         **답변 형식:**
-        · '{industry}' 관점에서 본 '{keyword}'의 현재 상황 (선정 이유 '{reason}'과 연계하여 설명)
-        · 주요 동향과 변화 (선정 이유가 현재 변화에 어떻게 기여하는지 포함)
-        · 전망과 시사점 (향후 '{reason}'이 '{keyword}'에 미칠 영향 예측)
+        · 현재 상황 및 특징: {keyword} (선정 이유와 연계하여 설명)
+        · 공통점 및 연관성: {keyword} vs {industry} 관점
+        · 상호 관계 및 상호 영향 (긍정적 측면)
+        · 미래 전망 및 중요성 (긍정적 측면)
 
         마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
         """
@@ -1836,19 +1846,18 @@ async def generate_industry_based_answer(question, keyword, industry, current_ke
         completion = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                # system 프롬프트도 'industry'를 '분석 관점'으로 명확히 지시
-                {"role": "system", "content": f"당신은 '{industry}' 관점에서 뉴스 데이터를 분석하고 키워드에 대해 전문적으로 답변하는 AI입니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
+                {"role": "system", "content": f"당신은 '{industry}' 관점에서 뉴스 데이터를 분석하고 키워드에 대해 전문적으로 답변하는 AI입니다. **오직 긍정적이고 낙관적인 측면만 강조합니다.** 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=16384,
-            temperature=0.3 # 일관성을 위해 0.3으로 조정 (원래 0.2였음)
+            temperature=0.3
         )
 
         return completion.choices[0].message.content
 
     except Exception as e:
         logger.error(f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다: {e}", exc_info=True)
-        return f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다."
+        return f"죄송합니다. {industry} 관점에서의 '{keyword}' 긍정적 분석 중 오류가 발생했습니다."
 
 async def generate_keyword_trend_answer(question, keyword):
     """키워드 트렌드 분석 답변 생성"""
@@ -1882,42 +1891,43 @@ async def generate_keyword_trend_answer(question, keyword):
     except Exception as e:
         return f"죄송합니다. '{keyword}' 트렌드 분석 중 오류가 발생했습니다: {str(e)}"
 
-async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None, reason: Optional[str] = None): # ✅ reason 파라미터 추가
-    """키워드들을 비교 분석 답변 생성 (직무/산업 관점 포함)"""
+async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None, reason: Optional[str] = None):
+    """키워드들을 비교 분석 답변 생성 (직무/산업 관점 포함) - 비판적 분석 강화"""
     try:
-        # 프롬프트에 직무/산업 관점 추가
         role_context = ""
         if perspective_role:
             role_context = f"'{perspective_role}'의 관점에서 "
 
-        # reason_text 변수를 더 명확하고 강조된 형태로 변경
         reason_text = ""
         if reason and keywords:
             # 첫 번째 키워드에 대한 이유라고 가정하고 명확히 언급
             reason_text = f"참고: 비교 대상 키워드 중 '{keywords[0]}'은(는) '{reason}'이라는 구체적인 이유로 선정되었습니다. 이 맥락을 비교 분석에 활용해주세요."
 
+        # 프롬프트 구성: 긍정적 분석을 참조하여 비판적 관점 강화
         prompt = f"""
-        당신은 전문적인 기술/산업 분석가입니다. 주어진 키워드들을 특정 직무/산업 관점에서 비교 분석해야 합니다.
-        **특히, 키워드가 선정된 이유가 있다면 그 맥락을 깊이 이해하고 비교 분석에 적극적으로 반영하여 답변의 깊이를 더해주세요.**
+        당신은 전문적인 기술/산업 분석가입니다. 주어진 키워드들을 특정 직무/산업 관점에서 **비판적이고 회의적인 시각**으로 분석해야 합니다.
+        **제공된 긍정적 분석 내용을 충분히 참고하되, 그 내용에 대해 반대 의견, 잠재적 문제점, 한계점, 또는 부정적인 영향을 중심으로 분석을 제공해주세요.**
+        **특히, 키워드가 선정된 이유가 있다면 그 맥락을 깊이 이해하고 비판적 분석에 적극적으로 반영하여 답변의 깊이를 더해주세요.**
 
         **분석 대상 정보:**
         - 질문: {question}
         - 비교 대상 키워드: {', '.join(keywords)}
         - 분석 관점 직무/산업: {role_context.strip()}
-        {reason_text} # 이유 정보를 명확히 포함
+        {reason_text}
 
         **분석 지침:**
-        1. 각 키워드의 현재 상황과 특징을 설명하되, **제공된 선정 이유(`{reason}`)**가 있다면 해당 키워드의 중요성을 그 이유와 연관 지어 설명하십시오.
-        2. 키워드들의 **공통점과 차이점을 직무/산업 관점(`{perspective_role}` 관점)**에서 심층적으로 분석하십시오.
-        3. 키워드들 간의 **상호 관계 및 서로에게 미치는 영향**을 기술하십시오.
-        4. 각각의 키워드가 가진 **미래 전망과 현재 중요성**을 제시하되, 선정 이유가 미래 전망에 어떤 시사점을 주는지 고려하십시오.
-        5. 객관적이고 균형잡힌 시각으로 분석하고, 전문적이면서도 이해하기 쉬운 언어를 사용하십시오.
+        1. 각 키워드의 현재 상황과 특징을 설명하되, **제공된 선정 이유(`{reason_text}`)**가 있다면 해당 키워드의 중요성 이면에 숨겨진 문제점을 지적하십시오.
+        2. 키워드와 '{perspective_role}' 직무/산업 간의 **공통점 및 긴밀한 연관성을 인정하되, 특히 우려되는 차이점, 갈등 요소, 또는 해결해야 할 과제**를 심층적으로 분석하십시오.
+        3. 키워드들 간의 **상호 관계 및 서로에게 미치는 부정적인 영향, 또는 예상치 못한 부작용**을 기술하십시오.
+        4. 각각의 키워드가 가진 **미래의 위험 요소, 불확실성, 또는 부정적 전망과 현재의 중요성 이면에 숨겨진 취약점**을 제시하되, 선정 이유가 이러한 비판적 전망에 어떤 시사점을 주는지 고려하십시오.
+        5. **객관적이고 균형 잡힌 시각을 유지하면서도, 비판적이고 회의적인 관점을 명확히 제시하십시오.**
+        6. 답변은 **긍정적 분석과 비슷한 분량**으로 상세하게 작성해주세요.
 
         **답변 형식:**
-        · 각 키워드의 현재 상황과 특징 (선정 이유와 연계)
-        · 공통점 및 차이점 (직무/산업 관점)
-        · 상호 관계 및 영향
-        · 미래 전망 및 중요성
+        · 현재 상황 및 특징: {keywords[0]} (긍정적 분석을 참조한 비판적 설명)
+        · 공통점 및 차이점: {keywords[0]} vs {perspective_role} 관점 (특히, 해결 과제 강조)
+        · 상호 관계 및 상호 영향 (부정적 측면 또는 위험 요소)
+        · 미래 전망 및 중요성 (비판적 측면 또는 불확실성)
 
         마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
         객관적이고 균형잡힌 시각으로 비교해주세요.
@@ -1926,10 +1936,11 @@ async def generate_comparison_answer(question, keywords, perspective_role: Optio
         completion = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": f"당신은 {perspective_role or '기술'} 분야의 전문가로서 다양한 키워드를 비교 분석합니다. 객관적이고 균형잡힌 시각으로 답변합니다. 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
+                {"role": "system", "content": f"당신은 {perspective_role or '기술'} 분야의 전문가로서 다양한 키워드를 비교 분석합니다. **주어진 긍정적 분석을 참고하여 비판적이고 회의적인 시각으로 답변합니다.** 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=16384
+            max_tokens=16384,
+            temperature=0.3 # 일관성을 위해 0.3으로 조정
         )
 
         return completion.choices[0].message.content
@@ -1937,7 +1948,7 @@ async def generate_comparison_answer(question, keywords, perspective_role: Optio
     except Exception as e:
         logger.error(f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}")
         return f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}"
-
+    
 async def generate_contextual_answer(question, current_keywords):
     """현재 키워드 컨텍스트 기반 일반 답변 생성"""
     try:
