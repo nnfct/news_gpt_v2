@@ -264,4 +264,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# cache_data
+cache_data
+cache_data/*
+
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,python,visualstudiocode,virtualenv
