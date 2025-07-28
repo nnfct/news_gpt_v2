@@ -2,6 +2,7 @@ import logging
 import time
 import feedparser
 import urllib.parse
+import json
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -79,21 +80,26 @@ def find_shared_keywords_with_llm(raw_keywords):
         keywords_text = "\n".join(formatted_keywords)
 
         prompt = f"""
-        다음은 국가별 트렌딩 키워드입니다. 
-        **여러 국가에서 동시에 나타나는 동일한 의미의 키워드 그룹**을 찾아주세요.
-
-        키워드 목록:
+        Here is a list of trending keywords from different countries.
+        Your task is to identify **keywords from different countries that refer to the SAME entity**, 
+        even if they are written in different languages or slightly different forms.
+        
+        Keyword list:
         {keywords_text}
-
-        조건:
-        - 같은 국가 내의 키워드는 비교하지 마세요
-        - 다른 국가 간에 의미적으로 동일한 키워드만 찾아주세요  
-        - Tesla/TSLA/테슬라, iPhone/아이폰, Trump/트럼프 같은 경우가 좋은 예시입니다
-        - 단순히 비슷한 주제가 아닌, 정확히 같은 대상을 가리키는 키워드만 묶어주세요
-
-        응답 형식 (JSON만): {{"shared_groups": [[인덱스1, 인덱스2], [인덱스3, 인덱스4, 인덱스5]]}}
-        예시: {{"shared_groups": [[0, 5, 12], [3, 8]]}}
+        
+        Rules:
+        - DO NOT group keywords from the same country together.
+        - Only group keywords that refer to the EXACT same entity (brand, company, person, product).
+        - **If a company name is combined with words like 'stock', 'shares', or '주가' (Korean for stock price), 
+        they must be grouped together as the same concept.**
+        - Good examples: Tesla/TSLA/테슬라, iPhone/아이폰, Trump/트럼프, 
+        **Samsung Electronics/삼성전자/Samsung stock/Samsung Electronics shares**.
+        - Do NOT group words that are only thematically related. They must refer to semantically the SAME target.
+        
+        Respond ONLY in JSON format like this:
+        {{"shared_groups": [[0, 5, 12], [3, 8]]}}
         """
+
         response = openai_client.chat.completions.create(
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
@@ -103,21 +109,28 @@ def find_shared_keywords_with_llm(raw_keywords):
             max_tokens=500,
             temperature=0.1
         )
+
+        response_text = response.choices[0].message.content or "{}"
         
-        shared_keywords_text = response.choices[0].message.content or "None"
-        if shared_keywords_text == "None":
-            return []
+        # LLM 응답에서 JSON 코드 블록 정리 (e.g., ```json ... ```)
+        if "```" in response_text:
+            response_text = response_text.split('```')[1]
+            if response_text.startswith('json'):
+                response_text = response_text[4:]
+
+        try:
+            data = json.loads(response_text.strip())
+            shared_groups = data.get("shared_groups", [])
             
-        shared_keywords = [kw.strip() for kw in shared_keywords_text.split('\n') if kw.strip()]
-        
-        shared_indices = set()
-        for i, item in enumerate(raw_keywords):
-            for shared_kw in shared_keywords:
-                if shared_kw.lower() in item['keyword'].lower() or item['keyword'].lower() in shared_kw.lower():
-                    shared_indices.add(i)
-                    break
-                    
-        return list(shared_indices)
+            # 모든 그룹의 인덱스를 하나의 set으로 통합
+            shared_indices = set()
+            for group in shared_groups:
+                shared_indices.update(group)
+                
+            return list(shared_indices)
+        except (json.JSONDecodeError, IndexError) as e:
+            logger.error(f"Failed to parse JSON from LLM response: '{response_text}', error: {e}")
+            return []
     except Exception as e:
         logger.error(f"Error finding shared keywords with LLM: {e}")
         return []
@@ -206,3 +219,7 @@ def get_news(country: str, keyword: str):
     except Exception as e:
         logger.error(f"Error fetching news for {keyword} in {country}: {e}", exc_info=True)
         return [] 
+    
+if __name__ == "__main__":
+    cache_google_tranding(["US", "GB", "MX", "KR", "IN", "ZA", "AU"])
+    
