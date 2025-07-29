@@ -452,67 +452,80 @@ def get_current_weekly_keywords():
         logger.error(f"키워드 추출 오류: {e}")
         return ["인공지능", "반도체", "기업"]
 
-async def generate_industry_based_answer(question, keyword, industry, current_keywords, reason: Optional[str] = None):
-    """산업별/직무별 관점 분석 기반 답변 생성"""
+async def generate_industry_based_answer(question, keyword, industry, current_keywords, reason: Optional[str] = None, ncs_summary_text: Optional[str] = None):
+    """
+    산업별/직무별 관점 분석 기반 답변 생성 (긍정적 시각, 카테고리별)
+    """
     try:
-        industry_context = {
-            "사회": "사회적 영향, 정책적 측면, 시민 생활 변화",
-            "경제": "경제적 파급효과, 시장 동향, 투자 관점",
-            "IT/과학": "기술적 혁신, 연구개발 동향, 기술적 과제",
-            "생활/문화": "일상생활 변화, 문화적 수용성, 소비자 행동",
-            "세계": "글로벌 트렌드, 국제 경쟁, 해외 동향"
-        }
-        context_desc = industry_context.get(industry, f"'{industry}' 관점")
+        # 시스템 메시지: '글로벌 Top 컨설팅 펌의 수석 성장 전략가' 페르소나 설정
+        system_message_content = (
+            "당신은 글로벌 Top 컨설팅 펌의 수석 성장 전략가(Senior Growth Strategist)입니다. "
+            "당신의 분석은 항상 최신 시장 데이터에 기반하며, 최대의 성장 기회를 발굴하고 최적의 시나리오를 제시합니다. "
+            "답변은 마크다운 헤더(#)를 사용하지 않고, 중간점(·)과 이모지로 구분된 텍스트 형식으로만 생성해야 하며, 다른 부가적인 설명은 절대 추가하지 마십시오."
+        )
 
+        # 사용자 프롬프트: '과업 목표', '분석 프레임워크', '답변 형식'을 포함
+        keyword_str = keyword # 단일 키워드
 
-        reason_text = f"이 키워드는 '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다." if reason else "제공된 선정 이유 없음."
+        reason_text = ""
+        if reason:
+            reason_text = f"이 분석 대상 키워드인 '{keyword_str}'은(는) '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다. 이 맥락을 긍정적 기회 분석에 깊이 활용해주세요."
 
-
-        # 프롬프트 구성: 각 항목별 2-3 문장으로 간결하게 요약하도록 지시
-        prompt = f"""
-        당신은 전문적인 AI 뉴스 분석가입니다. 사용자의 질문과 키워드, 그리고 특정 직무/산업 관점에서 **오직 긍정적이고 낙관적인 관점**으로 핵심적인 분석을 제공해야 합니다.
-        **특히, 키워드가 선정된 이유를 명확히 이해하고, 이 맥락을 바탕으로 분석의 핵심을 간결하게 전달해주세요.**
+        # NCS 요약 텍스트를 과업 목표에 직접 삽입
+        ncs_specific_context = ""
+        if ncs_summary_text:
+            # NCS 요약이 있다면, 이 정보를 클라이언트의 직무/산업 배경으로 제시
+            ncs_specific_context = f"""
+            **클라이언트의 직무/산업 배경:**
+            {ncs_summary_text}
+            이러한 배경을 가진 클라이언트에게 '{keyword_str}' 트렌드에 내재된,
+            """
+        else:
+            # NCS 요약이 없다면, 기존 industry 인자를 활용 (없을 경우 '산업 전반'으로 대체)
+            ncs_specific_context = f"'{industry if industry else '산업 전반'}' 관점에서 '{keyword_str}' 트렌드에 내재된,"
         
-        **분석 대상 정보:**
-        - 질문: {question}
-        - 분석 대상 키워드: {keyword}
-        - 키워드 선정 이유: {reason_text}
-        - 분석 관점 직무/산업: {industry} ({context_desc})
-        - 현재 주간 핵심 키워드: {', '.join(current_keywords)}
+        prompt = f"""
+### 과업 목표
+{ncs_specific_context} **잠재적이고 간과하기 쉬운 긍정적 기회 요소를 다각적으로 분석**하여 보고해주십시오. 분석은 반드시 **객관적이고 현실적인 최적의 시나리오**를 포함해야 합니다.
 
-        **분석 지침:**
-        1. **'{industry}' 직무/산업과 '{keyword}' 키워드의 긍정적인 긴밀한 연관성**을 핵심만 요약하여 설명하십시오.
-        2. **'{reason_text}'을(를) 배경으로, 현재 상황과 주요 긍정적 동향의 핵심만** 분석하십시오.
-        3. 현재 주간 핵심 키워드도 고려하여 답변의 시의성을 높이되, **간결하게 언급**하십시오.
-        4. 전문적이되, **독자가 30초 안에 읽을 수 있도록 매우 간결하고 핵심적인 어조**를 사용하십시오.
-        5. **오직 긍정적이고 낙관적인 측면만 강조**하십시오.
-        6. 비판적, 부정적 내용은 포함하지 마세요.
-        7. **각 항목당 2~3문장 이내로 작성하며, 전체 답변은 최대 250자(공백 포함)를 넘지 않도록** 해주세요.
+{reason_text}
 
-        **답변 형식:**
-        · 현재 상황 (선정 이유와 연계): [2~3문장 요약]
-        · 주요 동향 및 변화: [2~3문장 요약]
-        · 상호 관계 및 상호 영향 (긍정적 측면): [2~3문장 요약]
-        · 긍정적 전망 및 시사점: [2~3문장 요약] # 항목 이름 통일 및 4개로 맞춤
+### 분석 프레임워크 및 필수 포함 요소 (Analysis Framework)
+아래 제시된 4가지 긍정적 기회 카테고리별로 핵심 내용, 발생 가능한 긍정적 시나리오, 그리고 성과 지표를 포함하여 간결하게 작성해주세요. 각 항목당 2~3문장 이내로 작성하며, 전체 답변은 최대 400자(공백 포함)를 넘지 않도록 해주세요.
 
-        마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
-        """
+1.  **기술적/혁신적 기회 (Technological/Innovation Opportunity):** 새로운 기술 도입, 생산성 향상, 연구 개발 가속화, 혁신적인 솔루션 창출.
+2.  **시장/경제적 기회 (Market/Economic Opportunity):** 신규 시장 창출, 수익 증대, 비용 절감, 투자 유치, 경쟁 우위 확보.
+3.  **사회적/가치적 기회 (Social/Value Opportunity):** 사회 문제 해결 기여, 삶의 질 향상, 윤리적 가치 증진, 긍정적 브랜드 이미지 구축.
+4.  **정책적/규제적 기회 (Policy/Regulatory Opportunity):** 정부 지원 및 정책적 우대, 규제 완화, 산업 표준 선도, 국제 협력 증대.
 
-        completion = openai_client.chat.completions.create(
+### 답변 형식
+· **기술적/혁신적 기회:** 핵심 기회 요약. 긍정적 시나리오 예시: [예시 내용]. 성과 지표: [지표].
+· **시장/경제적 기회:** 핵심 기회 요약. 긍정적 시나리오 예시: [예시 내용]. 성과 지표: [지표].
+· **사회적/가치적 기회:** 핵심 기회 요약. 긍정적 시나리오 예시: [예시 내용]. 성과 지표: [지표].
+· **정책적/규제적 기회:** 핵심 기회 요약. 긍정적 시나리오 예시: [예시 내용]. 성과 지표: [지표].
+· **'직무별 기회 활용 전략:** [2~3문장으로 직무 담당자를 위한 구체적인 실행 방안 제시. 이 전략은 해당 직무의 전문성과 연관성을 명확히 보여야 합니다.]
+**최종 분석 요약:** [2~3문장으로 전체 긍정적 분석의 핵심 요약 및 기회 활용 방안 포함].
+"""
+
+        completion = await asyncio.to_thread( # await asyncio.to_thread 추가
+            openai_client.chat.completions.create,
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": f"당신은 '{industry}' 관점에서 뉴스 데이터를 분석하고 키워드에 대해 전문적으로 답변하는 AI입니다. **오직 긍정적이고 낙관적인 측면만 강조하며, 매우 간결하고 핵심적으로 답변합니다.** 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."},
+                {"role": "system", "content": system_message_content},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
+            max_tokens=600, # 넉넉하게 설정 (한글 1자 = 약 2~3토큰)
             temperature=0.3
         )
 
-        return completion.choices[0].message.content
+        response_content = completion.choices[0].message.content
+        logger.info(f"✅ 긍정적 분석 보고서 생성 성공. 길이: {len(response_content)}")
+        return response_content
 
     except Exception as e:
-        logger.error(f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다: {e}", exc_info=True)
-        return f"죄송합니다. {industry} 관점에서의 '{keyword}' 분석 중 오류가 발생했습니다."
+        logger.error(f"❌ 긍정적 분석 생성 중 오류: {e}", exc_info=True)
+        return f"죄송합니다. 긍정적 분석 보고서 생성 중 오류가 발생했습니다: {str(e)}"
+
 
 async def generate_keyword_trend_answer(question, keyword):
     """키워드 트렌드 분석 답변 생성"""
@@ -547,61 +560,115 @@ async def generate_keyword_trend_answer(question, keyword):
         return f"죄송합니다. '{keyword}' 트렌드 분석 중 오류가 발생했습니다: {str(e)}"
 
 async def generate_comparison_answer(question, keywords, perspective_role: Optional[str] = None, reason: Optional[str] = None):
-    """키워드들을 비교 분석 답변 생성 (직무/산업 관점 포함)"""
+    """
+    주어진 키워드들을 특정 직무/산업 관점에서 비판적/회의적인 시각으로 분석하여
+    텍스트 기반의 리스크 분석 보고서를 생성합니다. (긍정적 분석 결과 활용)
+    """
     try:
-        role_context = ""
-        if perspective_role:
-            role_context = f"'{perspective_role}'의 관점에서 "
+        # 1. 긍정적 분석 결과 받아오기
+        positive_analysis_context = ""
+        
+        # NCS 직무 요약 결과를 저장할 변수 초기화
+        ncs_job_summary_for_positive_analysis = None 
+
+        if keywords: # 키워드가 있을 때만 긍정적 분석 호출
+            # 여기에서 get_job_industry_summary를 호출하여 NCS 직무/산업 요약을 가져옵니다.
+            # 직무명인 perspective_role을 query로 사용합니다.
+            try:
+                ncs_job_summary_for_positive_analysis = await get_job_industry_summary(perspective_role)
+                logger.info(f"NCS Job Summary fetched for positive analysis: {ncs_job_summary_for_positive_analysis[:100]}...")
+            except Exception as e:
+                logger.error(f"Error fetching NCS job summary for positive analysis: {e}")
+                # 오류 발생 시 빈 문자열 또는 기본 메시지로 처리
+                ncs_job_summary_for_positive_analysis = "NCS 직무 정보 요약을 가져오는 데 실패했습니다."
+
+            positive_analysis_context = await generate_industry_based_answer(
+                question=question,
+                keyword=keywords[0],
+                industry=perspective_role, # industry는 기존대로 perspective_role 전달
+                current_keywords=[],
+                reason=reason,
+                ncs_summary_text=ncs_job_summary_for_positive_analysis # 여기에 NCS 요약 결과 전달
+            )
+
+
+        # 시스템 메시지: '글로벌 Top 컨설팅 펌의 수석 리스크 분석가' 페르소나 설정
+        system_message_content = (
+            "당신은 글로벌 Top 컨설팅 펌의 수석 리스크 분석가(Senior Risk Analyst)입니다. "
+            "당신의 분석은 항상 최신 데이터에 기반하며, 일반적으로 간과되거나 낙관적으로만 해석되는 면 이면에 숨겨진 리스크를 발굴하고, "
+            "최악의 시나리오까지 냉철하게 고려합니다. "
+            "답변은 마크다운 헤더(#)를 사용하지 않고, 중간점(·)과 이모지로 구분된 텍스트 형식으로만 생성해야 하며, 다른 부가적인 설명은 절대 추가하지 마십시오."
+        )
+
+        # 사용자 프롬프트: '과업 목표', '분석 프레임워크', '답변 형식'을 포함
+        keyword_str = ", ".join(keywords)
 
         reason_text = ""
         if reason and keywords:
-            reason_text = f"참고: 비교 대상 키워드 중 '{keywords[0]}'은(는) '{reason}'이라는 구체적인 이유로 선정되었습니다. 이 맥락을 비교 분석에 활용해주세요."
+            reason_text = f"이 분석 대상 키워드 중 '{keywords[0]}'은(는) '{reason}'이라는 구체적인 이유로 현재 가장 주목받고 있습니다. 이 맥락을 비판적 리스크 분석에 깊이 활용해주세요."
 
-        # 프롬프트 구성: 긍정적 분석을 참조하여 비판적 관점 강화, 그리고 간결성 강조
+        # NCS 요약 정보를 과업 목표에 직접 삽입
+        ncs_specific_client_context = ""
+        if ncs_job_summary_for_positive_analysis:
+            # NCS 요약이 있다면, 이 정보를 클라이언트의 직무/산업 배경으로 제시
+            ncs_specific_client_context = f"""
+            **클라이언트의 직무/산업 배경:**
+            {ncs_job_summary_for_positive_analysis}
+            이러한 배경을 가진 클라이언트가
+            """
+        else:
+            # NCS 요약이 없다면, 기존대로 '산업 전반' 클라이언트로 대체
+            ncs_specific_client_context = f"'{perspective_role if perspective_role else '산업 전반'}' 산업의 클라이언트가"
+
+
         prompt = f"""
-        당신은 전문적인 기술/산업 분석가입니다. 주어진 키워드들을 특정 직무/산업 관점에서 **비판적이고 회의적인 시각**으로 핵심을 분석해야 합니다.
-        **제공된 긍정적 분석 내용을 충분히 참고하되, 그 내용에 대해 반대 의견, 잠재적 문제점, 한계점, 또는 부정적인 영향을 중심으로 핵심 내용을 요약해주세요.**
-        **특히, 키워드가 선정된 이유가 있다면 그 맥락을 깊이 이해하고 비판적 분석에 적극적으로 반영하여 답변의 핵심만 전달해주세요.**
+### 과업 목표
+{ncs_specific_client_context} '{keyword_str}' 트렌드에 내재된, **간과하기 쉬운 비판적/회의적 관점의 잠재적 리스크**를 다각적으로 분석하여 보고해주십시오. 분석은 반드시 **객관적이고 현실적인 최악의 시나리오**를 포함해야 합니다.
 
-        **분석 대상 정보:**
-        - 질문: {question}
-        - 비교 대상 키워드: {', '.join(keywords)}
-        - 분석 관점 직무/산업: {role_context.strip()}
-        {reason_text}
+{reason_text}
 
-        **분석 지침:**
-        1. 각 키워드의 현재 상황과 특징을 설명하되, **제공된 선정 이유(`{reason_text}`)**가 있다면 해당 키워드의 중요성 이면에 숨겨진 문제점의 핵심을 지적하십시오.
-        2. 키워드와 '{perspective_role}' 직무/산업 간의 **공통점 및 긴밀한 연관성을 인정하되, 특히 우려되는 차이점, 갈등 요소, 또는 해결해야 할 과제의 핵심**을 분석하십시오.
-        3. 키워드들 간의 **상호 관계 및 서로에게 미치는 부정적인 영향, 또는 예상치 못한 부작용의 핵심**을 기술하십시오.
-        4. 각각의 키워드가 가진 **미래의 위험 요소, 불확실성, 또는 부정적 전망과 현재의 중요성 이면에 숨겨진 취약점의 핵심**을 제시하십시오.
-        5. **객관적이고 균형 잡힌 시각을 유지하면서도, 비판적이고 회의적인 관점의 핵심**을 명확히 제시하십시오.
-        6. 답변은 **긍정적 분석과 비슷한 분량으로 상세하게 작성하며, 각 항목당 2~3문장 이내로 작성, 전체 답변은 최대 250자(공백 포함)를 넘지 않도록** 해주세요.
+--- 참고용 긍정적 분석 보고서 (이 내용에 대한 비판적 관점을 제시해주세요) ---
+{positive_analysis_context}
+---
 
-        **답변 형식:**
-        · 현재 상황 및 특징 (긍정적 분석 참조한 비판적 설명): [2~3문장 요약]
-        · 공통점 및 차이점 (해결 과제 강조): [2~3문장 요약]
-        · 상호 관계 및 상호 영향 (부정적 측면): [2~3문장 요약]
-        · 미래 전망 및 중요성 (비판적 측면): [2~3문장 요약]
+### 분석 지침 (필수 포함 요소)
+위에서 제공된 긍정적 분석 내용을 충분히 참고하여, 그 내용에 대한 반대 의견, 잠재적 문제점, 한계점, 또는 부정적인 영향을 중심으로 핵심 내용을 요약해주세요.
+아래 제시된 4가지 리스크 카테고리별로 핵심 내용, 발생 가능한 최악의 시나리오, 그리고 모니터링 지표를 포함하여 간결하게 작성해주세요. 각 항목당 2~3문장 이내로 작성하며, 전체 답변은 최대 400자(공백 포함)를 넘지 않도록 해주세요.
 
-        마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지로 구분하세요.
-        객관적이고 균형잡힌 시각으로 비교해주세요.
-        """
+1.  **기술적/운영적 리스크 (Technological/Operational Risk):** 기술 한계, 확장성 문제, 구현의 복잡성, 시스템 오류 가능성, 예상치 못한 운영 문제.
+2.  **시장/경제적 리스크 (Market/Economic Risk):** 시장 과열로 인한 버블, 수익 모델의 취약성 및 지속 불가능성, 예상 밖의 높은 비용 또는 투자 회수 지연, 경쟁 심화.
+3.  **사회적/윤리적 리스크 (Social/Ethical Risk):** 사회적 불평등 심화, 일자리 감소 및 사회적 혼란, 개인정보 침해 및 데이터 오용, 윤리적 딜레마 (예: 책임 소재), 부정적인 브랜드 이미지 형성.
+4.  **규제/법률적 리스크 (Regulatory/Legal Risk):** 예상치 못한 정부 규제 도입 또는 강화, 기존 법규와의 충돌, 지적 재산권 분쟁 가능성, 국제적 규제 장벽.
 
-        completion = openai_client.chat.completions.create(
+### 답변 형식
+· **기술적/운영적 리스크:** 핵심 리스크 요약. 최악의 시나리오 예시: [예시 내용]. 모니터링 지표: [지표].
+· **시장/경제적 리스크:** 핵심 리스크 요약. 최악의 시나리오 예시: [예시 내용]. 모니터링 지표: [지표].
+· **사회적/윤리적 리스크:** 핵심 리스크 요약. 최악의 시나리오 예시: [예시 내용]. 모니터링 지표: [지표].
+· **규제/법률적 리스크:** 핵심 리스크 요약. 최악의 시나리오 예시: [예시 내용]. 모니터링 지표: [지표].
+· **'직무별 기회 활용 전략:** [2~3문장으로 직무 담당자를 위한 구체적인 실행 방안 제시. 이 전략은 해당 직무의 전문성과 연관성을 명확히 보여야 합니다.]
+
+**최종 분석 요약:** [2~3문장으로 전체 리스크 분석의 핵심 요약 및 권고 사항 포함].
+"""
+
+        completion = await asyncio.to_thread(
+            openai_client.chat.completions.create,
             model=AZURE_OPENAI_DEPLOYMENT,
             messages=[
-                {"role": "system", "content": f"당신은 {perspective_role or '기술'} 분야의 전문가로서 다양한 키워드를 비교 분석합니다. **주어진 긍정적 분석을 참고하여 비판적이고 회의적인 시각으로 핵심을 답변합니다.** 마크다운 헤더(#) 사용 금지. 중간점(·)과 이모지만 사용하세요."}, 
+                {"role": "system", "content": system_message_content},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
+            max_tokens=600,
             temperature=0.3
         )
 
-        return completion.choices[0].message.content
+        response_content = completion.choices[0].message.content
+        logger.info(f"✅ 비판적 분석 보고서 생성 성공. 길이: {len(response_content)}")
+        return response_content
 
     except Exception as e:
-        logger.error(f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}")
-        return f"죄송합니다. 키워드 비교 분석 중 오류가 발생했습니다: {str(e)}"
+        logger.error(f"❌ 비판적 분석 생성 중 오류: {e}", exc_info=True)
+        return f"죄송합니다. 비판적 분석 보고서 생성 중 오류가 발생했습니다: {str(e)}"
+
 
 async def generate_contextual_answer(question, current_keywords):
     """현재 키워드 컨텍스트 기반 일반 답변 생성"""
@@ -790,3 +857,6 @@ async def get_gpt_commentary(trend_request):
     except Exception as e:
         logger.error(f"Error generating GPT commentary: {e}", exc_info=True)
         return "Failed to generate commentary due to a server error." 
+    
+
+
