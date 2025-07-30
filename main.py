@@ -35,8 +35,8 @@ async def lifespan(_: FastAPI):
 
 # FastAPI 앱 인스턴스 생성
 app = FastAPI(
-    title="News GPT v2", 
-    description="AI 뉴스 키워드 분석 플랫폼", 
+    title="News GPT v2 Backend", 
+    description="AI 뉴스 키워드 분석 백엔드 API 서버", 
     lifespan=lifespan
 )
 
@@ -49,33 +49,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 정적 페이지 제공
+# ============================================================================
+# LEGACY: 프론트엔드 정적 파일 서빙 (TODO: 제거 예정)
+# 프론트엔드는 별도 저장소로 분리되었습니다: https://github.com/J1STAR/news-gpt-frontend
+# ============================================================================
+
 @app.get("/")
 async def serve_home():
-    """메인 페이지 제공"""
+    """LEGACY: 메인 페이지 제공 (프론트엔드 분리로 인해 제거 예정)"""
+    logger.warning("LEGACY: 프론트엔드 파일 서빙 - 별도 저장소로 분리됨")
     return FileResponse("index.html")
 
 @app.get("/analysis.html")
 async def serve_analysis():
-    """상세 분석 페이지 제공"""
+    """LEGACY: 상세 분석 페이지 제공 (프론트엔드 분리로 인해 제거 예정)"""
+    logger.warning("LEGACY: 프론트엔드 파일 서빙 - 별도 저장소로 분리됨")
     return FileResponse("analysis.html")
 
 @app.get("/news-detail.html")
 async def serve_news_detail():
-    """뉴스 상세 페이지 제공 (유튜브 스타일)"""
+    """LEGACY: 뉴스 상세 페이지 제공 (프론트엔드 분리로 인해 제거 예정)"""
+    logger.warning("LEGACY: 프론트엔드 파일 서빙 - 별도 저장소로 분리됨")
     return FileResponse("news-detail.html")
 
 @app.get("/trending.html")
 async def serve_trending():
-    """트렌딩 페이지 제공"""
+    """LEGACY: 트렌딩 페이지 제공 (프론트엔드 분리로 인해 제거 예정)"""
+    logger.warning("LEGACY: 프론트엔드 파일 서빙 - 별도 저장소로 분리됨")
     return FileResponse("trending.html")
 
 @app.get("/admin.html")
 async def serve_admin():
-    """관리자 페이지 제공"""
+    """LEGACY: 관리자 페이지 제공 (프론트엔드 분리로 인해 제거 예정)"""
+    logger.warning("LEGACY: 프론트엔드 파일 서빙 - 별도 저장소로 분리됨")
     return FileResponse("admin.html")
 
+# ============================================================================
 # API 라우터 포함
+# ============================================================================
 app.include_router(api_router)
 
 # uvicorn 실행을 위한 설정 (터미널에서 직접 실행 시)
